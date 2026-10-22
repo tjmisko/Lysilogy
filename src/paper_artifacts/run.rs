@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::{
-    ABSTRACT_SCHEMA, ANALYSIS_SCHEMA, CARD_SCHEMA, CHECK_SCHEMA, CITATIONS_SCHEMA, CORE_SCHEMA,
+    ABSTRACT_SCHEMA, ANALYSIS_SCHEMA, CARD_SCHEMA, CHECK_SCHEMA, CITATIONS_SCHEMA,
     GLOSSARY_SCHEMA, IDENTITY_SCHEMA, OBJECTS_SCHEMA, QUESTION_SCHEMA, REFERENCES_SCHEMA,
     RELATIONS_SCHEMA, REPAIR_SCHEMA, SECTIONS_SCHEMA, SUPERCUT_SCHEMA, TYPE_SCHEMA,
     admission::{
@@ -47,13 +47,9 @@ use crate::{
     store::write_atomic,
 };
 
-const CORE_PROMPT: &str = include_str!("../../prompts/paper-core.md");
 const FIELDS_PROMPT: &str = include_str!("../../prompts/paper-fields.md");
 const SECTIONS_POLICY: &str = include_str!("../../prompts/sectioning.md");
 const OBJECTS_PROMPT: &str = include_str!("../../prompts/paper-objects.md");
-const SUPERCUT_PROMPT: &str = include_str!("../../prompts/paper-supercut.md");
-const ANALYSIS_PROMPT: &str = include_str!("../../prompts/paper-analysis.md");
-const GLOSSARY_PROMPT: &str = include_str!("../../prompts/paper-glossary.md");
 const CHECK_PROMPT: &str = include_str!("../../prompts/paper-artifacts-check.md");
 const REPAIR_PROMPT: &str = include_str!("../../prompts/paper-artifacts-repair.md");
 
@@ -584,47 +580,25 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
         options.providers.clone(),
     );
 
-    let (core, object_chunks, object_merge) = if let Some(plan) = &options.plan {
-        run_plan(&session, &resources, plan, options.object_pages).await
-    } else {
-        let core = match options.core_mode {
-            CoreMode::Combined => core_pass(&session, &resources, &text).await,
-            CoreMode::Fanout => fanout_core(&session, &resources, &text).await,
-        };
-        let mut draft = core.clone();
-        let (chunks, merge) = feature_passes(
-            &mut draft,
-            &session,
-            &resources,
-            &text,
-            options.features,
-            options.object_pages,
-        )
-        .await;
-        (draft, chunks, merge)
-    };
+    let plan = options.plan.clone().unwrap_or_else(|| {
+        let mut plan = default_pipeline(options.core_mode, options.features);
+        if options.passes == 1 {
+            plan.verify.self_check = SelfCheckMode::None;
+        }
+        plan
+    });
+    let (core, object_chunks, object_merge) =
+        run_plan(&session, &resources, &plan, options.object_pages).await;
     let pass1_check = core.as_ref().map(|draft| check(&source, draft));
 
     let mut draft = core.clone();
-    let self_check_enabled = options.plan.as_ref().map_or(options.passes == 2, |plan| {
-        plan.verify.self_check == SelfCheckMode::Full
-    });
-    let repair_model = options
-        .plan
-        .as_ref()
-        .is_none_or(|plan| plan.verify.repair == RepairMode::Model);
-    let hide_objects = options.plan.as_ref().map_or_else(
-        || options.features.any_objects(),
-        |plan| {
-            plan.calls
-                .iter()
-                .any(|call| call.fields.iter().any(|field| field == "objects"))
-        },
-    );
-    let schema = options
-        .plan
-        .as_ref()
-        .map_or_else(|| draft_schema(options.features), plan_schema);
+    let self_check_enabled = plan.verify.self_check == SelfCheckMode::Full;
+    let repair_model = plan.verify.repair == RepairMode::Model;
+    let hide_objects = plan
+        .calls
+        .iter()
+        .any(|call| !object_kinds(call).is_empty());
+    let schema = plan_schema(&plan);
     let check_pass = match draft.as_mut() {
         Some(current) if self_check_enabled => {
             self_check(current, &text, &source, &session, hide_objects, &schema).await?
@@ -779,91 +753,6 @@ async fn self_check(
     })
 }
 
-/// The core pass: every field every extraction needs, from text alone.
-async fn core_pass(
-    session: &Session<'_>,
-    resources: &PageResources,
-    text: &[ContentPart],
-) -> Option<Value> {
-    let prompt = CORE_PROMPT.replace(
-        "{{sections}}",
-        &sections_guidance(resources.paper.pages.len()),
-    );
-    let mut parts = vec![ContentPart::Text(prompt)];
-    if let Some(title) = likely_title(resources) {
-        parts.push(ContentPart::Text(format!(
-            "Authoritative title from the largest heading on page 1: {title}. Return this exact string as `identity.title`; never use a cite-as or accepted-for-publication title."
-        )));
-    }
-    parts.extend(text.iter().cloned());
-    session
-        .call::<Value>(
-            "extract.pass1",
-            &parts,
-            CORE_SCHEMA,
-            core_max_tokens(resources.paper.pages.len()),
-        )
-        .await
-}
-
-/// The core fields, one call each over the same paper prefix. The fields run
-/// in order so the first call can populate a provider's prefix cache and the
-/// rest can read it back.
-async fn fanout_core(
-    session: &Session<'_>,
-    resources: &PageResources,
-    text: &[ContentPart],
-) -> Option<Value> {
-    let mut draft = serde_json::Map::new();
-    let mut abstract_answered = false;
-    for field in CORE_FIELDS {
-        let shared = shared_prefix(FIELDS_PROMPT, text, field.page_limit);
-        let instruction = field.instruction.replace(
-            "{{sections}}",
-            &sections_guidance(resources.paper.pages.len()),
-        );
-        let parts = [ContentPart::Text(shared), ContentPart::Text(instruction)];
-        let Some(value) = session
-            .call::<Value>(field.stage, &parts, field.schema, FEATURE_MAX_TOKENS)
-            .await
-        else {
-            continue;
-        };
-        if field.name == "abstract" {
-            abstract_answered = true;
-        }
-        merge_fields(&mut draft, &value);
-    }
-    if abstract_answered
-        && draft
-            .get("abstract")
-            .and_then(|value| value.get("text"))
-            .and_then(Value::as_str)
-            .is_none()
-    {
-        session.fail(
-            "extract.abstract",
-            None,
-            "no abstract found in the first three pages".to_owned(),
-            None,
-        );
-    }
-    (!draft.is_empty()).then_some(Value::Object(draft))
-}
-
-/// The shared prefix every field call carries, so a provider cache can hit it.
-/// `limit` keeps only the first pages, for the abstract shortcut.
-fn shared_prefix(preamble: &str, text: &[ContentPart], limit: Option<usize>) -> String {
-    let mut out = String::from(preamble);
-    for part in text.iter().take(limit.unwrap_or(usize::MAX)) {
-        if let ContentPart::Text(page) = part {
-            out.push('\n');
-            out.push_str(page);
-        }
-    }
-    out
-}
-
 /// Whether a config field name is one a call can fill.
 #[must_use]
 pub fn is_unit(name: &str) -> bool {
@@ -913,7 +802,7 @@ fn unit_schema(name: &str) -> Option<&'static str> {
         "references" => REFERENCES_SCHEMA,
         "citations" => CITATIONS_SCHEMA,
         "relations" => RELATIONS_SCHEMA,
-        "objects" => OBJECTS_SCHEMA,
+        "objects" | "figures" | "tables" | "algorithms" | "equations" => OBJECTS_SCHEMA,
         "supercut" => SUPERCUT_SCHEMA,
         "analysis" => ANALYSIS_SCHEMA,
         "glossary" => GLOSSARY_SCHEMA,
@@ -928,6 +817,10 @@ fn unit_instruction(name: &str, page_count: usize) -> String {
         .map_or_else(
             || match name {
                 "objects" => "Return the `objects` field.",
+                "figures" => "Return the `objects` field, figures only.",
+                "tables" => "Return the `objects` field, tables only.",
+                "algorithms" => "Return the `objects` field, algorithms only.",
+                "equations" => "Return the `objects` field, equations only.",
                 "supercut" => "Return the `supercut` field: the argument as ordered source and connector segments.",
                 "analysis" => "Return the `analysis` fields: claims, method, key numbers, limitations, open questions, headline results, and the read signal.",
                 "glossary" => "Return the `notation` and `glossary` fields.",
@@ -1039,6 +932,23 @@ impl PlanCallResult {
     }
 }
 
+/// The object kinds a call asks for; empty when it is not an object call.
+fn object_kinds(call: &Call) -> Vec<&'static str> {
+    if call.fields.iter().any(|field| field == "objects") {
+        return vec!["figure", "table", "algorithm", "equation"];
+    }
+    call.fields
+        .iter()
+        .filter_map(|field| match field.as_str() {
+            "figures" => Some("figure"),
+            "tables" => Some("table"),
+            "algorithms" => Some("algorithm"),
+            "equations" => Some("equation"),
+            _ => None,
+        })
+        .collect()
+}
+
 /// One plan call: the chunked object pass, or one text call over the paper.
 #[allow(clippy::too_many_lines)]
 async fn plan_call(
@@ -1049,8 +959,8 @@ async fn plan_call(
     object_pages: usize,
     draft: serde_json::Map<String, Value>,
 ) -> PlanCallResult {
-    if call.fields.iter().any(|field| field == "objects") {
-        let kinds = ["figure", "table", "algorithm", "equation"];
+    let kinds = object_kinds(call);
+    if !kinds.is_empty() {
         let page_parts = match page_parts(resources).await {
             Ok(parts) => parts,
             Err(error) => {
@@ -1125,41 +1035,67 @@ async fn plan_call(
 /// The reader's default pipeline: one combined core call plus any opted-in
 /// features, over the raw page text the experiments used.
 #[must_use]
-pub fn core_pipeline(features: Features) -> RunConfig {
-    let mut calls = vec![Call {
-        name: "core".to_owned(),
-        fields: CORE_FIELDS
-            .iter()
-            .map(|field| field.name.to_owned())
-            .collect(),
-        effort: Effort::Low,
-        model: None,
-        max_tokens: None,
-        include_draft: false,
-        scope: None,
-        requires: Vec::new(),
-    }];
-    let feature_call = |name: &str, field: &str| Call {
+pub fn default_pipeline(core_mode: CoreMode, features: Features) -> RunConfig {
+    let mut calls = match core_mode {
+        CoreMode::Combined => vec![Call {
+            name: "core".to_owned(),
+            fields: CORE_FIELDS
+                .iter()
+                .map(|field| field.name.to_owned())
+                .collect(),
+            effort: Effort::Low,
+            model: None,
+            max_tokens: None,
+            include_draft: false,
+            scope: None,
+            requires: Vec::new(),
+        }],
+        CoreMode::Fanout => {
+            let mut calls = Vec::new();
+            let mut requires = Vec::new();
+            for field in CORE_FIELDS {
+                calls.push(Call {
+                    name: field.name.to_owned(),
+                    fields: vec![field.name.to_owned()],
+                    effort: Effort::Low,
+                    model: None,
+                    max_tokens: None,
+                    include_draft: false,
+                    scope: field.page_limit.map(|limit| format!("first{limit}")),
+                    requires: requires.clone(),
+                });
+                requires = vec![field.name.to_owned()];
+            }
+            calls
+        }
+    };
+    let core_names: Vec<String> = calls.iter().map(|call| call.name.clone()).collect();
+    let feature = |name: &str, fields: Vec<String>| Call {
         name: name.to_owned(),
-        fields: vec![field.to_owned()],
+        fields,
         effort: Effort::Low,
         model: None,
         max_tokens: None,
         include_draft: false,
         scope: None,
-        requires: vec!["core".to_owned()],
+        requires: core_names.clone(),
     };
     if features.any_objects() {
-        calls.push(feature_call("objects", "objects"));
+        let fields = features
+            .object_kinds()
+            .into_iter()
+            .map(|kind| format!("{kind}s"))
+            .collect();
+        calls.push(feature("objects", fields));
     }
     if features.supercut {
-        calls.push(feature_call("supercut", "supercut"));
+        calls.push(feature("supercut", vec!["supercut".to_owned()]));
     }
     if features.analysis {
-        calls.push(feature_call("analysis", "analysis"));
+        calls.push(feature("analysis", vec!["analysis".to_owned()]));
     }
     if features.glossary {
-        calls.push(feature_call("glossary", "glossary"));
+        calls.push(feature("glossary", vec!["glossary".to_owned()]));
     }
     RunConfig {
         input: Input::default(),
@@ -1167,6 +1103,12 @@ pub fn core_pipeline(features: Features) -> RunConfig {
         verify: Verify::default(),
         models: Models::default(),
     }
+}
+
+/// The reader's default pipeline: the combined core plus opted-in features.
+#[must_use]
+pub fn core_pipeline(features: Features) -> RunConfig {
+    default_pipeline(CoreMode::Combined, features)
 }
 
 /// The paper as the model sees it: raw page-marked text or markdown, first
@@ -1231,109 +1173,6 @@ fn front_matter(resources: &PageResources) -> String {
     text
 }
 
-/// Run the optional feature passes that were asked for and merge them in.
-/// Objects go through the chunked pass; the rest are one text call each.
-async fn feature_passes(
-    draft: &mut Option<Value>,
-    session: &Session<'_>,
-    resources: &PageResources,
-    text: &[ContentPart],
-    features: Features,
-    object_pages: usize,
-) -> (Vec<ChunkRecord>, Option<MergeStats>) {
-    if draft.is_none() {
-        return (Vec::new(), None);
-    }
-    let supercut = async {
-        if features.supercut {
-            text_feature(
-                session,
-                text,
-                "extract.supercut",
-                SUPERCUT_PROMPT,
-                SUPERCUT_SCHEMA,
-            )
-            .await
-        } else {
-            None
-        }
-    };
-    let analysis = async {
-        if features.analysis {
-            text_feature(
-                session,
-                text,
-                "extract.analysis",
-                ANALYSIS_PROMPT,
-                ANALYSIS_SCHEMA,
-            )
-            .await
-        } else {
-            None
-        }
-    };
-    let glossary = async {
-        if features.glossary {
-            text_feature(
-                session,
-                text,
-                "extract.glossary",
-                GLOSSARY_PROMPT,
-                GLOSSARY_SCHEMA,
-            )
-            .await
-        } else {
-            None
-        }
-    };
-    let objects = async {
-        if features.any_objects() {
-            let kinds = features.object_kinds();
-            let page_parts = match page_parts(resources).await {
-                Ok(parts) => parts,
-                Err(error) => {
-                    session.fail("extract.objects", None, error.to_string(), None);
-                    return (Vec::new(), None, Vec::new());
-                }
-            };
-            let (inventory, merge, chunks) =
-                object_pass(session, resources, &page_parts, &kinds, object_pages).await;
-            (chunks, Some(merge), inventory)
-        } else {
-            (Vec::new(), None, Vec::new())
-        }
-    };
-    let (supercut, analysis, glossary, (chunks, merge, inventory)) =
-        tokio::join!(supercut, analysis, glossary, objects);
-    if let Some(draft) = draft.as_mut() {
-        let Some(fields) = draft.as_object_mut() else {
-            return (chunks, merge);
-        };
-        for value in [supercut, analysis, glossary].into_iter().flatten() {
-            merge_fields(fields, &value);
-        }
-        if features.any_objects() {
-            fields.insert("objects".to_owned(), Value::Array(inventory));
-        }
-    }
-    (chunks, merge)
-}
-
-/// One text-only feature call that returns the fields named by its schema.
-async fn text_feature(
-    session: &Session<'_>,
-    text: &[ContentPart],
-    stage: &str,
-    prompt: &str,
-    schema: &str,
-) -> Option<Value> {
-    let mut parts = vec![ContentPart::Text(prompt.to_owned())];
-    parts.extend(text.iter().cloned());
-    session
-        .call::<Value>(stage, &parts, schema, FEATURE_MAX_TOKENS)
-        .await
-}
-
 /// Merge a feature answer into the draft. Headline results and the read
 /// signal belong under `card`.
 fn merge_fields(draft: &mut serde_json::Map<String, Value>, fields: &Value) {
@@ -1349,25 +1188,6 @@ fn merge_fields(draft: &mut serde_json::Map<String, Value>, fields: &Value) {
             draft.insert(key.clone(), value.clone());
         }
     }
-}
-
-/// The schema for a draft, so a self-check correction can be validated against
-/// the shape the app expects. Feature fields are added when the feature ran.
-fn draft_schema(features: Features) -> Value {
-    let mut base: Value = serde_json::from_str(CORE_SCHEMA).unwrap_or(Value::Null);
-    if features.any_objects() {
-        merge_properties(&mut base, OBJECTS_SCHEMA);
-    }
-    if features.supercut {
-        merge_properties(&mut base, SUPERCUT_SCHEMA);
-    }
-    if features.analysis {
-        merge_properties(&mut base, ANALYSIS_SCHEMA);
-    }
-    if features.glossary {
-        merge_properties(&mut base, GLOSSARY_SCHEMA);
-    }
-    base
 }
 
 /// Add the properties and required keys of `extra` to `base`.
@@ -2031,15 +1851,16 @@ mod tests {
     }
 
     #[test]
-    fn should_send_only_the_leading_pages_for_the_abstract_shortcut() {
-        let resources = resources();
-        let text = text_parts(&resources);
-        let all = shared_prefix(FIELDS_PROMPT, &text, None);
-        let first = shared_prefix(FIELDS_PROMPT, &text, Some(1));
-        assert!(all.contains("<<page 2>>"));
-        assert!(first.contains("<<page 1>>") && !first.contains("<<page 2>>"));
-        assert!(first.starts_with(FIELDS_PROMPT));
-        assert!(all.starts_with(FIELDS_PROMPT));
+    fn should_scope_the_abstract_call_in_a_fanout_pipeline() {
+        let plan = default_pipeline(CoreMode::Fanout, Features::default());
+        assert_eq!(plan.calls.len(), CORE_FIELDS.len());
+        let abstract_call = plan
+            .calls
+            .iter()
+            .find(|call| call.name == "abstract")
+            .expect("abstract");
+        assert_eq!(abstract_call.scope.as_deref(), Some("first3"));
+        assert_eq!(abstract_call.requires, vec!["type"]);
     }
 
     #[test]
