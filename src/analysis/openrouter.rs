@@ -107,6 +107,8 @@ pub enum CostSource {
     Reported,
     /// Estimated from the published deepseek prices; wrong for other models.
     Estimated,
+    /// A plan-backed harness; no metered cost.
+    Plan,
 }
 
 /// A parsed completion before it is billed.

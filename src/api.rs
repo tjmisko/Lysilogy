@@ -757,15 +757,20 @@ impl AppState {
         paper: &crate::domain::ExtractedPaper,
         reset_stages: bool,
     ) -> Result<crate::analysis::AnalysisOutcome> {
-        if provider == AnalysisProvider::OpenRouter {
-            let pdf = self.source_path(id).await?;
-            self.analysis
-                .analyze_core_artifacts(provider, paper, &pdf, &self.store.paper_dir(id))
-                .await
-        } else {
-            self.analysis
-                .analyze(provider, paper, &self.store.paper_dir(id), reset_stages)
-                .await
+        match provider {
+            AnalysisProvider::Heuristic => {
+                self.analysis
+                    .analyze(provider, paper, &self.store.paper_dir(id), reset_stages)
+                    .await
+            }
+            AnalysisProvider::Codex
+            | AnalysisProvider::Claude
+            | AnalysisProvider::OpenRouter => {
+                let pdf = self.source_path(id).await?;
+                self.analysis
+                    .analyze_core_artifacts(provider, paper, &pdf, &self.store.paper_dir(id))
+                    .await
+            }
         }
     }
 

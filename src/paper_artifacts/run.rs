@@ -38,9 +38,11 @@ use super::{
 use crate::{
     Error, Result,
     analysis::{
+        LocalCliAnalyzer,
         openrouter::{self, ChatRequest, ContentPart, CostSource, ReasoningEffort},
         spend::SpendLedger,
     },
+    domain::AnalysisProvider,
     extract::PdfExtractor,
     store::write_atomic,
 };
@@ -276,11 +278,25 @@ enum RepairAction {
     Withdraw,
 }
 
+/// Where a structured model call runs.
+pub enum Backend<'a> {
+    /// Metered `OpenRouter` chat completions.
+    OpenRouter {
+        client: reqwest::Client,
+        ledger: &'a SpendLedger,
+    },
+    /// A plan harness: one structured call through the Codex or Claude CLI.
+    Plan {
+        analyzer: &'a LocalCliAnalyzer,
+        provider: AnalysisProvider,
+        directory: PathBuf,
+    },
+}
+
 /// The model calls for one paper, with its own spend cap. Calls take `&self`
 /// so independent calls can run concurrently.
 struct Session<'a> {
-    client: reqwest::Client,
-    ledger: &'a SpendLedger,
+    backend: Backend<'a>,
     model: &'a str,
     paper_budget_usd: f64,
     reasoning: ReasoningEffort,
@@ -301,16 +317,14 @@ struct SessionState {
 
 impl<'a> Session<'a> {
     fn new(
-        client: reqwest::Client,
-        ledger: &'a SpendLedger,
+        backend: Backend<'a>,
         model: &'a str,
         paper_budget_usd: f64,
         reasoning: ReasoningEffort,
         providers: Vec<String>,
     ) -> Self {
         Self {
-            client,
-            ledger,
+            backend,
             model,
             paper_budget_usd,
             reasoning,
@@ -363,6 +377,22 @@ impl<'a> Session<'a> {
         .await
     }
 
+    /// Dispatch one request to the configured backend.
+    async fn complete(&self, request: &ChatRequest<'_>) -> Result<openrouter::Completion> {
+        match &self.backend {
+            Backend::OpenRouter { client, ledger } => {
+                openrouter::complete(client, ledger, request).await
+            }
+            Backend::Plan {
+                analyzer,
+                provider,
+                directory,
+            } => {
+                Box::pin(analyzer.plan_completion(*provider, directory, request)).await
+            }
+        }
+    }
+
     /// One call with an explicit model and effort, for a configured plan.
     #[allow(clippy::too_many_arguments)]
     async fn call_with<T: serde::de::DeserializeOwned>(
@@ -396,7 +426,7 @@ impl<'a> Session<'a> {
         };
         let mut attempt = 1;
         loop {
-            let completion = match openrouter::complete(&self.client, self.ledger, &request).await {
+            let completion = match self.complete(&request).await {
                 Ok(completion) => completion,
                 Err(error) => {
                     if attempt < CALL_ATTEMPTS && self.within_budget(stage) {
@@ -509,14 +539,23 @@ struct ObjectsResponse {
     objects: Vec<Value>,
 }
 
-/// Extract one paper and write its record to `options.output`.
+/// Extract one paper through `OpenRouter` and write its record to `options.output`.
+pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<ExtractRecord> {
+    let backend = Backend::OpenRouter {
+        client: openrouter::client(options.timeout)?,
+        ledger,
+    };
+    extract_with(options, backend).await
+}
+
+/// Extract one paper with a chosen backend and write its record to `options.output`.
 ///
 /// # Errors
 /// Fails only when the options are invalid, the PDF cannot be turned into
 /// page resources, or the record cannot be written. Model failures are
 /// recorded in the returned record instead.
 #[allow(clippy::too_many_lines)]
-pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<ExtractRecord> {
+pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Result<ExtractRecord> {
     if !(1..=2).contains(&options.passes) {
         return Err(Error::InvalidRequest(format!(
             "passes must be 1 or 2, not {}",
@@ -535,8 +574,7 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
     let text = text_parts(&resources);
     let source = SourceText::new(&resources.paper.pages);
     let session = Session::new(
-        openrouter::client(options.timeout)?,
-        ledger,
+        backend,
         &options.model,
         options.paper_budget_usd,
         options.reasoning,
@@ -1644,8 +1682,10 @@ mod tests {
 
     fn session(ledger: &SpendLedger, paper_budget_usd: f64) -> Session<'_> {
         Session::new(
-            reqwest::Client::new(),
-            ledger,
+            Backend::OpenRouter {
+                client: reqwest::Client::new(),
+                ledger,
+            },
             openrouter::DEFAULT_MODEL,
             paper_budget_usd,
             ReasoningEffort::Low,

@@ -149,7 +149,7 @@ impl AnalysisService {
         use crate::paper_artifacts::{
             features::Features,
             resources::DEFAULT_DPI,
-            run::{CoreMode, ExtractOptions, extract},
+            run::{Backend, CoreMode, ExtractOptions, extract_with},
         };
         let options = ExtractOptions {
             pdf: pdf.to_path_buf(),
@@ -167,7 +167,20 @@ impl AnalysisService {
             providers: Vec::new(),
             plan: None,
         };
-        let record = extract(&options, &spend::SpendLedger::with_defaults()).await?;
+        let ledger = spend::SpendLedger::with_defaults();
+        let backend = if provider == AnalysisProvider::OpenRouter {
+            Backend::OpenRouter {
+                client: openrouter::client(options.timeout)?,
+                ledger: &ledger,
+            }
+        } else {
+            Backend::Plan {
+                analyzer: &self.local_cli,
+                provider,
+                directory: options.work_directory.clone(),
+            }
+        };
+        let record = extract_with(&options, backend).await?;
         let artifacts = record.artifacts.ok_or_else(|| {
             Error::InvalidAnalysis("the extraction produced no artifacts".to_owned())
         })?;

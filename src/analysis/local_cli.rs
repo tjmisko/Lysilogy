@@ -27,6 +27,9 @@ use super::{
 };
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(20 * 60);
+/// Plan harnesses are tool-free, so an oversized paper fails instead of
+/// sampling or reaching for the file tools. Large-document handling is open.
+const MAX_PLAN_PROMPT_CHARS: usize = 500_000;
 const CACHE_SCHEMA_VERSION: u16 = 2;
 const CODEX_FAST_MODEL: &str = "gpt-5.6-luna";
 const CLAUDE_FAST_MODEL: &str = "haiku";
@@ -220,6 +223,59 @@ impl LocalCliAnalyzer {
             )
             .await?;
         parse_structured_output(provider, &output.result)
+    }
+
+    /// One structured completion through a plan harness, with no tools.
+    ///
+    /// The shared `paper-artifacts` backend calls this for Codex and Claude so
+    /// they run the same combined core pass as `OpenRouter`.
+    pub(crate) async fn plan_completion(
+        &self,
+        provider: AnalysisProvider,
+        directory: &Path,
+        request: &openrouter::ChatRequest<'_>,
+    ) -> Result<openrouter::Completion> {
+        let started = std::time::Instant::now();
+        let prompt = plan_prompt(request.parts)?;
+        let schema = serde_json::to_string(request.schema)?;
+        let schema_path = directory.join("plan-output.schema.json");
+        write_schema(&schema_path, &schema).await?;
+        let schema_path = canonical_schema(&schema_path).await?;
+        let output_filename = format!(
+            "plan-agent-output-{}.json",
+            fingerprint(format!("{}|{}", request.stage, prompt).as_bytes())
+        );
+        let output = self
+            .run_agent(
+                provider,
+                AgentRequest {
+                    working_directory: directory,
+                    schema_path: &schema_path,
+                    schema: &schema,
+                    prompt: &prompt,
+                    session: None,
+                    output_filename: &output_filename,
+                    profile: plan_profile(request.reasoning),
+                    stage: request.stage,
+                },
+            )
+            .await?;
+        let value: serde_json::Value = parse_structured_output(provider, &output.result)?;
+        Ok(openrouter::Completion {
+            parsed: openrouter::ParsedCompletion {
+                content: serde_json::to_string(&value)?,
+                reasoning: None,
+                provider: Some(format!("{provider:?}")),
+                finish_reason: None,
+                prompt_tokens: 0,
+                cached_tokens: 0,
+                completion_tokens: 0,
+                reasoning_tokens: 0,
+                cost_usd: 0.0,
+                cost_source: openrouter::CostSource::Plan,
+            },
+            latency: started.elapsed(),
+        })
     }
 
     #[must_use]
@@ -1068,6 +1124,50 @@ pub fn structured_fast_model_key(provider: AnalysisProvider) -> String {
 
 /// Fast calls use the orientation profile pinned to the cheap Claude model;
 /// every other call keeps the experiment profile and the CLI's own model.
+/// The prompt for a plan-harness completion: text parts only.
+fn plan_prompt(parts: &[openrouter::ContentPart]) -> Result<String> {
+    let mut prompt = String::new();
+    for part in parts {
+        match part {
+            openrouter::ContentPart::Text(text) => {
+                if !prompt.is_empty() {
+                    prompt.push_str("\n\n");
+                }
+                prompt.push_str(text);
+            }
+            openrouter::ContentPart::Png(_) => {
+                return Err(Error::InvalidRequest(
+                    "plan harnesses do not send page images".to_owned(),
+                ));
+            }
+        }
+    }
+    if prompt.chars().count() > MAX_PLAN_PROMPT_CHARS {
+        return Err(Error::InvalidRequest(format!(
+            "the paper is too large for a plan harness ({} characters); oversized documents are not supported yet",
+            prompt.chars().count()
+        )));
+    }
+    Ok(prompt)
+}
+
+/// A tool-free, web-free profile for plan-harness completions.
+const fn plan_profile(reasoning: Option<openrouter::ReasoningEffort>) -> StageProfile {
+    StageProfile {
+        codex_model: CODEX_PRIMARY_MODEL,
+        effort: match reasoning {
+            Some(openrouter::ReasoningEffort::Medium) => "medium",
+            Some(openrouter::ReasoningEffort::High) => "high",
+            _ => "low",
+        },
+        live_web: false,
+        local_files: false,
+        persist_session: false,
+        claude_tools: "",
+        claude_model: None,
+    }
+}
+
 const fn reader_tool_profile(request: &super::ReaderToolRequest<'_>) -> StageProfile {
     if !request.fast {
         return PromptStage::Experiment.profile();
@@ -1967,5 +2067,97 @@ esac
             first.replace("DIRECT-ONLY", "VARIANT"),
             second.replace("BRIDGE-ONLY", "VARIANT")
         );
+    }
+
+    #[test]
+    fn plan_profile_is_tool_free_and_web_free() {
+        for reasoning in [
+            None,
+            Some(openrouter::ReasoningEffort::Off),
+            Some(openrouter::ReasoningEffort::Low),
+            Some(openrouter::ReasoningEffort::Medium),
+            Some(openrouter::ReasoningEffort::High),
+        ] {
+            let profile = plan_profile(reasoning);
+            assert!(!profile.live_web);
+            assert!(!profile.local_files);
+            assert!(!profile.persist_session);
+            assert_eq!(profile.claude_tools, "");
+            assert!(profile.claude_model.is_none());
+        }
+        assert_eq!(
+            plan_profile(Some(openrouter::ReasoningEffort::Low)).effort,
+            "low"
+        );
+        assert_eq!(
+            plan_profile(Some(openrouter::ReasoningEffort::Medium)).effort,
+            "medium"
+        );
+        assert_eq!(plan_profile(None).effort, "low");
+    }
+
+    #[test]
+    fn plan_prompt_rejects_images() {
+        let parts = [openrouter::ContentPart::Png(vec![0, 1, 2])];
+        assert!(plan_prompt(&parts).is_err());
+    }
+
+    #[test]
+    fn plan_prompt_rejects_oversized_documents() {
+        let text = "x".repeat(MAX_PLAN_PROMPT_CHARS + 1);
+        let parts = [openrouter::ContentPart::Text(text)];
+        assert!(plan_prompt(&parts).is_err());
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn plan_completion_runs_the_cli_tool_free_and_bills_no_metered_cost() -> Result<()> {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().expect("temporary directory");
+        let script = dir.path().join("stub-codex");
+        std::fs::write(
+            &script,
+            r#"#!/bin/sh
+cat >/dev/null
+printf '%s\n' "$*" > arguments
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--output-last-message" ]; then shift; output="$1"; fi
+  shift
+done
+printf '{"card":{"thesis":"T"}}' > "$output"
+"#,
+        )
+        .expect("stub script");
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700))
+            .expect("executable");
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let schema = serde_json::json!({"type":"object"});
+        let parts = [openrouter::ContentPart::Text("hello".to_owned())];
+        let request = openrouter::ChatRequest {
+            model: "ignored",
+            parts: &parts,
+            schema: &schema,
+            stage: "core",
+            max_tokens: Some(100),
+            reasoning: Some(openrouter::ReasoningEffort::Low),
+            provider_order: &[],
+        };
+        let completion = cli
+            .plan_completion(AnalysisProvider::Codex, dir.path(), &request)
+            .await?;
+        assert_eq!(completion.parsed.content, r#"{"card":{"thesis":"T"}}"#);
+        assert_eq!(completion.parsed.cost_source, openrouter::CostSource::Plan);
+        assert!(completion.parsed.cost_usd.abs() < f64::EPSILON);
+        let arguments = std::fs::read_to_string(dir.path().join("arguments")).expect("arguments");
+        assert!(
+            arguments.contains("model_reasoning_effort=\"low\""),
+            "{arguments}"
+        );
+        assert!(!arguments.contains("--search"), "{arguments}");
+        assert!(
+            arguments.contains("features.shell_tool=false"),
+            "{arguments}"
+        );
+        Ok(())
     }
 }
