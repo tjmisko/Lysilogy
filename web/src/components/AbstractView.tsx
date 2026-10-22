@@ -123,8 +123,6 @@ export function AbstractView({
           </article>;
         })}
       </section>
-      {onRefresh != null && <button className="context-refresh" type="button" disabled={refreshing !== null}
-        onClick={() => onRefresh("context")}>{refreshing === "context" ? "Researching and reviewing context…" : "Research before and after"}</button>}
       {legacyNotes.length > 0 && <article className="reading-context-card legacy-context">
         <span className="eyebrow">Earlier context</span>
         {renderNotes(legacyNotes)}

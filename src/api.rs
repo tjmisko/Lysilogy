@@ -466,7 +466,7 @@ impl AppState {
         &self,
         id: &PaperId,
         provider: AnalysisProvider,
-        force: bool,
+        _force: bool,
         component: crate::domain::AnalysisComponent,
     ) -> Result<PaperView> {
         use crate::domain::AnalysisComponent;
@@ -512,50 +512,42 @@ impl AppState {
                 .transition(id, ProcessingStage::Analysis, task)
                 .await?;
             let mut analysis = self.store.load_analysis(id).await?;
-            let mut structure_session = None;
             match component {
-                AnalysisComponent::Structure => {
+                AnalysisComponent::Structure | AnalysisComponent::Abstract => {
                     let analysis = analysis.as_mut().ok_or_else(|| {
                         Error::InvalidRequest(
-                            "Analyze this paper before refreshing its section map".to_owned(),
+                            "Analyze this paper before refreshing it".to_owned(),
                         )
                     })?;
-                    structure_session = self
+                    let pdf = self.source_path(id).await?;
+                    let refreshed = self
                         .analysis
-                        .refresh_structure(
+                        .analyze_core_artifacts(
                             provider,
                             &paper,
+                            &pdf,
                             &self.store.paper_dir(id),
-                            analysis,
-                            force,
                         )
                         .await?;
-                }
-                AnalysisComponent::Abstract => {
-                    let result = self
-                        .analysis
-                        .extract_abstract(provider, &paper, &self.store.paper_dir(id), force)
-                        .await?;
-                    if let Some(analysis) = &mut analysis {
-                        analysis.author_abstract.clone_from(&result.text);
-                        analysis.abstract_extraction = Some(result);
+                    match component {
+                        AnalysisComponent::Structure => {
+                            analysis.sections.clone_from(&refreshed.analysis.sections);
+                            analysis.generated_at = refreshed.analysis.generated_at;
+                        }
+                        AnalysisComponent::Abstract => {
+                            analysis
+                                .author_abstract
+                                .clone_from(&refreshed.analysis.author_abstract);
+                            analysis.abstract_extraction = refreshed.analysis.abstract_extraction;
+                        }
+                        AnalysisComponent::Context => unreachable!(),
                     }
                 }
                 AnalysisComponent::Context => {
-                    let analysis = analysis.as_mut().ok_or_else(|| {
-                        Error::InvalidRequest(
-                            "Analyze this paper before refreshing its context".to_owned(),
-                        )
-                    })?;
-                    self.analysis
-                        .refresh_context(
-                            provider,
-                            &paper,
-                            &self.store.paper_dir(id),
-                            analysis,
-                            force,
-                        )
-                        .await?;
+                    return Err(Error::InvalidRequest(
+                        "Context research is disabled until its node is rebuilt without web"
+                            .to_owned(),
+                    ));
                 }
             }
             self.jobs.task_completed(id, task).await?;
@@ -566,15 +558,12 @@ impl AppState {
             if let Some(analysis) = analysis {
                 if component == AnalysisComponent::Structure {
                     self.store.save_analysis(id, &analysis).await?;
-                    if let Some(session) = &structure_session {
-                        self.store.save_agent_session(id, session).await?;
-                    }
                 } else {
                     self.store.save_analysis_projection(id, &analysis).await?;
                 }
             }
             self.jobs.task_completed(id, "persist").await?;
-            self.jobs.complete(id, structure_session.is_some()).await?;
+            self.jobs.complete(id, false).await?;
             Ok::<(), Error>(())
         }
         .await;

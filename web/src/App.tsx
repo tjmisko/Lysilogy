@@ -646,9 +646,6 @@ export function App() {
       case "refresh-abstract":
         refreshComponent("abstract");
         break;
-      case "refresh-context":
-        refreshComponent("context");
-        break;
       case "refresh-structure":
         refreshComponent("structure");
         break;
