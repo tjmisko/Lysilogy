@@ -149,8 +149,9 @@ impl AnalysisService {
         use crate::paper_artifacts::{
             features::Features,
             resources::DEFAULT_DPI,
-            run::{Backend, CoreMode, ExtractOptions, extract_with},
+            run::{Backend, CoreMode, ExtractOptions, core_pipeline, extract_with},
         };
+        let features = Features::parse("none")?;
         let options = ExtractOptions {
             pdf: pdf.to_path_buf(),
             model: openrouter::DEFAULT_MODEL.to_owned(),
@@ -160,12 +161,12 @@ impl AnalysisService {
             output: artifact_directory.join("paper-artifacts.json"),
             paper_budget_usd: 0.15,
             timeout: std::time::Duration::from_secs(20 * 60),
-            features: Features::parse("none")?,
+            features,
             object_pages: 6,
             reasoning: openrouter::ReasoningEffort::Low,
             core_mode: CoreMode::Combined,
             providers: Vec::new(),
-            plan: None,
+            plan: Some(core_pipeline(features)),
         };
         let ledger = spend::SpendLedger::with_defaults();
         let backend = if provider == AnalysisProvider::OpenRouter {

@@ -26,8 +26,8 @@ use super::{
         apply_removals, check, quote_sites,
     },
     config::{
-        Call, Input, InputFormat, Repair as RepairMode, RunConfig, SelfCheck as SelfCheckMode,
-        scope_pages,
+        Call, Effort, Input, InputFormat, Models, Repair as RepairMode, RunConfig,
+        SelfCheck as SelfCheckMode, Verify, scope_pages,
     },
     core_fields::CORE_FIELDS,
     corrections::{self, CheckResponse, Correction, CorrectionOutcome},
@@ -1119,6 +1119,53 @@ async fn plan_call(
         value,
         chunks: Vec::new(),
         merge: None,
+    }
+}
+
+/// The reader's default pipeline: one combined core call plus any opted-in
+/// features, over the raw page text the experiments used.
+#[must_use]
+pub fn core_pipeline(features: Features) -> RunConfig {
+    let mut calls = vec![Call {
+        name: "core".to_owned(),
+        fields: CORE_FIELDS
+            .iter()
+            .map(|field| field.name.to_owned())
+            .collect(),
+        effort: Effort::Low,
+        model: None,
+        max_tokens: None,
+        include_draft: false,
+        scope: None,
+        requires: Vec::new(),
+    }];
+    let feature_call = |name: &str, field: &str| Call {
+        name: name.to_owned(),
+        fields: vec![field.to_owned()],
+        effort: Effort::Low,
+        model: None,
+        max_tokens: None,
+        include_draft: false,
+        scope: None,
+        requires: vec!["core".to_owned()],
+    };
+    if features.any_objects() {
+        calls.push(feature_call("objects", "objects"));
+    }
+    if features.supercut {
+        calls.push(feature_call("supercut", "supercut"));
+    }
+    if features.analysis {
+        calls.push(feature_call("analysis", "analysis"));
+    }
+    if features.glossary {
+        calls.push(feature_call("glossary", "glossary"));
+    }
+    RunConfig {
+        input: Input::default(),
+        calls,
+        verify: Verify::default(),
+        models: Models::default(),
     }
 }
 
@@ -2240,5 +2287,24 @@ esac
         assert!(draft.get("supercut").is_some_and(Value::is_array));
         assert!(draft.get("glossary").is_some_and(Value::is_array));
         Ok(())
+    }
+
+    #[test]
+    fn should_build_the_core_pipeline_and_its_optional_features() {
+        let core = core_pipeline(Features::default());
+        assert_eq!(core.calls.len(), 1);
+        assert_eq!(core.calls[0].name, "core");
+        assert!(core.calls[0].fields.iter().any(|field| field == "sections"));
+        assert_eq!(core.calls[0].effort, Effort::Low);
+        assert!(core.calls[0].requires.is_empty());
+
+        let all = core_pipeline(Features::all());
+        assert_eq!(all.calls.len(), 5);
+        for call in &all.calls[1..] {
+            assert_eq!(call.requires, vec!["core"]);
+        }
+        for name in ["objects", "supercut", "analysis", "glossary"] {
+            assert!(all.calls.iter().any(|call| call.name == name), "{name}");
+        }
     }
 }
