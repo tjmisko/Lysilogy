@@ -118,6 +118,19 @@ fn allows_source_preserving_spacing_repairs_but_rejects_changed_words() {
 }
 
 #[test]
+fn skips_a_correspondence_block_inside_an_abstract() {
+    let p = paper(&[
+        "Abstract\nThe first part of the abstract states the central result and its scope.\nCorresponding author:\nA. Author, Example University, Somewhere.\nEmail: a.author@example.edu\nThe abstract continues after the correspondence block and completes the argument.\nIntroduction\nBody text.",
+    ]);
+    let result = extract(&p);
+    assert_eq!(result.status, AbstractStatus::Accepted);
+    let text = result.text.unwrap();
+    assert!(text.ends_with("completes the argument."));
+    assert!(!text.contains("Corresponding"));
+    assert!(!text.contains("example.edu"));
+}
+
+#[test]
 fn unlabeled_opening_requires_independent_review_without_relaxing_source_fidelity() {
     let p = paper(&[
         "Target discovery\nA. Author\nFebruary 2019\nThere are several distinct mechanisms through which the measured proxy changes under optimization.\nThis paper explains those mechanisms and specifies the conditions under which they occur.\nThe result helps readers distinguish statistical noise from structural changes in the observed physical system.\n\nVarieties of Measurement Failure\nThe body develops the model.",

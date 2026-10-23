@@ -154,8 +154,18 @@ pub fn source_lines(paper: &ExtractedPaper) -> Vec<SourceLine> {
             .map(str::trim)
             .filter(|s| !s.is_empty())
             .collect::<Vec<_>>();
+        let mut correspondence = 0usize;
         for (index, text) in lines.iter().enumerate() {
             let edge = index < 2 || index + 2 >= lines.len();
+            let lower = text.to_lowercase();
+            if lower.starts_with("corresponding author:") {
+                correspondence = 4;
+            }
+            let in_correspondence = correspondence > 0;
+            correspondence = correspondence.saturating_sub(1);
+            if lower.starts_with("email:") {
+                correspondence = 0;
+            }
             let repeated = edge
                 && text.len() < 180
                 && pages
@@ -186,7 +196,8 @@ pub fn source_lines(paper: &ExtractedPaper) -> Vec<SourceLine> {
                         digit.is_empty() || !notes.contains(&digit)
                     })
                     .collect(),
-                running_matter: (repeated || page_number) && heading_remainder(text).is_none(),
+                running_matter: ((repeated || page_number) && heading_remainder(text).is_none())
+                    || in_correspondence,
                 section_heading: !paper.metadata.authors.iter().any(|author| {
                     normalize(text.trim_end_matches(['*', '∗', '†', '‡'])) == normalize(author)
                 }) && (boundary(text)
