@@ -289,6 +289,29 @@ fn message_reasoning(message: Option<&Value>) -> Option<String> {
     (!parts.is_empty()).then(|| parts.join("\n"))
 }
 
+// The key from `OPENROUTER_API_KEY`, or from the file `OR_KEY_PATH` names.
+fn api_key() -> Result<String> {
+    if let Some(key) = std::env::var("OPENROUTER_API_KEY")
+        .ok()
+        .filter(|value| !value.is_empty())
+    {
+        return Ok(key);
+    }
+    if let Ok(path) = std::env::var("OR_KEY_PATH") {
+        let key = std::fs::read_to_string(&path)
+            .map_err(|error| Error::ProgramUnavailable(format!("OR_KEY_PATH {path}: {error}")))?
+            .trim()
+            .to_owned();
+        if key.is_empty() {
+            return Err(Error::ProgramUnavailable(format!(
+                "OR_KEY_PATH {path} is empty"
+            )));
+        }
+        return Ok(key);
+    }
+    Err(Error::ProgramUnavailable("OPENROUTER_API_KEY".to_owned()))
+}
+
 /// Send `request`, bill it to `ledger`, and return the completion.
 ///
 /// # Errors
@@ -299,10 +322,7 @@ pub async fn complete(
     ledger: &SpendLedger,
     request: &ChatRequest<'_>,
 ) -> Result<Completion> {
-    let api_key = std::env::var("OPENROUTER_API_KEY")
-        .ok()
-        .filter(|value| !value.is_empty())
-        .ok_or_else(|| Error::ProgramUnavailable("OPENROUTER_API_KEY".to_owned()))?;
+    let api_key = api_key()?;
     ledger.ensure_available()?;
     let started = Instant::now();
     let response = client
