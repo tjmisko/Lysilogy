@@ -662,37 +662,22 @@ impl AppState {
             }
         }
         self.jobs
-            .transition(id, ProcessingStage::Analysis, "prefetch")
+            .transition(id, ProcessingStage::Analysis, "core")
             .await
             .map_err(|error| (ProcessingStage::Persistence, error))?;
-        for (task, detail) in [
-            ("orientation", "Thesis and reading prerequisites"),
-            ("structure", "Structural map and exact paper evidence"),
-            (
-                "context",
-                "Research evidence, write history and influence, then review citations",
-            ),
-        ] {
-            self.jobs
-                .task_active(id, task, Some(detail.to_owned()))
-                .await
-                .map_err(|error| (ProcessingStage::Persistence, error))?;
-        }
         let outcome = self
             .run_analysis_backend(id, provider, &paper, reset_stages)
             .await
             .map_err(|error| (ProcessingStage::Analysis, error))?;
-        for task in ["prefetch", "orientation", "structure", "context"] {
-            self.jobs
-                .task_completed(id, task)
-                .await
-                .map_err(|error| (ProcessingStage::Persistence, error))?;
-        }
+        self.jobs
+            .task_completed(id, "core")
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
         self.jobs
             .task_active(
                 id,
                 "verify",
-                Some("Normalized model output and verified citations".to_owned()),
+                Some("Self-checked the draft and admitted quotations".to_owned()),
             )
             .await
             .map_err(|error| (ProcessingStage::Persistence, error))?;
@@ -2754,7 +2739,7 @@ mod tests {
                 .lines()
                 .filter(|line| line.starts_with("- [x]"))
                 .count()
-                >= 5
+                >= 4
         );
         Ok(())
     }

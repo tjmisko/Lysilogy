@@ -271,14 +271,11 @@ fn tasks_for(kind: AnalysisJobKind) -> Vec<AnalysisTask> {
         .as_slice(),
         AnalysisJobKind::Initial => [
             ("extract", "Extract text and exact PDF page coordinates"),
-            ("prefetch", "Build deterministic reusable paper context"),
+            ("core", "Read the paper into one structured draft"),
             (
-                "orientation",
-                "Extract the thesis and reading prerequisites",
+                "verify",
+                "Self-check the draft and admit quotations against the source",
             ),
-            ("structure", "Map sections, claims, evidence, and Gloss"),
-            ("context", "Research independently sourced field context"),
-            ("verify", "Normalize output and verify source evidence"),
             ("persist", "Validate and save the finished paper atlas"),
         ]
         .as_slice(),
@@ -440,7 +437,7 @@ mod tests {
         job.tasks[1].detail = Some("page 4 of 12".to_owned());
         let parsed = parse_tasklist(&render_tasklist(&job));
         assert_eq!(parsed, job.tasks);
-        assert_eq!(progress(&parsed, &job.status), 21);
+        assert_eq!(progress(&parsed, &job.status), 37);
     }
 
     #[tokio::test]
@@ -465,8 +462,8 @@ mod tests {
             .ok_or_else(|| Error::Task("tasklist was not written".to_owned()))?
             .replace("- [ ] `extract`", "- [x] `extract`")
             .replace(
-                "- [ ] `prefetch` Build deterministic reusable paper context",
-                "- [~] `prefetch` Build deterministic reusable paper context — page 4 of 12",
+                "- [ ] `core` Read the paper into one structured draft",
+                "- [~] `core` Read the paper into one structured draft — page 4 of 12",
             );
         store.save_tasklist(&id, &tasklist).await?;
         let queue = tracker.queue().await?;
@@ -498,7 +495,7 @@ mod tests {
             )
             .await?;
         tracker
-            .transition(&id, ProcessingStage::Analysis, "prefetch")
+            .transition(&id, ProcessingStage::Analysis, "core")
             .await?;
         let restarted = JobTracker::load(store).await?;
         let queue = restarted.queue().await?;
@@ -514,7 +511,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_failure_marks_every_parallel_active_task_failed() -> Result<()> {
+    async fn a_failure_marks_the_active_task_failed() -> Result<()> {
         let directory = tempdir().map_err(|error| Error::io("tempdir", error))?;
         let store = ArtifactStore::new(directory.path());
         store.initialize().await?;
@@ -530,11 +527,8 @@ mod tests {
             )
             .await?;
         tracker
-            .transition(&id, ProcessingStage::Analysis, "prefetch")
+            .transition(&id, ProcessingStage::Analysis, "core")
             .await?;
-        for task in ["orientation", "structure", "context"] {
-            tracker.task_active(&id, task, None).await?;
-        }
 
         tracker
             .fail(
@@ -550,7 +544,8 @@ mod tests {
             .iter()
             .filter(|task| task.status == AnalysisTaskStatus::Failed)
             .count();
-        assert_eq!(failed, 4);
+        assert_eq!(failed, 1);
+        assert_eq!(queue.jobs[0].tasks[1].id, "core");
         Ok(())
     }
 }
