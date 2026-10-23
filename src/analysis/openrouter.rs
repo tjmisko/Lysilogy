@@ -15,8 +15,18 @@ use serde_json::{Value, json};
 use super::spend::{SpendLedger, SpendRecord, completion_cost};
 use crate::{Error, Result};
 
+mod stream;
+
+pub use stream::StreamProgress;
+use stream::StreamAccumulator;
+
 /// `OpenRouter`'s chat completions endpoint.
 pub const OPENROUTER_URL: &str = "https://openrouter.ai/api/v1/chat/completions";
+
+/// How long a streamed answer may go without a data event before the call is
+/// abandoned. Keep-alive comments do not count; they only prove the connection
+/// is open, not that the provider is producing.
+pub const STREAM_IDLE_TIMEOUT: Duration = Duration::from_secs(90);
 
 /// The model used when a caller names none.
 pub const DEFAULT_MODEL: &str = "deepseek/deepseek-v4.1-flash";
@@ -151,6 +161,7 @@ pub fn request_body(request: &ChatRequest<'_>) -> Value {
             "type": "json_schema",
             "json_schema": {"name": "result", "strict": true, "schema": request.schema},
         },
+        "stream": true,
         "usage": {"include": true},
     });
     if let Some(max_tokens) = request.max_tokens {
@@ -218,38 +229,7 @@ pub fn parse_response(text: &str) -> Result<ParsedCompletion> {
             Error::InvalidAnalysis("OpenRouter returned no message content".to_owned())
         })?;
     let reasoning = message_reasoning(message);
-    let usage = value.get("usage");
-    let count = |key: &str| {
-        usage
-            .and_then(|usage| usage.get(key))
-            .and_then(Value::as_u64)
-            .unwrap_or(0)
-    };
-    let prompt_tokens = count("prompt_tokens");
-    let cached_tokens = usage
-        .and_then(|usage| usage.get("prompt_tokens_details"))
-        .and_then(|details| details.get("cached_tokens"))
-        .and_then(Value::as_u64)
-        .unwrap_or(0);
-    let completion_tokens = count("completion_tokens");
-    let reasoning_tokens = usage
-        .and_then(|usage| usage.get("completion_tokens_details"))
-        .and_then(|details| details.get("reasoning_tokens"))
-        .and_then(Value::as_u64)
-        .unwrap_or(0);
-    let reported = usage
-        .and_then(|usage| usage.get("cost"))
-        .and_then(Value::as_f64)
-        .filter(|cost| *cost > 0.0);
-    let (cost_usd, cost_source) = reported.map_or_else(
-        || {
-            (
-                completion_cost(prompt_tokens, completion_tokens),
-                CostSource::Estimated,
-            )
-        },
-        |cost| (cost, CostSource::Reported),
-    );
+    let billing = Billing::from_usage(value.get("usage"));
     let text_field = |container: Option<&Value>, key: &str| {
         container
             .and_then(|container| container.get(key))
@@ -261,13 +241,67 @@ pub fn parse_response(text: &str) -> Result<ParsedCompletion> {
         reasoning,
         provider: text_field(Some(&value), "provider"),
         finish_reason: text_field(choice, "finish_reason"),
-        prompt_tokens,
-        cached_tokens,
-        completion_tokens,
-        reasoning_tokens,
-        cost_usd,
-        cost_source,
+        prompt_tokens: billing.prompt_tokens,
+        cached_tokens: billing.cached_tokens,
+        completion_tokens: billing.completion_tokens,
+        reasoning_tokens: billing.reasoning_tokens,
+        cost_usd: billing.cost_usd,
+        cost_source: billing.cost_source,
     })
+}
+
+/// The token counts and cost a response's `usage` block carries.
+struct Billing {
+    prompt_tokens: u64,
+    cached_tokens: u64,
+    completion_tokens: u64,
+    reasoning_tokens: u64,
+    cost_usd: f64,
+    cost_source: CostSource,
+}
+
+impl Billing {
+    fn from_usage(usage: Option<&Value>) -> Self {
+        let count = |key: &str| {
+            usage
+                .and_then(|usage| usage.get(key))
+                .and_then(Value::as_u64)
+                .unwrap_or(0)
+        };
+        let prompt_tokens = count("prompt_tokens");
+        let cached_tokens = usage
+            .and_then(|usage| usage.get("prompt_tokens_details"))
+            .and_then(|details| details.get("cached_tokens"))
+            .and_then(Value::as_u64)
+            .unwrap_or(0);
+        let completion_tokens = count("completion_tokens");
+        let reasoning_tokens = usage
+            .and_then(|usage| usage.get("completion_tokens_details"))
+            .and_then(|details| details.get("reasoning_tokens"))
+            .and_then(Value::as_u64)
+            .unwrap_or(0);
+        let reported = usage
+            .and_then(|usage| usage.get("cost"))
+            .and_then(Value::as_f64)
+            .filter(|cost| *cost > 0.0);
+        let (cost_usd, cost_source) = reported.map_or_else(
+            || {
+                (
+                    completion_cost(prompt_tokens, completion_tokens),
+                    CostSource::Estimated,
+                )
+            },
+            |cost| (cost, CostSource::Reported),
+        );
+        Self {
+            prompt_tokens,
+            cached_tokens,
+            completion_tokens,
+            reasoning_tokens,
+            cost_usd,
+            cost_source,
+        }
+    }
 }
 
 fn message_reasoning(message: Option<&Value>) -> Option<String> {
@@ -312,20 +346,54 @@ fn api_key() -> Result<String> {
     Err(Error::ProgramUnavailable("OPENROUTER_API_KEY".to_owned()))
 }
 
+/// Receives progress while a streamed answer arrives.
+#[derive(Clone)]
+pub struct ProgressSink(std::sync::Arc<dyn Fn(StreamProgress) + Send + Sync>);
+
+impl ProgressSink {
+    pub fn new(report: impl Fn(StreamProgress) + Send + Sync + 'static) -> Self {
+        Self(std::sync::Arc::new(report))
+    }
+
+    fn report(&self, progress: StreamProgress) {
+        (self.0)(progress);
+    }
+}
+
+impl std::fmt::Debug for ProgressSink {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("ProgressSink")
+    }
+}
+
 /// Send `request`, bill it to `ledger`, and return the completion.
 ///
 /// # Errors
 /// Fails without a key, when the budget is spent, on a transport or HTTP
-/// error, or when the response cannot be parsed or recorded.
+/// error, when the stream goes quiet for [`STREAM_IDLE_TIMEOUT`], or when the
+/// response cannot be parsed or recorded.
 pub async fn complete(
     client: &reqwest::Client,
     ledger: &SpendLedger,
     request: &ChatRequest<'_>,
 ) -> Result<Completion> {
+    complete_with_progress(client, ledger, request, None).await
+}
+
+/// [`complete`], reporting to `progress` as the answer streams in.
+///
+/// # Errors
+/// As [`complete`].
+pub async fn complete_with_progress(
+    client: &reqwest::Client,
+    ledger: &SpendLedger,
+    request: &ChatRequest<'_>,
+    progress: Option<&ProgressSink>,
+) -> Result<Completion> {
     let api_key = api_key()?;
     ledger.ensure_available()?;
     let started = Instant::now();
-    let response = client
+    let mut response = client
         .post(OPENROUTER_URL)
         .bearer_auth(api_key)
         .header(reqwest::header::CONTENT_TYPE, "application/json")
@@ -336,18 +404,40 @@ pub async fn complete(
         .await
         .map_err(|error| Error::Task(format!("OpenRouter request failed: {error}")))?;
     let status = response.status();
-    let text = response
-        .text()
-        .await
-        .map_err(|error| Error::Task(format!("OpenRouter response could not be read: {error}")))?;
-    let latency = started.elapsed();
     if !status.is_success() {
+        let text = response.text().await.map_err(|error| {
+            Error::Task(format!("OpenRouter response could not be read: {error}"))
+        })?;
         return Err(Error::Task(format!(
             "OpenRouter returned {status}: {}",
             truncate(&text)
         )));
     }
-    let parsed = parse_response(&text)?;
+    let mut accumulator = StreamAccumulator::default();
+    let mut last_event = Instant::now();
+    loop {
+        let wait = STREAM_IDLE_TIMEOUT.saturating_sub(last_event.elapsed());
+        let chunk = tokio::time::timeout(wait, response.chunk())
+            .await
+            .map_err(|_| {
+                Error::Task(format!(
+                    "OpenRouter stream sent no data for {}s",
+                    STREAM_IDLE_TIMEOUT.as_secs()
+                ))
+            })?
+            .map_err(|error| Error::Task(format!("OpenRouter stream failed: {error}")))?;
+        let Some(chunk) = chunk else {
+            break;
+        };
+        if accumulator.feed(&chunk)? {
+            last_event = Instant::now();
+            if let Some(sink) = progress {
+                sink.report(accumulator.progress(request.stage));
+            }
+        }
+    }
+    let latency = started.elapsed();
+    let parsed = accumulator.finish()?;
     ledger.record(&SpendRecord {
         at: Utc::now(),
         stage: request.stage.to_owned(),
@@ -391,6 +481,23 @@ mod tests {
 
     fn schema() -> Value {
         json!({"type": "object", "properties": {}, "required": [], "additionalProperties": false})
+    }
+
+    #[test]
+    fn should_request_a_stream_that_reports_usage_when_a_request_is_built() {
+        let schema = schema();
+        let parts = [ContentPart::Text("hello".to_owned())];
+        let body = request_body(&ChatRequest {
+            model: "m",
+            parts: &parts,
+            schema: &schema,
+            stage: "s",
+            max_tokens: None,
+            reasoning: None,
+            provider_order: &[],
+        });
+        assert_eq!(body["stream"], true);
+        assert_eq!(body["usage"]["include"], true);
     }
 
     #[test]
