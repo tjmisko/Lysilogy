@@ -119,6 +119,8 @@ pub enum CostSource {
     Estimated,
     /// A plan-backed harness; no metered cost.
     Plan,
+    /// Replayed from a saved call; nothing was spent this run.
+    Checkpoint,
 }
 
 /// A parsed completion before it is billed.

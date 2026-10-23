@@ -139,6 +139,7 @@ impl AnalysisService {
             resources::DEFAULT_DPI,
             run::{Backend, CoreMode, ExtractOptions, core_pipeline, extract_with},
         };
+        let checkpoint_directory = artifact_directory.join("checkpoints");
         let features = Features::parse("none")?;
         let options = ExtractOptions {
             pdf: pdf.to_path_buf(),
@@ -156,6 +157,7 @@ impl AnalysisService {
             providers: Vec::new(),
             plan: Some(core_pipeline(features)),
             progress,
+            checkpoints: Some(checkpoint_directory.clone()),
         };
         let ledger = spend::SpendLedger::with_defaults();
         let backend = if provider == AnalysisProvider::OpenRouter {
@@ -171,6 +173,7 @@ impl AnalysisService {
             }
         };
         let record = extract_with(&options, backend).await?;
+        let clean = record.failures.is_empty();
         let reason = record.failures.first().map_or_else(
             || "the extraction produced no artifacts".to_owned(),
             |failure| failure.error.clone(),
@@ -185,6 +188,12 @@ impl AnalysisService {
             .filter(|value| !value.is_empty())
             .map(str::to_owned);
         analysis.abstract_extraction = None;
+        // A finished run must not be replayed by the next one: a refresh asks
+        // the model again. Keep the saved calls when any call failed, so the
+        // retry pays only for what is missing.
+        if clean {
+            crate::paper_artifacts::checkpoint::clear(&checkpoint_directory).await?;
+        }
         Ok(AnalysisOutcome {
             analysis,
             session: None,

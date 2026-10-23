@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::{
+    checkpoint::{self, CallInputs, Checkpoint},
     ABSTRACT_SCHEMA, ANALYSIS_SCHEMA, CARD_SCHEMA, CHECK_SCHEMA, CITATIONS_SCHEMA,
     GLOSSARY_SCHEMA, IDENTITY_SCHEMA, OBJECTS_SCHEMA, QUESTION_SCHEMA, REFERENCES_SCHEMA,
     RELATIONS_SCHEMA, REPAIR_SCHEMA, SECTIONS_SCHEMA, SUPERCUT_SCHEMA, TYPE_SCHEMA,
@@ -112,6 +113,9 @@ pub struct ExtractOptions {
     pub plan: Option<RunConfig>,
     /// Told how far each streamed model answer has got.
     pub progress: Option<ProgressSink>,
+    /// Where answered calls are saved and replayed from, so a retry does not
+    /// pay for them again. `None` runs every call fresh.
+    pub checkpoints: Option<PathBuf>,
 }
 
 /// How the core record's fields are asked for.
@@ -304,6 +308,7 @@ struct Session<'a> {
     /// Providers to try in order, so a shared prefix can hit one cache.
     providers: Vec<String>,
     progress: Option<ProgressSink>,
+    checkpoints: Option<PathBuf>,
     state: Mutex<SessionState>,
 }
 
@@ -332,6 +337,7 @@ impl<'a> Session<'a> {
             reasoning,
             providers,
             progress: None,
+            checkpoints: None,
             state: Mutex::new(SessionState::default()),
         }
     }
@@ -339,6 +345,18 @@ impl<'a> Session<'a> {
     fn with_progress(mut self, progress: Option<ProgressSink>) -> Self {
         self.progress = progress;
         self
+    }
+
+    fn with_checkpoints(mut self, directory: Option<PathBuf>) -> Self {
+        self.checkpoints = directory;
+        self
+    }
+
+    fn backend_label(&self) -> String {
+        match &self.backend {
+            Backend::OpenRouter { .. } => "openrouter".to_owned(),
+            Backend::Plan { provider, .. } => format!("plan:{provider:?}"),
+        }
     }
 
     fn state(&self) -> MutexGuard<'_, SessionState> {
@@ -414,6 +432,28 @@ impl<'a> Session<'a> {
         model: &str,
         reasoning: ReasoningEffort,
     ) -> Option<T> {
+        let checkpoint = match &self.checkpoints {
+            Some(directory) => {
+                let key = CallInputs {
+                    backend: &self.backend_label(),
+                    model,
+                    reasoning,
+                    max_tokens,
+                    providers: &self.providers,
+                    schema,
+                    parts,
+                }
+                .key();
+                if let Some(saved) = checkpoint::load(directory, &key).await
+                    && let Ok(value) = serde_json::from_str(&saved.content)
+                {
+                    self.record_replay(&saved, max_tokens);
+                    return Some(value);
+                }
+                Some((directory, key))
+            }
+            None => None,
+        };
         if !self.within_budget(stage) {
             return None;
         }
@@ -464,7 +504,21 @@ impl<'a> Session<'a> {
                 return None;
             }
             return match serde_json::from_str(&parsed.content) {
-                Ok(value) => Some(value),
+                Ok(value) => {
+                    if let Some((directory, key)) = &checkpoint {
+                        let saved = Checkpoint {
+                            stage: stage.to_owned(),
+                            content: parsed.content.clone(),
+                            provider: parsed.provider.clone(),
+                            prompt_tokens: parsed.prompt_tokens,
+                            cached_tokens: parsed.cached_tokens,
+                            completion_tokens: parsed.completion_tokens,
+                            reasoning_tokens: parsed.reasoning_tokens,
+                        };
+                        checkpoint::save(directory, key, &saved).await;
+                    }
+                    Some(value)
+                }
                 Err(error) => {
                     self.fail(
                         stage,
@@ -476,6 +530,23 @@ impl<'a> Session<'a> {
                 }
             };
         }
+    }
+
+    /// Record a call answered from a checkpoint: its tokens, but no cost.
+    fn record_replay(&self, saved: &Checkpoint, max_tokens: u32) {
+        self.state().calls.push(CallRecord {
+            stage: saved.stage.clone(),
+            max_tokens,
+            provider: saved.provider.clone(),
+            finish_reason: Some("checkpoint".to_owned()),
+            prompt_tokens: saved.prompt_tokens,
+            cached_tokens: saved.cached_tokens,
+            completion_tokens: saved.completion_tokens,
+            reasoning_tokens: saved.reasoning_tokens,
+            cost_usd: 0.0,
+            cost_source: CostSource::Checkpoint,
+            latency_s: 0.0,
+        });
     }
 
     /// Whether another call may start; records why not when it may not.
@@ -589,7 +660,8 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
         options.reasoning,
         options.providers.clone(),
     )
-    .with_progress(options.progress.clone());
+    .with_progress(options.progress.clone())
+    .with_checkpoints(options.checkpoints.clone());
 
     let plan = options.plan.clone().unwrap_or_else(|| {
         let mut plan = default_pipeline(options.core_mode, options.features);
@@ -2064,6 +2136,7 @@ mod tests {
                 providers: Vec::new(),
                 plan: None,
                 progress: None,
+                checkpoints: None,
             };
             assert!(matches!(
                 extract(&options, &ledger).await,
@@ -2120,6 +2193,150 @@ esac
         assert!(draft.get("supercut").is_some_and(Value::is_array));
         assert!(draft.get("glossary").is_some_and(Value::is_array));
         Ok(())
+    }
+
+    /// A stub plan harness that logs each invocation and answers with `answer`.
+    #[cfg(unix)]
+    fn counting_stub(directory: &Path, answer: &str) -> (PathBuf, PathBuf) {
+        use std::os::unix::fs::PermissionsExt;
+        let script = directory.join("stub-codex");
+        let log = directory.join("invocations.log");
+        std::fs::write(
+            &script,
+            format!(
+                r#"#!/bin/sh
+cat > /dev/null
+echo run >> "{log}"
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--output-last-message" ]; then shift; output="$1"; fi
+  shift
+done
+printf '%s' '{answer}' > "$output"
+"#,
+                log = log.display(),
+            ),
+        )
+        .expect("stub script");
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700))
+            .expect("executable");
+        (script, log)
+    }
+
+    #[cfg(unix)]
+    fn invocations(log: &Path) -> usize {
+        std::fs::read_to_string(log).map_or(0, |text| text.lines().count())
+    }
+
+    #[cfg(unix)]
+    fn checkpointed_session<'a>(
+        cli: &'a LocalCliAnalyzer,
+        directory: &Path,
+    ) -> Session<'a> {
+        Session::new(
+            Backend::Plan {
+                analyzer: cli,
+                provider: AnalysisProvider::Codex,
+                directory: directory.to_path_buf(),
+            },
+            openrouter::DEFAULT_MODEL,
+            1.0,
+            ReasoningEffort::Low,
+            Vec::new(),
+        )
+        .with_checkpoints(Some(directory.join("checkpoints")))
+    }
+
+    #[cfg(unix)]
+    fn two_call_plan() -> RunConfig {
+        RunConfig::parse(
+            r#"{"calls":[
+                {"name":"cut","fields":["supercut"]},
+                {"name":"words","fields":["glossary"]}
+            ]}"#,
+        )
+        .expect("plan")
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_replay_answered_calls_without_calling_the_model_when_a_run_is_retried() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let (script, log) = counting_stub(directory.path(), r#"{"supercut":[],"glossary":[]}"#);
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let plan = two_call_plan();
+
+        let first = checkpointed_session(&cli, directory.path());
+        let (draft, _, _) = run_plan(&first, &resources(), &plan, 6).await;
+        assert_eq!(invocations(&log), 2);
+
+        let second = checkpointed_session(&cli, directory.path());
+        let (replayed, _, _) = run_plan(&second, &resources(), &plan, 6).await;
+        assert_eq!(invocations(&log), 2, "the retry should not call the model");
+        assert_eq!(replayed, draft);
+        let state = second.into_state();
+        assert_eq!(state.calls.len(), 2);
+        assert!(
+            state
+                .calls
+                .iter()
+                .all(|call| call.cost_source == CostSource::Checkpoint && call.cost_usd == 0.0)
+        );
+        assert!(state.failures.is_empty());
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_call_the_model_again_when_the_prompt_changes() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let (script, log) = counting_stub(directory.path(), r#"{"supercut":[]}"#);
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let plan = RunConfig::parse(r#"{"calls":[{"name":"cut","fields":["supercut"]}]}"#)
+            .expect("plan");
+
+        let session = checkpointed_session(&cli, directory.path());
+        run_plan(&session, &resources(), &plan, 6).await;
+        assert_eq!(invocations(&log), 1);
+
+        let mut changed = resources();
+        changed.paper.pages[0].text.push_str(" A different page.");
+        let session = checkpointed_session(&cli, directory.path());
+        run_plan(&session, &changed, &plan, 6).await;
+        assert_eq!(invocations(&log), 2);
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_not_save_a_call_that_returned_no_usable_answer() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let (script, log) = counting_stub(directory.path(), "not json");
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let plan = RunConfig::parse(r#"{"calls":[{"name":"cut","fields":["supercut"]}]}"#)
+            .expect("plan");
+
+        let session = checkpointed_session(&cli, directory.path());
+        let (draft, _, _) = run_plan(&session, &resources(), &plan, 6).await;
+        assert!(draft.is_none());
+        let failed = invocations(&log);
+
+        let session = checkpointed_session(&cli, directory.path());
+        run_plan(&session, &resources(), &plan, 6).await;
+        assert!(invocations(&log) > failed, "a failure must be retried");
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_not_save_anything_when_checkpoints_are_off() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let (script, log) = counting_stub(directory.path(), r#"{"supercut":[]}"#);
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let plan = RunConfig::parse(r#"{"calls":[{"name":"cut","fields":["supercut"]}]}"#)
+            .expect("plan");
+        for _ in 0..2 {
+            let session = checkpointed_session(&cli, directory.path()).with_checkpoints(None);
+            run_plan(&session, &resources(), &plan, 6).await;
+        }
+        assert_eq!(invocations(&log), 2);
+        assert!(!directory.path().join("checkpoints").exists());
     }
 
     #[test]

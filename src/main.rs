@@ -654,6 +654,7 @@ async fn run(cli: Cli) -> Result<()> {
                     None => None,
                 },
                 progress: None,
+                checkpoints: None,
             };
             let ledger = lysilogy::analysis::spend::SpendLedger::with_defaults();
             let record = lysilogy::paper_artifacts::run::extract(&options, &ledger).await?;
