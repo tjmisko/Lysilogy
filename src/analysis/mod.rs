@@ -182,9 +182,13 @@ impl AnalysisService {
             }
         };
         let record = extract_with(&options, backend).await?;
-        let artifacts = record.artifacts.ok_or_else(|| {
-            Error::InvalidAnalysis("the extraction produced no artifacts".to_owned())
-        })?;
+        let reason = record.failures.first().map_or_else(
+            || "the extraction produced no artifacts".to_owned(),
+            |failure| failure.error.clone(),
+        );
+        let artifacts = record
+            .artifacts
+            .ok_or(Error::InvalidAnalysis(reason))?;
         let draft = draft_from_artifacts(&artifacts)?;
         let mut analysis = normalize_analysis(draft, provider, paper)?;
         analysis.author_abstract = artifacts
