@@ -132,6 +132,7 @@ impl AnalysisService {
         paper: &ExtractedPaper,
         pdf: &Path,
         artifact_directory: &Path,
+        progress: Option<openrouter::ProgressSink>,
     ) -> Result<AnalysisOutcome> {
         use crate::paper_artifacts::{
             features::Features,
@@ -154,6 +155,7 @@ impl AnalysisService {
             core_mode: CoreMode::Combined,
             providers: Vec::new(),
             plan: Some(core_pipeline(features)),
+            progress,
         };
         let ledger = spend::SpendLedger::with_defaults();
         let backend = if provider == AnalysisProvider::OpenRouter {

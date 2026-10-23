@@ -520,6 +520,7 @@ impl AppState {
                         )
                     })?;
                     let pdf = self.source_path(id).await?;
+                    let (progress, forwarder) = self.jobs.progress_reporter(id, task);
                     let refreshed = self
                         .analysis
                         .analyze_core_artifacts(
@@ -527,8 +528,11 @@ impl AppState {
                             &paper,
                             &pdf,
                             &self.store.paper_dir(id),
+                            Some(progress),
                         )
-                        .await?;
+                        .await;
+                    forwarder.stop().await;
+                    let refreshed = refreshed?;
                     match component {
                         AnalysisComponent::Structure => {
                             analysis.sections.clone_from(&refreshed.analysis.sections);
@@ -665,10 +669,12 @@ impl AppState {
             .transition(id, ProcessingStage::Analysis, "core")
             .await
             .map_err(|error| (ProcessingStage::Persistence, error))?;
+        let (progress, forwarder) = self.jobs.progress_reporter(id, "core");
         let outcome = self
-            .run_analysis_backend(id, provider, &paper, reset_stages)
-            .await
-            .map_err(|error| (ProcessingStage::Analysis, error))?;
+            .run_analysis_backend(id, provider, &paper, reset_stages, progress)
+            .await;
+        forwarder.stop().await;
+        let outcome = outcome.map_err(|error| (ProcessingStage::Analysis, error))?;
         self.jobs
             .task_completed(id, "core")
             .await
@@ -730,6 +736,7 @@ impl AppState {
         provider: AnalysisProvider,
         paper: &crate::domain::ExtractedPaper,
         reset_stages: bool,
+        progress: crate::analysis::openrouter::ProgressSink,
     ) -> Result<crate::analysis::AnalysisOutcome> {
         match provider {
             AnalysisProvider::Heuristic => {
@@ -740,7 +747,13 @@ impl AppState {
             AnalysisProvider::Codex | AnalysisProvider::Claude | AnalysisProvider::OpenRouter => {
                 let pdf = self.source_path(id).await?;
                 self.analysis
-                    .analyze_core_artifacts(provider, paper, &pdf, &self.store.paper_dir(id))
+                    .analyze_core_artifacts(
+                        provider,
+                        paper,
+                        &pdf,
+                        &self.store.paper_dir(id),
+                        Some(progress),
+                    )
                     .await
             }
         }

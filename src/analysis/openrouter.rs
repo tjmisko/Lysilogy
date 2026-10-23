@@ -17,8 +17,8 @@ use crate::{Error, Result};
 
 mod stream;
 
-pub use stream::StreamProgress;
 use stream::StreamAccumulator;
+pub use stream::StreamProgress;
 
 /// `OpenRouter`'s chat completions endpoint.
 pub const OPENROUTER_URL: &str = "https://openrouter.ai/api/v1/chat/completions";
@@ -355,7 +355,7 @@ impl ProgressSink {
         Self(std::sync::Arc::new(report))
     }
 
-    fn report(&self, progress: StreamProgress) {
+    pub fn report(&self, progress: StreamProgress) {
         (self.0)(progress);
     }
 }

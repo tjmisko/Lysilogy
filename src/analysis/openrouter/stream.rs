@@ -265,7 +265,10 @@ mod tests {
             + &event(r#"{"reasoning_details":[{"text":"c"}]}"#)
             + &event(r#"{"content":"{}"}"#);
         stream.feed(text.as_bytes()).expect("fed");
-        assert_eq!(stream.finish().expect("finished").reasoning.as_deref(), Some("abc"));
+        assert_eq!(
+            stream.finish().expect("finished").reasoning.as_deref(),
+            Some("abc")
+        );
     }
 
     #[test]
@@ -305,8 +308,8 @@ mod tests {
         let mut stream = StreamAccumulator::default();
         let answer = r#"{"identity":{"title":"A: b","tags":["x","y"]},"type":"empirical","ab\"stract":"has \"quotes\": and colons""#;
         for piece in answer.as_bytes().chunks(7) {
-            let text = serde_json::to_string(std::str::from_utf8(piece).expect("ascii"))
-                .expect("json");
+            let text =
+                serde_json::to_string(std::str::from_utf8(piece).expect("ascii")).expect("json");
             stream
                 .feed(event(&format!("{{\"content\":{text}}}")).as_bytes())
                 .expect("fed");

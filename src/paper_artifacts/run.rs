@@ -39,7 +39,7 @@ use crate::{
     Error, Result,
     analysis::{
         LocalCliAnalyzer,
-        openrouter::{self, ChatRequest, ContentPart, CostSource, ReasoningEffort},
+        openrouter::{self, ChatRequest, ContentPart, CostSource, ProgressSink, ReasoningEffort},
         spend::SpendLedger,
     },
     domain::AnalysisProvider,
@@ -110,6 +110,8 @@ pub struct ExtractOptions {
     pub providers: Vec<String>,
     /// A configured call plan; when set it replaces the core/feature paths.
     pub plan: Option<RunConfig>,
+    /// Told how far each streamed model answer has got.
+    pub progress: Option<ProgressSink>,
 }
 
 /// How the core record's fields are asked for.
@@ -301,6 +303,7 @@ struct Session<'a> {
     reasoning: ReasoningEffort,
     /// Providers to try in order, so a shared prefix can hit one cache.
     providers: Vec<String>,
+    progress: Option<ProgressSink>,
     state: Mutex<SessionState>,
 }
 
@@ -328,8 +331,14 @@ impl<'a> Session<'a> {
             paper_budget_usd,
             reasoning,
             providers,
+            progress: None,
             state: Mutex::new(SessionState::default()),
         }
+    }
+
+    fn with_progress(mut self, progress: Option<ProgressSink>) -> Self {
+        self.progress = progress;
+        self
     }
 
     fn state(&self) -> MutexGuard<'_, SessionState> {
@@ -380,7 +389,8 @@ impl<'a> Session<'a> {
     async fn complete(&self, request: &ChatRequest<'_>) -> Result<openrouter::Completion> {
         match &self.backend {
             Backend::OpenRouter { client, ledger } => {
-                openrouter::complete(client, ledger, request).await
+                openrouter::complete_with_progress(client, ledger, request, self.progress.as_ref())
+                    .await
             }
             Backend::Plan {
                 analyzer,
@@ -578,7 +588,8 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
         options.paper_budget_usd,
         options.reasoning,
         options.providers.clone(),
-    );
+    )
+    .with_progress(options.progress.clone());
 
     let plan = options.plan.clone().unwrap_or_else(|| {
         let mut plan = default_pipeline(options.core_mode, options.features);
@@ -2052,6 +2063,7 @@ mod tests {
                 core_mode: CoreMode::Combined,
                 providers: Vec::new(),
                 plan: None,
+                progress: None,
             };
             assert!(matches!(
                 extract(&options, &ledger).await,
