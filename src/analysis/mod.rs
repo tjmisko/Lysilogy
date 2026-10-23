@@ -176,13 +176,12 @@ impl AnalysisService {
         let artifacts = record.artifacts.ok_or(Error::InvalidAnalysis(reason))?;
         let draft = draft_from_artifacts(&artifacts)?;
         let mut analysis = normalize_analysis(draft, provider, paper)?;
-        analysis.author_abstract = artifacts
-            .pointer("/abstract/text")
-            .and_then(serde_json::Value::as_str)
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(str::to_owned);
-        analysis.abstract_extraction = None;
+        if analysis.author_abstract.is_none() {
+            analysis.author_abstract = analysis
+                .abstract_extraction
+                .as_ref()
+                .and_then(|extraction| extraction.text.clone());
+        }
         Ok(AnalysisOutcome {
             analysis,
             session: None,
@@ -482,12 +481,18 @@ const fn one() -> u8 {
 /// mapped here; the graph fields feed the reference resolver instead.
 pub(crate) fn draft_from_artifacts(artifacts: &serde_json::Value) -> Result<AnalysisDraft> {
     let thesis = artifacts
-        .pointer("/card/thesis")
+        .pointer("/card/thesis/text")
         .and_then(serde_json::Value::as_str)
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .ok_or_else(|| Error::InvalidAnalysis("the extraction returned no thesis".to_owned()))?
         .to_owned();
+    let author_abstract = artifacts
+        .pointer("/abstract/text")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_owned);
     let sections = artifacts
         .get("sections")
         .and_then(serde_json::Value::as_array)
@@ -496,7 +501,7 @@ pub(crate) fn draft_from_artifacts(artifacts: &serde_json::Value) -> Result<Anal
     Ok(AnalysisDraft {
         thesis,
         outsider_brief: String::new(),
-        author_abstract: None,
+        author_abstract,
         context_notes: Vec::new(),
         context_sources: Vec::new(),
         assessment: None,
@@ -514,6 +519,14 @@ fn section_from_artifact(item: &serde_json::Value) -> Option<SectionDraft> {
     if title.is_empty() {
         return None;
     }
+    let kind = item
+        .get("kind")
+        .and_then(|value| serde_json::from_value(value.clone()).ok())
+        .unwrap_or_default();
+    let family = item
+        .get("family")
+        .and_then(|value| serde_json::from_value(value.clone()).ok())
+        .unwrap_or_default();
     let summary = item
         .get("summary")
         .and_then(serde_json::Value::as_str)
@@ -534,8 +547,8 @@ fn section_from_artifact(item: &serde_json::Value) -> Option<SectionDraft> {
     });
     Some(SectionDraft {
         title: title.to_owned(),
-        kind: SectionKind::default(),
-        family: SectionFamily::default(),
+        kind,
+        family,
         pages: PageSpan { start, end },
         digest: summary.clone(),
         summary,
@@ -1307,10 +1320,16 @@ mod tests {
     #[test]
     fn maps_core_artifacts_to_a_reader_draft() {
         let artifacts = serde_json::json!({
-            "card": {"thesis": "A sharper thesis."},
+            "card": {"thesis": {
+                "text": "A sharper thesis.",
+                "evidence": [{"quote": "a bound", "page": 1}],
+                "confidence": "high"
+            }},
             "abstract": {"text": "The authors' abstract."},
             "sections": [{
                 "title": "Opening",
+                "kind": "background",
+                "family": "context",
                 "summary": "What the section does.",
                 "pages": {"start": 1, "end": 3},
                 "source_span": {
@@ -1321,8 +1340,14 @@ mod tests {
         });
         let draft = draft_from_artifacts(&artifacts).expect("draft");
         assert_eq!(draft.thesis, "A sharper thesis.");
+        assert_eq!(
+            draft.author_abstract.as_deref(),
+            Some("The authors' abstract.")
+        );
         assert_eq!(draft.sections.len(), 1);
         assert_eq!(draft.sections[0].title, "Opening");
+        assert_eq!(draft.sections[0].kind, SectionKind::Background);
+        assert_eq!(draft.sections[0].family, SectionFamily::Context);
         assert_eq!(draft.sections[0].pages.start, 1);
         assert!(draft.sections[0].source_span.is_some());
     }
@@ -1330,6 +1355,12 @@ mod tests {
     #[test]
     fn rejects_artifacts_without_a_thesis() {
         let artifacts = serde_json::json!({"sections": []});
+        assert!(draft_from_artifacts(&artifacts).is_err());
+    }
+
+    #[test]
+    fn rejects_a_thesis_that_is_not_an_object() {
+        let artifacts = serde_json::json!({"card": {"thesis": "A bare string."}});
         assert!(draft_from_artifacts(&artifacts).is_err());
     }
 }
