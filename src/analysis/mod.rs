@@ -32,9 +32,6 @@ pub(crate) use local_cli::{structured_fast_model_key, structured_model_key};
 
 pub const ANALYSIS_SCHEMA: &str = include_str!("../../prompts/paper-analysis.schema.json");
 pub const CLARIFICATION_SCHEMA: &str = include_str!("../../prompts/clarification.schema.json");
-pub const ORIENTATION_SCHEMA: &str = include_str!("../../prompts/paper-orientation.schema.json");
-pub const STRUCTURE_SCHEMA: &str = include_str!("../../prompts/paper-structure.schema.json");
-pub const CONTEXT_SCHEMA: &str = include_str!("../../prompts/paper-context.schema.json");
 pub const LEARNING_RAMP_SCHEMA: &str = include_str!("../../prompts/learning-ramp.schema.json");
 
 #[derive(Clone, Debug, Default)]
@@ -95,7 +92,7 @@ impl AnalysisService {
             .await
     }
 
-    pub async fn analyze(
+    pub async fn analyze_heuristic(
         &self,
         provider: AnalysisProvider,
         paper: &ExtractedPaper,
@@ -106,22 +103,7 @@ impl AnalysisService {
             .local_cli
             .extract_abstract(provider, paper, artifact_directory, reset_stages)
             .await?;
-        let (draft, session) = match provider {
-            AnalysisProvider::Heuristic => (HeuristicAnalyzer::analyze(paper), None),
-            AnalysisProvider::Codex | AnalysisProvider::Claude | AnalysisProvider::OpenRouter => {
-                let result = self
-                    .local_cli
-                    .analyze(
-                        provider,
-                        paper,
-                        artifact_directory,
-                        reset_stages,
-                        &abstract_result,
-                    )
-                    .await?;
-                (result.draft, result.session)
-            }
-        };
+        let draft = HeuristicAnalyzer::analyze(paper);
         let mut analysis = normalize_analysis(draft, provider, paper)?;
         analysis.author_abstract.clone_from(&abstract_result.text);
         analysis.abstract_extraction = Some(abstract_result);
@@ -133,7 +115,10 @@ impl AnalysisService {
             )
             .await?;
         }
-        Ok(AnalysisOutcome { analysis, session })
+        Ok(AnalysisOutcome {
+            analysis,
+            session: None,
+        })
     }
 
     /// Run the spike's core `paper-artifacts` extraction and map it onto the
@@ -188,9 +173,7 @@ impl AnalysisService {
             || "the extraction produced no artifacts".to_owned(),
             |failure| failure.error.clone(),
         );
-        let artifacts = record
-            .artifacts
-            .ok_or(Error::InvalidAnalysis(reason))?;
+        let artifacts = record.artifacts.ok_or(Error::InvalidAnalysis(reason))?;
         let draft = draft_from_artifacts(&artifacts)?;
         let mut analysis = normalize_analysis(draft, provider, paper)?;
         analysis.author_abstract = artifacts
@@ -204,76 +187,6 @@ impl AnalysisService {
             analysis,
             session: None,
         })
-    }
-
-    pub async fn refresh_context(
-        &self,
-        provider: AnalysisProvider,
-        paper: &ExtractedPaper,
-        directory: &Path,
-        analysis: &mut PaperAnalysis,
-        force: bool,
-    ) -> Result<()> {
-        if provider == AnalysisProvider::Heuristic {
-            return Err(Error::InvalidRequest(
-                "Historical context requires a model-backed reader".to_owned(),
-            ));
-        }
-        let abstract_result = analysis
-            .abstract_extraction
-            .clone()
-            .filter(|result| {
-                result.source_fingerprint == crate::abstracts::source_fingerprint(paper)
-            })
-            .unwrap_or_else(|| crate::abstracts::extract(paper));
-        let context = prefetch::PrefetchedPaperContext::with_abstract(paper, &abstract_result);
-        let draft = self
-            .local_cli
-            .research_context(provider, directory, &context.orientation_text, force)
-            .await?;
-        let (brief, notes, sources) =
-            normalize_context("", draft.context_notes, draft.context_sources);
-        analysis.outsider_brief = brief;
-        analysis.context_notes = notes;
-        analysis.context_sources = sources;
-        analysis.context_assessment = draft.assessment;
-        analysis.schema_version = 5;
-        // Context may be generated for a previously heuristic map.
-        sources::verify_context_sources_with_provider(analysis).await;
-        if let Some(assessment) = &analysis.context_assessment {
-            crate::store::write_atomic(
-                &directory.join("context-assessment.json"),
-                &serde_json::to_vec_pretty(assessment)?,
-            )
-            .await?;
-        }
-        Ok(())
-    }
-
-    pub async fn refresh_structure(
-        &self,
-        provider: AnalysisProvider,
-        paper: &ExtractedPaper,
-        directory: &Path,
-        analysis: &mut PaperAnalysis,
-        force: bool,
-    ) -> Result<Option<AgentSession>> {
-        if provider == AnalysisProvider::Heuristic {
-            return Err(Error::InvalidRequest(
-                "Topic-based section refresh requires the Codex or Claude reader".to_owned(),
-            ));
-        }
-        let abstract_result = analysis
-            .abstract_extraction
-            .clone()
-            .unwrap_or_else(|| crate::abstracts::extract(paper));
-        let context = prefetch::PrefetchedPaperContext::with_abstract(paper, &abstract_result);
-        let (structure, session) = self
-            .local_cli
-            .run_structure_stage(provider, directory, &context, paper, force)
-            .await?;
-        apply_structure(analysis, structure, provider, paper)?;
-        Ok(session)
     }
 
     pub async fn revise(
@@ -385,40 +298,6 @@ impl AnalysisService {
     }
 }
 
-fn apply_structure(
-    analysis: &mut PaperAnalysis,
-    structure: StructureDraft,
-    provider: AnalysisProvider,
-    paper: &ExtractedPaper,
-) -> Result<()> {
-    let normalized = normalize_analysis(
-        AnalysisDraft {
-            thesis: analysis.thesis.clone(),
-            outsider_brief: String::new(),
-            author_abstract: None,
-            context_notes: Vec::new(),
-            context_sources: Vec::new(),
-            assessment: None,
-            prerequisites: Vec::new(),
-            sections: structure.sections,
-            claims: structure.claims,
-            glossary: structure.glossary,
-            caveats: structure.caveats,
-            reading_path: structure.reading_path,
-        },
-        provider,
-        paper,
-    )?;
-    // Only publish the structural projection after all source anchors and links validate.
-    analysis.sections = normalized.sections;
-    analysis.claims = normalized.claims;
-    analysis.glossary = normalized.glossary;
-    analysis.caveats = normalized.caveats;
-    analysis.reading_path = normalized.reading_path;
-    analysis.generated_at = normalized.generated_at;
-    Ok(())
-}
-
 pub(crate) fn normalize_learning_ramp(
     mut ramp: LearningRamp,
     paper: &ExtractedPaper,
@@ -517,27 +396,6 @@ pub(crate) struct AnalysisDraft {
     pub assessment: Option<context::ContextAssessment>,
     #[serde(default)]
     pub prerequisites: Vec<String>,
-    pub sections: Vec<SectionDraft>,
-    #[serde(default)]
-    pub claims: Vec<Claim>,
-    #[serde(default)]
-    pub glossary: Vec<GlossaryEntry>,
-    #[serde(default)]
-    pub caveats: Vec<String>,
-    #[serde(default)]
-    pub reading_path: Vec<String>,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub(crate) struct OrientationDraft {
-    pub thesis: String,
-    pub author_abstract: Option<String>,
-    #[serde(default)]
-    pub prerequisites: Vec<String>,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub(crate) struct StructureDraft {
     pub sections: Vec<SectionDraft>,
     #[serde(default)]
     pub claims: Vec<Claim>,
@@ -1229,59 +1087,6 @@ mod tests {
     fn creates_stable_readable_slugs() {
         assert_eq!(slugify("Results & Limitations"), "results-limitations");
         assert_eq!(slugify("  A/B  "), "a-b");
-    }
-
-    #[test]
-    fn structure_refresh_preserves_orientation_and_history_and_rejects_invalid_changes()
-    -> Result<()> {
-        let paper = ExtractedPaper {
-            metadata: PaperMetadata::default(),
-            pages: vec![ExtractedPage {
-                number: 1,
-                text: "An argument and its evidence.".to_owned(),
-            }],
-            layout: DocumentLayout::default(),
-        };
-        let mut analysis = analysis_with_sections(Vec::new());
-        analysis.author_abstract = Some("Original authored abstract".to_owned());
-        analysis.outsider_brief = "Existing historical account".to_owned();
-        analysis.prerequisites = vec!["Existing prerequisite".to_owned()];
-        analysis.context_notes = vec![ContextNote {
-            kind: crate::domain::ContextKind::Before,
-            text: "Inspected prior work".to_owned(),
-            source_ids: vec!["source".to_owned()],
-        }];
-        let before = serde_json::to_value(&analysis)?;
-        let structure: StructureDraft = serde_json::from_value(serde_json::json!({
-            "sections":[{"title":"One complete argument","kind":"theory","family":"method",
-                "pages":{"start":1,"end":1},"summary":"The whole mechanism.","digest":"The mechanism and its qualifications."}],
-            "claims":[{"statement":"A claim","support":"Source evidence","strength":"supported","section_ids":["one-complete-argument"]}],
-            "reading_path":["One complete argument"]
-        }))?;
-        apply_structure(&mut analysis, structure, AnalysisProvider::Codex, &paper)?;
-        let after = serde_json::to_value(&analysis)?;
-        for key in [
-            "thesis",
-            "author_abstract",
-            "abstract_extraction",
-            "outsider_brief",
-            "context_notes",
-            "context_sources",
-            "context_assessment",
-            "prerequisites",
-            "provider",
-        ] {
-            assert_eq!(before[key], after[key], "changed {key}");
-        }
-        assert_eq!(analysis.sections.len(), 1);
-        assert_eq!(
-            analysis.claims[0].section_ids,
-            [analysis.sections[0].id.clone()]
-        );
-        let invalid: StructureDraft = serde_json::from_value(serde_json::json!({"sections":[]}))?;
-        assert!(apply_structure(&mut analysis, invalid, AnalysisProvider::Codex, &paper).is_err());
-        assert_eq!(serde_json::to_value(&analysis)?, after);
-        Ok(())
     }
 
     #[test]
