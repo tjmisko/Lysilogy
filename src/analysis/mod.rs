@@ -124,20 +124,22 @@ impl AnalysisService {
     /// Run the spike's core `paper-artifacts` extraction and map it onto the
     /// reader model. This is the new backend for `analyze` on model readers.
     ///
-    /// The abstract is taken from the extraction; the deterministic abstract
-    /// verifier is not used on this path.
+    /// The abstract is taken from the extraction, falling back to the
+    /// deterministic abstract extraction when the artifact's is absent.
     pub async fn analyze_core_artifacts(
         &self,
         provider: AnalysisProvider,
         paper: &ExtractedPaper,
         pdf: &Path,
         artifact_directory: &Path,
+        progress: Option<openrouter::ProgressSink>,
     ) -> Result<AnalysisOutcome> {
         use crate::paper_artifacts::{
             features::Features,
             resources::DEFAULT_DPI,
             run::{Backend, CoreMode, ExtractOptions, core_pipeline, extract_with},
         };
+        let checkpoint_directory = artifact_directory.join("checkpoints");
         let features = Features::parse("none")?;
         let options = ExtractOptions {
             pdf: pdf.to_path_buf(),
@@ -154,6 +156,8 @@ impl AnalysisService {
             core_mode: CoreMode::Combined,
             providers: Vec::new(),
             plan: Some(core_pipeline(features)),
+            progress,
+            checkpoints: Some(checkpoint_directory.clone()),
         };
         let ledger = spend::SpendLedger::with_defaults();
         let backend = if provider == AnalysisProvider::OpenRouter {
@@ -169,6 +173,7 @@ impl AnalysisService {
             }
         };
         let record = extract_with(&options, backend).await?;
+        let clean = record.failures.is_empty();
         let reason = record.failures.first().map_or_else(
             || "the extraction produced no artifacts".to_owned(),
             |failure| failure.error.clone(),
@@ -181,6 +186,12 @@ impl AnalysisService {
                 .abstract_extraction
                 .as_ref()
                 .and_then(|extraction| extraction.text.clone());
+        }
+        // A finished run must not be replayed by the next one: a refresh asks
+        // the model again. Keep the saved calls when any call failed, so the
+        // retry pays only for what is missing.
+        if clean {
+            crate::paper_artifacts::checkpoint::clear(&checkpoint_directory).await?;
         }
         Ok(AnalysisOutcome {
             analysis,

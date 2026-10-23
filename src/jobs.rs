@@ -1,10 +1,11 @@
-use std::{collections::BTreeMap, sync::Arc};
+use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 use chrono::Utc;
-use tokio::sync::RwLock;
+use tokio::{sync::RwLock, task::JoinHandle};
 
 use crate::{
     Result,
+    analysis::openrouter::{ProgressSink, StreamProgress},
     domain::{
         AnalysisJob, AnalysisJobKind, AnalysisJobStatus, AnalysisProvider, AnalysisTask,
         AnalysisTaskStatus, PaperId, ProcessingQueue, ProcessingStage,
@@ -12,6 +13,9 @@ use crate::{
     error::Error,
     store::ArtifactStore,
 };
+
+/// The least time between two progress writes to a task's detail line.
+const PROGRESS_INTERVAL: Duration = Duration::from_secs(1);
 
 #[derive(Clone, Debug)]
 pub struct JobTracker {
@@ -122,6 +126,37 @@ impl JobTracker {
     ) -> Result<()> {
         self.update_task(paper_id, task_id, AnalysisTaskStatus::Active, detail)
             .await
+    }
+
+    /// A sink that shows how far a streamed model answer has got on `task_id`'s
+    /// detail line, at most once per [`PROGRESS_INTERVAL`]. Stop the forwarder
+    /// before completing the task so a late update cannot reopen it.
+    #[must_use]
+    pub fn progress_reporter(
+        &self,
+        paper_id: &PaperId,
+        task_id: &str,
+    ) -> (ProgressSink, ProgressForwarder) {
+        let (sender, mut receiver) = tokio::sync::watch::channel(None::<StreamProgress>);
+        let sink = ProgressSink::new(move |progress| {
+            let _ = sender.send(Some(progress));
+        });
+        let tracker = self.clone();
+        let paper_id = paper_id.clone();
+        let task_id = task_id.to_owned();
+        let handle = tokio::spawn(async move {
+            while receiver.changed().await.is_ok() {
+                let Some(progress) = receiver.borrow_and_update().clone() else {
+                    continue;
+                };
+                // Progress is best effort; a failed write must not fail the run.
+                let _ = tracker
+                    .task_active(&paper_id, &task_id, Some(describe_progress(&progress)))
+                    .await;
+                tokio::time::sleep(PROGRESS_INTERVAL).await;
+            }
+        });
+        (sink, ProgressForwarder(handle))
     }
 
     pub async fn complete(&self, paper_id: &PaperId, resumable: bool) -> Result<()> {
@@ -238,6 +273,44 @@ impl JobTracker {
         };
         self.store.save_job(&job).await
     }
+}
+
+/// Cancels its progress task when stopped or dropped.
+pub struct ProgressForwarder(JoinHandle<()>);
+
+impl ProgressForwarder {
+    /// Stop forwarding and wait until no write is in flight.
+    pub async fn stop(mut self) {
+        self.0.abort();
+        let _ = (&mut self.0).await;
+    }
+}
+
+impl Drop for ProgressForwarder {
+    fn drop(&mut self) {
+        self.0.abort();
+    }
+}
+
+fn describe_progress(progress: &StreamProgress) -> String {
+    let thousands = |chars: usize| format!("{}.{}k", chars / 1000, chars % 1000 / 100);
+    if progress.content_chars == 0 {
+        if progress.reasoning_chars == 0 {
+            return "Waiting for the model".to_owned();
+        }
+        return format!(
+            "Thinking — {} characters of reasoning",
+            thousands(progress.reasoning_chars)
+        );
+    }
+    let fields = match (progress.top_level_keys, &progress.last_key) {
+        (0, _) | (_, None) => String::new(),
+        (count, Some(key)) => format!(" — {count} fields, now `{key}`"),
+    };
+    format!(
+        "Drafting{fields} — {} characters written",
+        thousands(progress.content_chars)
+    )
 }
 
 fn tasks_for(kind: AnalysisJobKind) -> Vec<AnalysisTask> {
@@ -546,6 +619,88 @@ mod tests {
             .count();
         assert_eq!(failed, 1);
         assert_eq!(queue.jobs[0].tasks[1].id, "core");
+        Ok(())
+    }
+
+    #[test]
+    fn should_describe_progress_by_what_the_model_has_produced() {
+        let describe = |content_chars, reasoning_chars, top_level_keys, last_key: Option<&str>| {
+            describe_progress(&StreamProgress {
+                stage: "core".to_owned(),
+                content_chars,
+                reasoning_chars,
+                top_level_keys,
+                last_key: last_key.map(str::to_owned),
+            })
+        };
+        assert_eq!(describe(0, 0, 0, None), "Waiting for the model");
+        assert_eq!(
+            describe(0, 12_300, 0, None),
+            "Thinking — 12.3k characters of reasoning"
+        );
+        assert_eq!(
+            describe(4_200, 0, 3, Some("question")),
+            "Drafting — 3 fields, now `question` — 4.2k characters written"
+        );
+        assert_eq!(
+            describe(150, 0, 0, None),
+            "Drafting — 0.1k characters written"
+        );
+    }
+
+    #[tokio::test]
+    async fn should_show_stream_progress_on_the_task_until_the_forwarder_stops() -> Result<()> {
+        let directory = tempdir().map_err(|error| Error::io("tempdir", error))?;
+        let store = ArtifactStore::new(directory.path());
+        store.initialize().await?;
+        let tracker = JobTracker::load(store).await?;
+        let id = PaperId::from_relative_path(std::path::Path::new("paper.pdf"));
+        tracker
+            .begin(
+                id.clone(),
+                "A paper".to_owned(),
+                AnalysisProvider::OpenRouter,
+                AnalysisJobKind::Initial,
+                None,
+            )
+            .await?;
+        tracker
+            .transition(&id, ProcessingStage::Analysis, "core")
+            .await?;
+        let detail = |tracker: &JobTracker| {
+            let tracker = tracker.clone();
+            async move {
+                let queue = tracker.queue().await?;
+                Ok::<_, Error>(queue.jobs[0].tasks[1].detail.clone())
+            }
+        };
+
+        let (sink, forwarder) = tracker.progress_reporter(&id, "core");
+        let report = |content_chars| {
+            sink.report(StreamProgress {
+                stage: "core".to_owned(),
+                content_chars,
+                ..StreamProgress::default()
+            });
+        };
+        report(1_000);
+        let mut shown = None;
+        for _ in 0..40 {
+            shown = detail(&tracker).await?;
+            if shown.is_some() {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+        assert_eq!(shown.as_deref(), Some("Drafting — 1.0k characters written"));
+
+        forwarder.stop().await;
+        report(9_000);
+        tokio::time::sleep(PROGRESS_INTERVAL + Duration::from_millis(200)).await;
+        assert_eq!(
+            detail(&tracker).await?.as_deref(),
+            Some("Drafting — 1.0k characters written")
+        );
         Ok(())
     }
 }
