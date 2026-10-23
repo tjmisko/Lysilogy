@@ -12,6 +12,8 @@ use super::{
     fallback_quote, prefetch, slugify,
 };
 
+/// Deprecated: the offline reader is hidden from the UI. Kept as an internal
+/// deterministic fallback and test helper.
 #[derive(Clone, Debug, Default)]
 pub struct HeuristicAnalyzer;
 

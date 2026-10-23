@@ -9,7 +9,6 @@ const COMMANDS = [
   ["analyze", "Analyze with the selected reader"],
   ["analyze codex", "Analyze with Codex"],
   ["analyze claude", "Analyze with Claude"],
-  ["analyze heuristic", "Run the offline structural pass"],
   ["queue", "Show live analysis jobs and feedback"],
   ["feedback", "Send feedback about the current atlas"],
   ["experiment", "Compare two learning-ramp prompts blind"],

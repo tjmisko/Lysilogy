@@ -24,6 +24,8 @@ use crate::{
     layout::verify_quote,
 };
 
+// Deprecated: the offline reader is hidden from the UI. Kept as an internal
+// deterministic fallback and test helper.
 pub use heuristic::HeuristicAnalyzer;
 pub use local_cli::LocalCliAnalyzer;
 pub(crate) use local_cli::{structured_fast_model_key, structured_model_key};

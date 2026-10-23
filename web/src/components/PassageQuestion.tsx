@@ -43,7 +43,7 @@ export function PassageQuestion({ paperId, text, page, provider: initialProvider
       }}>
         <label>What would you like to understand?<textarea ref={input} value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} placeholder="Explain this passage, or ask a specific question." /></label>
         <div className="clarify-controls"><select aria-label="Clarification provider" value={provider} onChange={(event) => setProvider(event.target.value as AnalysisProvider)}>
-          <option value="codex">Codex</option><option value="claude">Claude</option><option value="heuristic">Offline</option>
+          <option value="codex">Codex</option><option value="claude">Claude</option>
         </select><button type="submit" disabled={busy}>{busy ? "Reading source…" : "Ask"}</button></div>
       </form>
       {error !== null && <p className="inline-error" role="alert">{error}</p>}

@@ -101,7 +101,7 @@ export function DigestPanel({
   const [nativeSelection, setNativeSelection] = useState("");
   const [clarifySelection, setClarifySelection] = useState(initialSelection.trim());
   const [question, setQuestion] = useState("");
-  const [provider, setProvider] = useState<AnalysisProvider>("heuristic");
+  const [provider, setProvider] = useState<AnalysisProvider>("codex");
   const [clarification, setClarification] = useState<Clarification | null>(null);
   const [clarifyError, setClarifyError] = useState<string | null>(null);
   const [clarifying, setClarifying] = useState(false);
@@ -393,7 +393,6 @@ export function DigestPanel({
               onChange={(event) => setProvider(event.target.value as AnalysisProvider)}
               aria-label="Clarification provider"
             >
-              <option value="heuristic">Instant · offline</option>
               <option value="codex">Codex · local CLI</option>
               <option value="claude">Claude · local CLI</option>
             </select>

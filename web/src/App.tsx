@@ -607,8 +607,8 @@ export function App() {
         break;
       case "analyze": {
         const chosen = argument ?? provider;
-        if (chosen !== "openrouter" && chosen !== "codex" && chosen !== "claude" && chosen !== "heuristic") {
-          setError(`Unknown reader “${chosen}”. Use openrouter, codex, claude, or heuristic.`);
+        if (chosen !== "openrouter" && chosen !== "codex" && chosen !== "claude") {
+          setError(`Unknown reader “${chosen}”. Use openrouter, codex, or claude.`);
           return;
         }
         setProvider(chosen);
@@ -1122,7 +1122,6 @@ export function App() {
                 <option value="openrouter">OpenRouter</option>
                 <option value="codex">Codex</option>
                 <option value="claude">Claude</option>
-                <option value="heuristic">Offline</option>
               </select>
             </label>
             <button

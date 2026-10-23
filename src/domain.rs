@@ -225,6 +225,8 @@ pub enum AnalysisProvider {
     #[serde(rename = "openrouter")]
     #[default]
     OpenRouter,
+    /// Deprecated: the offline reader is hidden from the UI. Kept as an
+    /// internal fallback and test helper.
     Heuristic,
 }
 
