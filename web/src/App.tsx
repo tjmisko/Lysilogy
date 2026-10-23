@@ -607,8 +607,8 @@ export function App() {
         break;
       case "analyze": {
         const chosen = argument ?? provider;
-        if (chosen !== "codex" && chosen !== "claude" && chosen !== "heuristic") {
-          setError(`Unknown reader “${chosen}”. Use codex, claude, or heuristic.`);
+        if (chosen !== "openrouter" && chosen !== "codex" && chosen !== "claude" && chosen !== "heuristic") {
+          setError(`Unknown reader “${chosen}”. Use openrouter, codex, claude, or heuristic.`);
           return;
         }
         setProvider(chosen);
