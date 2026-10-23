@@ -7,7 +7,6 @@ import { PaperPreview } from "./PaperPreview";
 import "./HomePage.css";
 
 type HomePageProps = {
-  name: string;
   papers: PaperOverview[];
   query: string;
   onQuery: (query: string) => void;
@@ -41,7 +40,7 @@ function paperStatus(paper: PaperOverview): string {
   }
 }
 
-export function HomePage({ name, papers, query, onQuery, activeId, onActive, onSelect, onImport, keyboardEnabled, darkInk, onToggleInk }: HomePageProps) {
+export function HomePage({ papers, query, onQuery, activeId, onActive, onSelect, onImport, keyboardEnabled, darkInk, onToggleInk }: HomePageProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState("title");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -131,12 +130,8 @@ export function HomePage({ name, papers, query, onQuery, activeId, onActive, onS
     return () => window.removeEventListener("keydown", navigate);
   }, [keyboardEnabled, onSelect, onToggleInk, selectedId, visible]);
 
-  return <section className={`home-page${darkInk ? " dark-ink" : ""}`} aria-labelledby="home-title">
+  return <section className={`home-page${darkInk ? " dark-ink" : ""}`}>
     <header className="home-intro">
-      <div>
-        <p className="home-eyebrow">{name}</p>
-        <h1 id="home-title">The reading room<span aria-hidden="true">.</span></h1>
-      </div>
       <p className="home-counts"><strong>{papers.length}</strong> {papers.length === 1 ? "paper" : "papers"}<span aria-hidden="true"> / </span><strong>{mapped}</strong> mapped</p>
     </header>
 

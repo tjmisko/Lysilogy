@@ -1145,7 +1145,7 @@ export function App() {
           {loading && (
             <div className="center-state"><span className="loader large" /><p>Opening the vault…</p></div>
           )}
-          {!loading && home && <HomePage papers={library?.papers ?? []} name={library?.name ?? "Library"}
+          {!loading && home && <HomePage papers={library?.papers ?? []}
             darkInk={darkInk} onToggleInk={() => setDarkInk((value) => !value)}
             query={homeQuery} onQuery={setHomeQuery} onSelect={selectPaper} activeId={homeActiveId} onActive={setHomeActiveId}
             keyboardEnabled={!libraryOpen && !switcherOpen && !commandOpen && !queueOpen && panel === null && !experimentOpen && toolsTab === null}
