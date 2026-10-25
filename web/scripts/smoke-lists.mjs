@@ -125,9 +125,7 @@ try {
     if (url.pathname === `/api/history/papers/${paperId}`) return json({ position: null });
     if (url.pathname.startsWith('/api/papers/') && url.pathname.endsWith('/position')) return json({});
     if (url.pathname === '/api/lists' && method === 'GET') return json({ lists: [detail().list] });
-    if (url.pathname === '/api/lists' && method === 'POST') {
-            return json(detail(), 201);
-    }
+    if (url.pathname === '/api/lists' && method === 'POST') return json(detail(), 201);
     if (url.pathname === `/api/lists/${listId}` && method === 'GET') return json(detail());
     if (url.pathname === `/api/lists/${listId}` && method === 'PATCH') {
       const patch = body();
@@ -204,15 +202,25 @@ try {
   const rowCount = (count) => page.waitForFunction((n) => document.querySelectorAll('.list-sequence .list-row').length === n, count);
   const selected = () => page.locator('.list-row.is-selected .list-row-title').first().innerText();
   // Esc steps back out of a nested stage (topic choice) before it cancels the dialog.
+  // The page re-attaches its key listener in an effect after the dialog detaches, so wait
+  // two animation frames plus a beat before the next key can be trusted.
+  const settle = async () => {
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await page.waitForTimeout(150);
+  };
   const closeOverlay = async () => {
     for (let attempt = 0; attempt < 3; attempt += 1) {
       await page.waitForTimeout(300);
-      if (await page.locator('[data-list-overlay]').count() === 0) return;
+      if (await page.locator('[data-list-overlay]').count() === 0) return settle();
       await page.keyboard.press('Escape');
     }
     await page.waitForSelector('[data-list-overlay]', { state: 'detached' });
+    await settle();
   };
-  const overlayGone = () => page.waitForSelector('[data-list-overlay]', { state: 'detached' });
+  const overlayGone = async () => {
+    await page.waitForSelector('[data-list-overlay]', { state: 'detached' });
+    await settle();
+  };
 
   // ---- Lists index: j k gg G Ctrl-d Ctrl-u / n R A za Enter o q -----------------------------
   await page.goto('http://localhost/#lists');
@@ -256,13 +264,13 @@ try {
   await press('3'); await page.waitForSelector('.list-col');
   await press('h', 'l');
   await press('5'); await page.waitForSelector('.list-views button[aria-pressed="true"]');
-  await press('6'); await page.waitForSelector('[aria-label="Papers to acquire"], .list-empty');
+  await press('6'); await page.waitForSelector('[aria-label="Papers to acquire"]');
   const fetchMark = requests.length;
   await press('F');
   await press('f');
   await page.waitForTimeout(300);
   const fetched = since(fetchMark).filter((entry) => /^POST \/api\/works\/[^/]+\/fetch/u.test(entry.call));
-  assert.ok(fetched.length > 0 || await page.locator('.list-empty').count() > 0, `Acquire f / F sent no fetch: ${requests.slice(fetchMark).join('\n')}`);
+  assert.ok(fetched.length > 0, `Acquire f / F sent no fetch: ${requests.slice(fetchMark).join('\n')}`);
   await press('7'); await page.waitForSelector('[data-node-id], .list-row');
   await press('1'); await page.waitForSelector('.list-sequence .list-row');
 
@@ -306,7 +314,12 @@ try {
   await press('g', 'g', 'j'); // the sort is reversed by year: first row is the claim
   await press('T'); await page.waitForSelector('[data-list-overlay]');
   await press('Escape'); await overlayGone();
-  await press('E'); await press('j'); await press('Enter');
+  await press('E');
+  await page.waitForSelector('.list-status-mode');
+  const edgeFrom = await selected();
+  await press('j');
+  await page.waitForFunction((was) => document.querySelector('.list-row.is-selected .list-row-title')?.textContent !== was, edgeFrom);
+  await press('Enter');
   await page.waitForFunction(() => document.querySelector('.list-message')?.textContent?.includes('prerequisite'));
   await press('X'); await page.waitForSelector('[data-list-overlay]');
   await press('Escape'); await overlayGone();

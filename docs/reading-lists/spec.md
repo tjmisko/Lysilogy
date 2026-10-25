@@ -651,7 +651,8 @@ Shipped:
   `npm run build` first). It presses the keys of every list, history, picker and popover surface
   and asserts the HTTP effect of the writes (archive, add, create-and-add, topic add, remove,
   undo, references with `via_work_id`, fetch, context link). Keys pressed without an assertion on
-  the result: the movement keys, the `z` folds, `h` / `l`, the sort and group keys, and the
+  the result: Review `x` (reject) and `c` then `Enter` (claim resolution), the lists `z a` toggle,
+  History `Enter` / `o` reopen, the movement keys, the `z` folds, `h` / `l`, the sort and group keys, and the
   History kind filters.
 
 Deferred:
@@ -660,7 +661,9 @@ Deferred:
 - `:export md|bib` (Q9).
 - The live smoke of T12: the real planner under a $0.15 budget, and the saved report in
   `docs/experiment-reports/`. Generation quality is therefore unmeasured.
-- The graph overlay's `y`, `R` and `Y` are covered by the projection tests and the keymap audit,
+- In the picker, `j` / `k` type into the search on the list stage, so `Ctrl-n` / `Ctrl-p` move
+  there; `j` / `k` move only in the topic choice.
+- The graph overlay's `y`, `R`, `Y` and `M` are covered by the projection tests and the keymap audit,
   not by `smoke:lists`, which needs no Literature fixture.
 
 Known keymap overlap, waived in the audit with a reason: in the graph with a Work open, `g`

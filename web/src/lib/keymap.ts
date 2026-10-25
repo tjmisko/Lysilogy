@@ -127,6 +127,7 @@ const PICKER: KeyContext = {
     { keys: ["Enter"], action: "Add to the highlighted list" },
     { keys: ["Ctrl-Enter"], action: "Create a list from the typed title and add" },
     { keys: ["Tab"], action: "Choose a topic of the highlighted list first" },
+    { keys: ["j", "k"], action: "Move in the topic choice (they type into the search on the list stage)" },
     { keys: ["Escape"], action: "Back from the topic choice, then cancel" },
   ],
 };
@@ -184,9 +185,9 @@ const GRAPH: KeyContext = {
     { keys: ["g"], action: "Show the citing sentence", scopes: ["work"] },
     { keys: ["f"], action: "Fetch an open-access copy", scopes: ["work"] },
     { keys: ["s"], action: "Sources", scopes: ["work"] },
-    { keys: ["w"], action: "Expand the work's references in place", scopes: ["radial"] },
-    { keys: ["y"], action: "Add the selected Work to the current list", scopes: ["radial"] },
-    { keys: ["R"], action: "Show / hide the list sidebar", scopes: ["radial"] },
+    { keys: ["w"], action: "Expand the work's references in place", scopes: ["radial", "work"] },
+    { keys: ["y"], action: "Add the selected Work to the current list", scopes: ["radial", "work"] },
+    { keys: ["R"], action: "Show / hide the list sidebar", scopes: ["radial", "work"] },
     { keys: ["v"], action: "Radial graph / year histogram" },
   ],
 };
