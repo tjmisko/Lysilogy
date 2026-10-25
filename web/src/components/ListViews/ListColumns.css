@@ -1,0 +1,21 @@
+/* Column views of the list page: Topics (one column per layer) and Timeline (one per year).
+   Rows reuse the list-row ring and tokens from ListPage.css. */
+
+.list-columns { display: flex; align-items: flex-start; gap: 12px; padding-bottom: 8px; overflow-x: auto; }
+.list-col { display: flex; flex: 0 0 260px; flex-direction: column; gap: 6px; min-width: 0; }
+.list-col > ol, .list-col-topic > ol { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.list-col-head { margin: 0; padding: 0 2px 4px; border-bottom: 1px solid var(--line); color: var(--ink-faint); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; text-transform: uppercase; }
+.list-timeline .list-col-head { color: var(--ink-soft); font-size: 12px; }
+.list-col-topic { display: flex; flex-direction: column; gap: 2px; }
+.list-col-topic .list-group-head { margin-top: 0; }
+.list-col-after { margin: 0; padding: 0 2px; color: var(--ink-faint); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+.list-col-gap { margin: 0; color: var(--ink-faint); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+.list-col-work { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg-raised); cursor: default; }
+.list-col-work:hover { border-color: var(--line-bright); }
+.list-col-work.is-selected::after { position: absolute; inset: 0; border: 2px solid var(--signal); border-radius: inherit; content: ""; pointer-events: none; }
+.list-col-work.is-linked { border-color: var(--signal); }
+.list-col-work[data-status="read"] .list-col-title { color: var(--ink-faint); }
+.list-col-glyph { color: var(--ink-soft); font-size: 13px; }
+.list-col-title { min-width: 0; flex: 1; color: var(--ink); font: 12px/1.3 Georgia, "Times New Roman", serif; overflow-wrap: anywhere; }
+.list-col-year, .list-col-cite { color: var(--ink-faint); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
