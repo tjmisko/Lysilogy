@@ -1,4 +1,4 @@
-import { neighborQuery, type NeighborOptions } from "./relevance";
+import { neighborQuery, type NeighborOptions } from "./relevance.ts";
 import type {
   AnalysisProvider,
   Clarification,
