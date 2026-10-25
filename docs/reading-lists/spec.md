@@ -1,6 +1,6 @@
 # Reading lists and reading history
 
-Status: draft spec, 2026-10-24. Branch `docs/reading-lists-plan`. Generalizes Ramp E
+Status: MVP built on `feat/reading-lists` (see [MVP status](#mvp-status)); the graph view, `:export` and the live generation smoke are deferred. Drafted 2026-10-24 on `docs/reading-lists-plan`. Generalizes Ramp E
 ([ramps/ramp-e.md](../ramps/ramp-e.md)). Written to be decomposed into work units for an
 autonomous implementation run; every task in [Tasks](#tasks) has files, dependencies and
 acceptance tests.
@@ -600,7 +600,8 @@ Acceptance per task (the test lists below are candidates; see Q10):
 - **T11.** Each view renders the projection and keys move selection correctly. The graph
   sidebar keeps the ramp's `y` semantics against lists.
 - **T12.** No key in the new tables collides with an existing binding in the same context
-  (scripted check over `HelpOverlay` groups). Live smoke on the dev DB: create a list from a
+  (scripted check, `npm run test:keymap`, over the table in `web/src/lib/keymap.ts` that
+  `HelpOverlay` renders from). Live smoke on the dev DB: create a list from a
   held paper's references and cited-by with `A`, then generate a 10-item list anchored on a
   held paper with the real OpenRouter planner under a $0.15 budget. Pass requires ≥ 7 of the
   10 items to verify, ≥ 1 valid `context_link` when the profile is non-empty, and no item that
@@ -627,3 +628,37 @@ resolve key collisions (D19). Fixtures come from the vault (D20).
 - **Q10** UI tests. Proposal: Node projection tests, plus one scripted smoke
   (`npm run smoke:lists`, intercepted HTTP like `smoke:paragraph-selection`) that drives every
   new key once. No full browser suite.
+
+## MVP status
+
+What shipped on `feat/reading-lists`, against the tasks above.
+
+Shipped:
+
+- Core types, the lists schema with the Ramp E migration, per-Work reading state, the history
+  schema, cited-by expansion and claim verification with vault fixtures (T1 to T4, T13).
+- The list service, API and CLI in place of ramps; the history service and API (T5, T6).
+- Generation: the staged planner pipeline with a budget stop, the generation run store and the
+  `generate` subcommand (T7). The OpenRouter planner is implemented and never exercised live;
+  every test drives a recording fake planner.
+- Web foundations, the lists index, list page, picker, membership popover, history capture and
+  page (T8 to T10), and the Topics, Timeline, Next up, Acquire and Review views with the
+  graph sidebar backed by lists (T11).
+- Archive (Q6), `g l` / `g r` (Q8), the $0.15 default budget (Q4), claims kept as nodes (Q2).
+- T12: the declared keymap with a collision audit (`npm run test:keymap`), the key map overlay
+  groups for Lists, List page and History, and `npm run smoke:lists`, an intercepted-HTTP
+  Playwright smoke that presses every list, history and picker key once against `web/dist`
+  (run `npm run build` first).
+
+Deferred:
+
+- View 4, Graph. Key `4` shows "Graph view is not in this build".
+- `:export md|bib` (Q9).
+- The live smoke of T12: the real planner under a $0.15 budget, and the saved report in
+  `docs/experiment-reports/`. Generation quality is therefore unmeasured.
+- The graph overlay's `y`, `R` and `Y` are covered by the projection tests and the keymap audit,
+  not by `smoke:lists`, which needs no Literature fixture.
+
+Known keymap overlap, waived in the audit with a reason: in the graph with a Work open, `g`
+shows the citing sentence at once, so `g l` / `g r` also run that action before the route
+changes.

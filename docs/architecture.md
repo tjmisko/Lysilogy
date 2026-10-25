@@ -187,6 +187,19 @@ PDF.js renders either a focused page or an aligned two-page spread in Text and l
 
 Highlights deliberately avoid a database. `highlights.jsonl` is canonical and atomically rewritten in stable ID order, one complete JSON object per line. Reader records survive reanalysis; AI records are regenerated from currently verified key quotes. `highlights.md` is a disposable human-readable projection. This gives tools and people a plain-text interface while retaining enough typed geometry for lossless rendering.
 
+## Reading lists and history
+
+A reading list is a graph in the workspace database: Work nodes, topic nodes, claim nodes for
+papers not yet resolved, and typed edges (`prerequisite`, `covers`, `subtopic`). Reading status
+belongs to the Work, not the list. `src/lists.rs` and `src/api/lists.rs` serve the lists and the
+CLI; `src/history.rs` records reader events and the sessions the history page groups by day.
+`src/reading_list_planner` builds a list for a goal in staged passes under a spend budget, and
+every addition from generation waits in review. The web app routes `#lists`, `#list=<id>` and
+`#history`; `web/src/lib/keymap.ts` declares their keys, feeds the key map overlay, and is
+audited for collisions by `npm run test:keymap`. `npm run smoke:lists` drives the pages against
+an intercepted API. The graph view (view 4) and list export are not built yet. The full design is
+[reading-lists/spec.md](reading-lists/spec.md).
+
 ## Deliberate MVP boundaries
 
 - Scanned, image-only papers report an empty extraction instead of silently inventing OCR text. OCR is the next extraction adapter.

@@ -1,0 +1,370 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { chromium } from 'playwright';
+
+// Every key of the reading-list surfaces, once, against the built bundle (npm run build first).
+// Only the HTTP transport is intercepted; the lists and the history live in an in-memory fake.
+// The live model call is out of scope here: generation is only started, never awaited.
+// localhost is a secure context, which the history session id (crypto.randomUUID) needs.
+const root = path.resolve('..');
+const now = new Date();
+const stamp = (daysAgo, minutes = 0) => new Date(now.getTime() - daysAgo * 86_400_000 - minutes * 60_000).toISOString();
+const listId = 'p00000000000000000000000000000001';
+const paperId = '1234567890abcdef';
+const paper = { id: paperId, metadata: { title: 'Held paper', authors: ['Test Author'], year: 2026, page_count: 2 }, relative_path: 'held.pdf', status: { state: 'discovered' }, analyzed_at: null, one_line_summary: null };
+const analysis = {
+  schema_version: 5, provider: 'heuristic', generated_at: stamp(0), thesis: 'A synthetic thesis.', author_abstract: 'A synthetic abstract.',
+  outsider_brief: '', context_notes: [], context_sources: [], prerequisites: [], sections: [], claims: [], glossary: [], caveats: [], reading_path: [],
+};
+
+let counter = 0;
+const workRecord = (id, title, year) => ({ id: `w-${id}`, kind: 'article', visibility: 'private', title_state: 'asserted', year_state: 'asserted', created_at: stamp(0), updated_at: stamp(0), display_title: title, display_year: year, display_authors: ['Ann Author'] });
+const node = (kind, id, over = {}) => {
+  counter += 1;
+  return {
+    id, list_id: listId, kind, work_id: null, label: null, summary: null, claim: null, claim_state: null,
+    candidates: [], position: counter * 10, note: null, rationale: null, context_links: [], source: 'user', review: 'accepted',
+    via_work_id: null, path: null, generation_id: null, added_at: stamp(0), updated_at: stamp(0),
+    work: null, ordinal: counter, depth: 0, path_steps: [], ...over,
+  };
+};
+const workNode = (id, title, year, over = {}) => node('work', id, { work_id: `w-${id}`, work: workRecord(id, title, year), ...over });
+const state = {
+  nodes: [
+    workNode('a', 'Attention Is All You Need', 2017),
+    workNode('b', 'Deep RL from human preferences', 2017),
+    workNode('c', 'InstructGPT', 2022),
+    workNode('p', 'Proposed paper', 2023, { review: 'proposed', source: 'generated' }),
+    node('claim', 'k', { claim: { title: 'a paper on reward hacking', authors: [], year: null, doi: null }, claim_state: 'ambiguous', candidates: [
+      { provider_id: 'oa-1', title: 'Scaling laws for reward model overoptimization', year: 2023, authors: ['L Gao'] },
+      { provider_id: 'oa-2', title: 'Reward hacking in practice', year: 2022, authors: ['A Pan'] },
+    ] }),
+  ],
+  edges: [],
+  statuses: {},
+  papers: { 'w-a': [{ paper_id: paperId, title: 'Held paper' }] },
+  gone: null,
+  archived: false,
+  title: 'RLHF basics',
+};
+
+function detail() {
+  const nodes = [...state.nodes].sort((x, y) => x.position - y.position).map((entry, index) => ({ ...entry, ordinal: index + 1 }));
+  const counts = { unread: 0, reading: 0, read: 0 };
+  for (const entry of nodes) if (entry.kind === 'work') counts[state.statuses[entry.work_id] ?? 'unread'] += 1;
+  return {
+    list: {
+      id: listId, workspace_id: 'ws', title: state.title, description: null, origin: 'manual', seed_work_id: null, goal: null,
+      archived_at: state.archived ? stamp(0) : null, created_at: stamp(3), updated_at: stamp(0), seed_title: null,
+      item_count: nodes.filter((n) => n.kind === 'work').length, topic_count: nodes.filter((n) => n.kind === 'topic').length,
+      claim_count: 1, proposed_count: 1, status_counts: counts,
+    },
+    nodes, edges: state.edges, citations: [],
+    reading_states: Object.fromEntries(Object.entries(state.statuses).map(([id, status]) => [id, { status, changed_at: stamp(0) }])),
+    local_papers: state.papers, acquisitions: {}, expansions: {},
+  };
+}
+
+const event = (id, session, minutes, kind, over = {}) => ({
+  id, occurred_at: stamp(0, minutes), session_id: session, kind, paper_id: null, work_id: null, list_id: null, dwell_ms: null,
+  detail: {}, client_seq: id, work_title: null, ...over,
+});
+const sessions = [
+  { session_id: 's-today', started_at: stamp(0, 30), ended_at: stamp(0, 5), events: [
+    event(3, 's-today', 5, 'paper_opened', { paper_id: paperId }),
+    event(2, 's-today', 15, 'search_run', { detail: { query: 'reward' } }),
+    event(1, 's-today', 25, 'graph_opened', { paper_id: paperId, work_id: 'w-a', work_title: 'Attention Is All You Need' }),
+  ] },
+  { session_id: 's-old', started_at: stamp(2, 30), ended_at: stamp(2, 5), events: [
+    { ...event(5, 's-old', 5, 'list_opened', { list_id: listId }), occurred_at: stamp(2, 5) },
+    { ...event(4, 's-old', 20, 'section_focused', { paper_id: paperId }), occurred_at: stamp(2, 20) },
+  ] },
+];
+
+const citations = {
+  work: workRecord('a', 'Attention Is All You Need', 2017),
+  outgoing: [workRecord('r1', 'Neural machine translation by jointly learning to align', 2014), workRecord('r2', 'Sequence to sequence learning', 2014)],
+  incoming: [workRecord('i1', 'BERT', 2018)],
+  edges: [], local_papers: {}, acquisitions: {},
+};
+
+const browser = await chromium.launch({ headless: true, ...(process.env.LYSILOGY_CHROME === undefined ? {} : { executablePath: process.env.LYSILOGY_CHROME }) });
+try {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 850 } });
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  const requests = [];
+  const unexpected = [];
+  await page.route('**/*', async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const method = request.method();
+    if (url.pathname.startsWith('/api/')) requests.push(`${method} ${url.pathname}${url.search}`);
+    const json = (body, status = 200) => route.fulfill({ status, json: body });
+    const body = () => (request.postData() === null ? {} : JSON.parse(request.postData()));
+    const segments = url.pathname.split('/');
+    if (url.pathname === '/api/library') return json({ name: 'Synthetic library', papers: [paper] });
+    if (url.pathname === '/api/queue') return json({ jobs: [] });
+    if (url.pathname === '/api/tags') return json({ tags: [] });
+    if (url.pathname === `/api/papers/${paperId}`) return json({ paper, analysis });
+    if (url.pathname.endsWith('/map')) return json({ layout: { schema_version: 1, pages: [] }, highlights: [] });
+    if (url.pathname === `/api/papers/${paperId}/lists`) {
+      const here = state.nodes.find((entry) => entry.id === 'a');
+      return json({ paper_id: paperId, work_id: 'w-a', memberships: here === undefined ? [] : [{ list_id: listId, title: state.title, archived: false, node_id: 'a', topics: [], note: null }] });
+    }
+    if (url.pathname === `/api/papers/${paperId}/work`) return json({ paper_id: paperId, work: { id: 'w-a' }, link: null });
+    if (url.pathname === '/api/history/events') return json({ accepted: 1, duplicates: 0, nudged: [] });
+    if (url.pathname === '/api/history') return json({ sessions, next_before: null });
+    if (url.pathname === '/api/history/inspected') return json({ works: [{ work_id: 'w-i', title: 'Looked at once', inspects: 1, last_inspected: stamp(0, 3) }] });
+    if (url.pathname === `/api/history/papers/${paperId}`) return json({ position: null });
+    if (url.pathname.startsWith('/api/papers/') && url.pathname.endsWith('/position')) return json({});
+    if (url.pathname === '/api/lists' && method === 'GET') return json({ lists: [detail().list] });
+    if (url.pathname === '/api/lists' && method === 'POST') {
+            return json(detail(), 201);
+    }
+    if (url.pathname === `/api/lists/${listId}` && method === 'GET') return json(detail());
+    if (url.pathname === `/api/lists/${listId}` && method === 'PATCH') {
+      const patch = body();
+      if (typeof patch.title === 'string') state.title = patch.title;
+      if (patch.archived !== undefined) state.archived = patch.archived === true;
+      return json(detail().list);
+    }
+    if (url.pathname === `/api/lists/${listId}/order`) {
+      body().node_ids.forEach((id, index) => { state.nodes.find((entry) => entry.id === id).position = (index + 1) * 10; });
+      return json(detail());
+    }
+    if ((url.pathname === `/api/lists/${listId}/nodes` || url.pathname === `/api/lists/${listId}/nodes:batch`) && method === 'POST') {
+      const add = body();
+      const adds = add.nodes ?? [add];
+      const made = adds.map((one) => {
+        counter += 1;
+        if (one.topic !== undefined) return node('topic', `n${counter}`, { label: one.topic.label });
+        if (one.claim !== undefined && one.work_id === undefined) return node('claim', `n${counter}`, { claim: one.claim.title ?? 'claim', claim_state: 'pending' });
+        const restored = state.gone !== null && state.gone.work_id === one.work_id ? state.gone : null;
+        return restored === null
+          ? workNode(`n${counter}`, one.work_id ?? 'New', 2020, { work_id: one.work_id ?? null })
+          : { ...restored, id: `n${counter}`, position: counter * 10 };
+      });
+      state.nodes.push(...made);
+      return json(url.pathname.endsWith(':batch') ? { nodes: made } : made[0], 201);
+    }
+    if (segments[3] === listId && segments[4] === 'nodes' && segments[5] !== undefined) {
+      const index = state.nodes.findIndex((entry) => entry.id === segments[5]);
+      if (method === 'DELETE') {
+        const [removed] = state.nodes.splice(index, 1);
+        state.gone = removed;
+        return json({ node: removed, edges: [], was_seed: false });
+      }
+      if (method === 'PATCH') {
+        const patch = body();
+        state.nodes[index] = { ...state.nodes[index], ...(patch.note === undefined ? {} : { note: patch.note === '' ? null : patch.note }), ...(patch.review === undefined ? {} : { review: patch.review }) };
+        return json(state.nodes[index]);
+      }
+    }
+    if (url.pathname === `/api/lists/${listId}/edges`) {
+      if (method === 'POST') {
+        const edge = { list_id: listId, ...body(), source: 'user', review: 'accepted', created_at: stamp(0) };
+        state.edges.push(edge);
+        return json(edge, 201);
+      }
+      return route.fulfill({ status: 204 });
+    }
+    if (segments[2] === 'works' && segments[4] === 'reading-state') {
+      state.statuses[segments[3]] = body().status;
+      return json({ work_id: segments[3], status: body().status, changed_at: stamp(0) });
+    }
+    if (segments[2] === 'works' && segments[4] === 'lists') return json({ work_id: segments[3], memberships: [] });
+    if (segments[2] === 'works' && segments[4] === 'citations') return json(citations);
+    if (segments[2] === 'works' && segments[4] === 'acquisition') return json({ work_id: segments[3], job: { state: 'idle' }, acquisition: null, paper_id: null });
+    if (segments[2] === 'works' && segments[4] === 'fetch') return json({ work_id: segments[3], job: { state: 'running' }, acquisition: null, paper_id: null }, 202);
+    if (url.pathname === '/api/lists/generate') return json({ generation_id: 'g00000000000000000000000000000001' }, 202);
+    if (segments[2] === 'generations') return json({ state: 'running', report: {}, spend_usd: 0, list_id: listId });
+    if (url.pathname === '/api/works/search') {
+      return json({ results: [{ work_id: 'w-new', paper_id: null, title: 'Learning to summarize', year: 2020, authors: ['N Stiennon'], source: 'graph', in_graph: true, openalex_id: null, doi: null }] });
+    }
+    if (url.pathname.startsWith('/api/')) {
+      unexpected.push(`${method} ${url.pathname}`);
+      return route.fulfill({ status: 404, json: { message: `Unexpected fixture request ${method} ${url.pathname}` } });
+    }
+    const file = path.join(root, 'web/dist', url.pathname === '/' ? 'index.html' : url.pathname.slice(1));
+    return route.fulfill({ body: await readFile(file), contentType: /\.m?js$/.test(file) ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.svg') ? 'image/svg+xml' : 'text/html' });
+  });
+
+  const press = async (...keys) => { for (const key of keys) await page.keyboard.press(key); };
+  const titles = () => page.$$eval('.list-sequence .list-row .list-row-title', (nodes) => nodes.map((entry) => entry.textContent));
+  const rowCount = (count) => page.waitForFunction((n) => document.querySelectorAll('.list-sequence .list-row').length === n, count);
+  const selected = () => page.locator('.list-row.is-selected .list-row-title').first().innerText();
+  // Esc steps back out of a nested stage (topic choice) before it cancels the dialog.
+  const closeOverlay = async () => {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await page.waitForTimeout(300);
+      if (await page.locator('[data-list-overlay]').count() === 0) return;
+      await page.keyboard.press('Escape');
+    }
+    await page.waitForSelector('[data-list-overlay]', { state: 'detached' });
+  };
+  const overlayGone = () => page.waitForSelector('[data-list-overlay]', { state: 'detached' });
+
+  // ---- Lists index: j k gg G Ctrl-d Ctrl-u / n R A za Enter o q -----------------------------
+  await page.goto('http://localhost/#lists');
+  await page.waitForSelector('.lists-row');
+  await press('j', 'ArrowDown', 'k', 'ArrowUp', 'G', 'g', 'g', 'Control+d', 'Control+u');
+  await press('/');
+  await page.locator('.lists-filter, input[aria-label*="ilter"]').first().fill('rlhf');
+  await press('Enter');
+  assert.equal(await page.locator('.lists-row').count(), 1);
+  await press('Escape');
+  await press('R');
+  await page.getByRole('textbox', { name: 'List title' }).fill('RLHF fundamentals');
+  await press('Enter');
+  await page.waitForFunction(() => document.body.textContent.includes('RLHF fundamentals'));
+  await press('A');
+  assert.ok(requests.some((entry) => entry === `PATCH /api/lists/${listId}`), requests.join('\n'));
+  await press('z', 'a');
+  state.archived = false;
+  await press('q'); // from the index, back to the home grid
+  await page.goto('http://localhost/#lists');
+  await page.waitForSelector('.lists-row');
+  await press('o'); await page.waitForSelector('.list-sequence .list-row');
+  await press('q'); await page.waitForSelector('.lists-row');
+  await press('n');
+  await page.getByRole('textbox', { name: 'New list title' }).fill('Another list');
+  await press('Enter');
+  await page.waitForSelector('.list-sequence .list-row');
+  assert.ok(requests.some((entry) => entry === 'POST /api/lists'), requests.join('\n'));
+
+  // ---- List page: views 1-7 and v ---------------------------------------------------------
+  assert.deepEqual(await titles(), ['Attention Is All You Need', 'Deep RL from human preferences', 'InstructGPT', 'a paper on reward hacking']);
+  await press('v'); assert.match(page.url(), /view=2/u);
+  await press('v'); assert.match(page.url(), /view=3/u);
+  await press('4'); await page.waitForSelector('[data-empty="graph"]');
+  assert.match(await page.locator('[data-empty="graph"]').innerText(), /not in this build/iu);
+  await press('2'); await page.waitForSelector('.list-col');
+  await press('h', 'l', 'ArrowLeft', 'ArrowRight');
+  await press('z', 'o', 'z', 'c', 'z', 'a', 'z', 'R', 'z', 'M');
+  await press('3'); await page.waitForSelector('.list-col');
+  await press('h', 'l');
+  await press('5'); await page.waitForSelector('.list-views button[aria-pressed="true"]');
+  await press('6'); await page.waitForSelector('[aria-label="Papers to acquire"], .list-empty');
+  await press('F');
+  await press('f');
+  await press('7'); await page.waitForSelector('[data-node-id], .list-row');
+  await press('1'); await page.waitForSelector('.list-sequence .list-row');
+
+  // ---- Sequence: movement, status, sort, filter, group, fold -------------------------------
+  await press('j', 'ArrowDown', 'k', 'ArrowUp', 'G', 'g', 'g', 'Control+d', 'Control+u', 'g', 'g');
+  assert.match(await selected(), /Attention/u);
+  await press('j');
+  assert.match(await selected(), /Deep RL/u);
+  await press('r'); await page.waitForSelector('.list-row[data-status="reading"]');
+  await press('r'); await page.waitForSelector('.list-row[data-status="read"]');
+  await press('r'); await page.waitForSelector('.list-row.is-selected[data-status="unread"]');
+  await press('d', 'd'); await page.waitForSelector('.list-row.is-cut');
+  await press('G', 'p');
+  await page.waitForFunction(() => document.querySelector('.list-sequence .list-row:last-child .list-row-title')?.textContent === 'Deep RL from human preferences');
+  await press('g', 'g', 'd', 'd', 'G', 'P');
+  await page.waitForFunction(() => document.querySelector('.list-sequence .list-row:nth-last-child(2) .list-row-title')?.textContent === 'Attention Is All You Need');
+  await press('K'); await press('J');
+  await press('x'); await rowCount(3);
+  await press('u'); await rowCount(4);
+  await press('e');
+  await page.locator('.list-row-input').fill('start here');
+  await press('Enter');
+  await page.waitForSelector('.list-row-note');
+  await press('s', 's');
+  assert.match(await page.locator('.list-toolbar').innerText(), /year/u);
+  await press('S');
+  await press('/');
+  await page.locator('.list-filter').fill('instruct');
+  await press('Enter');
+  assert.deepEqual(await titles(), ['InstructGPT']);
+  await press('Escape');
+  assert.equal((await titles()).length, 4);
+
+  // ---- Topics, edges, context, references, claims ------------------------------------------
+  await press('O');
+  await page.locator('.list-row-input').fill('Rewards');
+  await press('Enter');
+  await page.waitForFunction(() => document.querySelector('.list-row-input') === null);
+  assert.ok(state.nodes.some((entry) => entry.kind === 'topic' && entry.label === 'Rewards'), 'topic created');
+  await press('z', 'g'); await press('z', 'g');
+  await press('g', 'g', 'j'); // the sort is reversed by year: first row is the claim
+  await press('T'); await page.waitForSelector('[data-list-overlay]');
+  await press('Escape'); await overlayGone();
+  await press('E'); await press('j'); await press('Enter');
+  await page.waitForFunction(() => document.querySelector('.list-message')?.textContent?.includes('prerequisite'));
+  await press('X'); await page.waitForSelector('[data-list-overlay]');
+  await press('Escape'); await overlayGone();
+  await press('C');
+  await page.waitForFunction(() => document.querySelector('.list-message')?.textContent?.includes('no links') || document.querySelector('[data-list-overlay]'));
+  if (await page.locator('[data-list-overlay]').count() > 0) { await press('Escape'); await overlayGone(); }
+  await press('g', 'g', 'j');
+  await press('A'); await page.getByRole('dialog').waitFor();
+  await page.getByText('Neural machine translation').waitFor();
+  await press('Space'); await press('Tab'); await press('Tab');
+  await press('Escape'); await overlayGone();
+  await press('a');
+  await page.getByRole('textbox', { name: 'Add a paper by name' }).fill('summarize');
+  await page.getByRole('option', { name: /Learning to summarize/u }).waitFor();
+  await press('Enter');
+  await page.waitForFunction(() => document.querySelectorAll('.list-sequence .list-row').length >= 5);
+  await press('Enter'); // o / Enter open the Work panel
+  await press('f');
+  await press('q'); // closes the panel before leaving the page
+
+  // ---- Review: a x c Enter Escape ---------------------------------------------------------
+  await press('7');
+  await page.waitForSelector('[data-node-id="p"]');
+  await page.locator('[data-node-id="p"]').click();
+  await press('a');
+  await page.waitForSelector('[data-node-id="p"]', { state: 'detached' });
+  assert.ok(requests.some((entry) => entry === `PATCH /api/lists/${listId}/nodes/p`), requests.join('\n'));
+  await page.locator('[data-node-id="k"]').click();
+  await press('c'); await press('c'); await press('Escape');
+  await press('c'); await press('Enter');
+  await press('x');
+  await press('1');
+
+  // ---- Reader: M, Y, g l, g r, and the generation command ---------------------------------
+  await page.goto(`http://localhost/#paper=${paperId}`);
+  await page.waitForSelector('.paper-lists');
+  await press('M'); await page.waitForSelector('[data-list-overlay]');
+  await press('j', 'k', 'Escape'); await overlayGone();
+  await press('Y'); await page.waitForSelector('[data-list-overlay]');
+  await press('Tab'); // topic stage for a list the paper is not on, nothing for one it is
+  await closeOverlay();
+  await page.keyboard.type(':');
+  await page.getByRole('textbox', { name: 'Command' }).fill('generate learn RLHF reward modelling');
+  await press('Enter');
+  await page.waitForSelector('.generation-strip');
+  await press('g', 'l'); await page.waitForSelector('.lists-row');
+  assert.match(page.url(), /#lists/u);
+
+  // ---- History: j k gg G Ctrl-d [ ] Enter Y / 1-5 zo zc za zR zM I Escape ------------------
+  await press('g', 'r'); await page.waitForSelector('[aria-label="Reading history"] .history-row');
+  await press('j', 'ArrowDown', 'k', 'ArrowUp', 'G', 'g', 'g', 'Control+d', 'Control+u');
+  await press('z', 'o'); await page.waitForSelector('.history-row:not(.history-session)');
+  await press('z', 'c', 'z', 'a', 'z', 'R', 'z', 'M');
+  await press(']', '[');
+  await press('/');
+  await page.getByLabel('Filter history').fill('reward');
+  await press('Enter');
+  await press('Escape');
+  for (const kind of ['1', '2', '3', '4', '5']) { await press(kind); await press(kind); }
+  await press('Y'); await page.waitForSelector('[data-list-overlay]');
+  await press('Escape'); await overlayGone();
+  await press('I'); await page.waitForSelector('[aria-label="Inspected works"]');
+  await press('Y'); await page.waitForSelector('[data-list-overlay]');
+  await press('Escape'); await overlayGone();
+  await press('Escape');
+  await press('g', 'g');
+  await press('o'); // reopen the first session row: toggles it, nothing to open
+  await press('Enter');
+
+  assert.deepEqual(unexpected, []);
+  assert.deepEqual(errors, []);
+  console.log('lists smoke passed');
+} finally {
+  await browser.close();
+}
