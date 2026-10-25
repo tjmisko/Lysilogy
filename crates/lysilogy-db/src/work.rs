@@ -2,10 +2,12 @@
 
 use chrono::{Datelike, NaiveDate};
 use lysilogy_core::{
-    IdentifierId, IdentifierScheme, IdentifierStatus, ParseStateError, SourceRecordId, VersionKind,
-    Visibility, Work, WorkId, WorkIdentifier, WorkKind, WorkVersion, WorkVersionId,
-    WorkVersionIdentifier, title_key,
+    IdentifierId, IdentifierScheme, IdentifierStatus, ListEdge, NodeId, NodeKind, ParseStateError,
+    SourceRecordId, VersionKind, Visibility, Work, WorkId, WorkIdentifier, WorkKind, WorkVersion,
+    WorkVersionId, WorkVersionIdentifier, title_key, validate_edge,
 };
+use std::collections::HashMap;
+
 use sqlx::postgres::PgRow;
 use sqlx::{PgConnection, PgPool, Row};
 use uuid::Uuid;
@@ -945,26 +947,17 @@ async fn move_curation(transaction: &mut PgConnection, from_id: Uuid, into_id: U
 /// dropping duplicates and edges that would become self edges. Otherwise the node is
 /// repointed. Every path, `via_work_id` and list seed is repointed. Reading status keeps the
 /// furthest of the two (read > reading > unread), and history rows are repointed.
-async fn move_lists(transaction: &mut PgConnection, from_id: Uuid, into_id: Uuid) -> Result<()> {
-    // Lists holding both: fold the merged node into the survivor.
-    sqlx::query(
-        "insert into reader.list_edge (list_id, from_node, to_node, kind, source, review, created_at) \
-         select e.list_id, \
-                case when e.from_node = f.id then i.id else e.from_node end, \
-                case when e.to_node = f.id then i.id else e.to_node end, \
-                e.kind, e.source, e.review, e.created_at \
-         from reader.list_node f \
-         join reader.list_node i \
-             on i.list_id = f.list_id and i.kind = 'work' and i.work_id = $2 \
-         join reader.list_edge e on e.from_node = f.id or e.to_node = f.id \
-         where f.kind = 'work' and f.work_id = $1 \
-           and not (e.from_node in (f.id, i.id) and e.to_node in (f.id, i.id)) \
-         on conflict do nothing",
-    )
-    .bind(from_id)
-    .bind(into_id)
-    .execute(&mut *transaction)
-    .await?;
+async fn move_lists(transaction: &mut PgConnection, from_id: Uuid, into_id: Uuid) -> Result<usize> {
+    // Lists holding both: fold the merged node's edges into the survivor.
+    let dropped = fold_edges(transaction, from_id, into_id).await?;
+    if dropped > 0 {
+        tracing::warn!(
+            dropped,
+            %from_id,
+            %into_id,
+            "dropped list edges that would close a cycle while merging works"
+        );
+    }
     sqlx::query(
         "update reader.list_node i set \
              note = left(case when i.note is null then f.note \
@@ -1011,6 +1004,14 @@ async fn move_lists(transaction: &mut PgConnection, from_id: Uuid, into_id: Uuid
         .execute(&mut *transaction)
         .await?;
     sqlx::query(
+        "update reader.list_node set via_work_id = null \
+         where kind = 'work' and work_id = $1 and via_work_id = $1",
+    )
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
+    repoint_context_links(transaction, from_id, into_id).await?;
+    sqlx::query(
         "update reader.reading_list set seed_work_id = $2, updated_at = now() \
          where seed_work_id = $1",
     )
@@ -1041,7 +1042,121 @@ async fn move_lists(transaction: &mut PgConnection, from_id: Uuid, into_id: Uuid
         .bind(into_id)
         .execute(&mut *transaction)
         .await?;
+    Ok(dropped)
+}
+
+/// Repoint `context_links` entries from the merged Work to the survivor, collapsing a
+/// link to the survivor that was already there.
+async fn repoint_context_links(
+    transaction: &mut PgConnection,
+    from_id: Uuid,
+    into_id: Uuid,
+) -> Result<()> {
+    sqlx::query(
+        "update reader.list_node set updated_at = now(), context_links = ( \
+             select coalesce(jsonb_agg(d.e order by d.ord), '[]'::jsonb) from ( \
+                 select m.e, m.ord, \
+                        row_number() over (partition by m.e->>'work_id' order by m.ord) as rn \
+                 from ( \
+                     select case when t.e->>'work_id' = $1::text \
+                                 then jsonb_set(t.e, '{work_id}', to_jsonb($2::text)) \
+                                 else t.e end as e, t.ord \
+                     from jsonb_array_elements(context_links) with ordinality as t(e, ord) \
+                 ) m \
+             ) d where d.rn = 1) \
+         where jsonb_typeof(context_links) = 'array' and exists ( \
+             select 1 from jsonb_array_elements(context_links) c where c.value->>'work_id' = $1::text)",
+    )
+    .bind(from_id.to_string())
+    .bind(into_id.to_string())
+    .execute(&mut *transaction)
+    .await?;
     Ok(())
+}
+
+/// In every list holding both Works, move the merged node's edges onto the survivor's node.
+/// Duplicates and self edges are skipped; an edge that would close a D8 cycle (validated with
+/// the list graph rules, against the edges kept so far) is dropped. Returns how many were
+/// dropped for that reason.
+async fn fold_edges(transaction: &mut PgConnection, from_id: Uuid, into_id: Uuid) -> Result<usize> {
+    let pairs = sqlx::query(
+        "select f.list_id, f.id as from_node, i.id as into_node \
+         from reader.list_node f \
+         join reader.list_node i \
+             on i.list_id = f.list_id and i.kind = 'work' and i.work_id = $2 \
+         where f.kind = 'work' and f.work_id = $1",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .fetch_all(&mut *transaction)
+    .await?;
+    let mut dropped = 0;
+    for pair in &pairs {
+        let list: Uuid = pair.try_get("list_id")?;
+        let gone = NodeId::from_uuid(pair.try_get("from_node")?);
+        let kept = NodeId::from_uuid(pair.try_get("into_node")?);
+        let mut kinds: HashMap<NodeId, NodeKind> = HashMap::new();
+        for row in sqlx::query("select id, kind from reader.list_node where list_id = $1")
+            .bind(list)
+            .fetch_all(&mut *transaction)
+            .await?
+        {
+            let kind: String = row.try_get("kind")?;
+            kinds.insert(NodeId::from_uuid(row.try_get("id")?), parse_state(&kind)?);
+        }
+        let rows = sqlx::query(
+            "select from_node, to_node, kind, source, review, created_at \
+             from reader.list_edge where list_id = $1 order by created_at, from_node, to_node",
+        )
+        .bind(list)
+        .fetch_all(&mut *transaction)
+        .await?;
+        let mut current: Vec<ListEdge> = Vec::new();
+        let mut moving: Vec<(ListEdge, PgRow)> = Vec::new();
+        for row in rows {
+            let kind: String = row.try_get("kind")?;
+            let edge = ListEdge {
+                from: NodeId::from_uuid(row.try_get("from_node")?),
+                to: NodeId::from_uuid(row.try_get("to_node")?),
+                kind: parse_state(&kind)?,
+            };
+            if edge.from == gone || edge.to == gone {
+                moving.push((edge, row));
+            } else {
+                current.push(edge);
+            }
+        }
+        for (edge, row) in moving {
+            let mapped = ListEdge {
+                from: if edge.from == gone { kept } else { edge.from },
+                to: if edge.to == gone { kept } else { edge.to },
+                kind: edge.kind,
+            };
+            if mapped.from == mapped.to || current.contains(&mapped) {
+                continue;
+            }
+            if validate_edge(&kinds, &current, mapped).is_err() {
+                dropped += 1;
+                continue;
+            }
+            current.push(mapped);
+            sqlx::query(
+                "insert into reader.list_edge \
+                     (list_id, from_node, to_node, kind, source, review, created_at) \
+                 values ($1, $2, $3, $4, $5, $6, $7) on conflict do nothing",
+            )
+            .bind(list)
+            .bind(mapped.from.as_uuid())
+            .bind(mapped.to.as_uuid())
+            .bind(row.try_get::<String, _>("kind")?)
+            .bind(row.try_get::<String, _>("source")?)
+            .bind(row.try_get::<String, _>("review")?)
+            .bind(row.try_get::<chrono::DateTime<chrono::Utc>, _>("created_at")?)
+            .execute(&mut *transaction)
+            .await?;
+        }
+    }
+    Ok(dropped)
 }
 
 /// Move the merged Work's expansion rows to the survivor, per direction, only where the
@@ -1697,6 +1812,165 @@ mod tests {
         .await
         .expect("decisions");
         assert_eq!(decisions, 1);
+    }
+
+    async fn list_with_nodes(pool: &PgPool, works: &[WorkId]) -> (Uuid, Vec<Uuid>) {
+        let workspace = test_support::new_workspace(pool).await;
+        let list: Uuid = sqlx::query_scalar(
+            "insert into reader.reading_list (workspace_id, title, origin) \
+             values ($1, 'Merge', 'manual') returning id",
+        )
+        .bind(workspace.as_uuid())
+        .fetch_one(pool)
+        .await
+        .expect("list");
+        let mut nodes = Vec::new();
+        for (position, work) in (0_i32..).zip(works) {
+            let id: Uuid = sqlx::query_scalar(
+                "insert into reader.list_node (list_id, kind, work_id, position, source) \
+                 values ($1, 'work', $2, $3, 'user') returning id",
+            )
+            .bind(list)
+            .bind(work.as_uuid())
+            .bind(position)
+            .fetch_one(pool)
+            .await
+            .expect("node");
+            nodes.push(id);
+        }
+        (list, nodes)
+    }
+
+    async fn prerequisite(pool: &PgPool, list: Uuid, from: Uuid, to: Uuid) {
+        sqlx::query(
+            "insert into reader.list_edge (list_id, from_node, to_node, kind, source) \
+             values ($1, $2, $3, 'prerequisite', 'user')",
+        )
+        .bind(list)
+        .bind(from)
+        .bind(to)
+        .execute(pool)
+        .await
+        .expect("edge");
+    }
+
+    #[tokio::test]
+    async fn should_repoint_context_links_when_merging_works() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let from = test_support::new_work(&pool).await;
+        let into = test_support::new_work(&pool).await;
+        let other = test_support::new_work(&pool).await;
+        let (_, nodes) = list_with_nodes(&pool, &[other]).await;
+        let links = serde_json::json!([
+            {"work_id": from.as_uuid().to_string(), "relation": "extends", "note": null},
+            {"work_id": into.as_uuid().to_string(), "relation": "builds_on", "note": null},
+            {"work_id": other.as_uuid().to_string(), "relation": "extends", "note": null},
+        ]);
+        sqlx::query("update reader.list_node set context_links = $2 where id = $1")
+            .bind(nodes[0])
+            .bind(&links)
+            .execute(&pool)
+            .await
+            .expect("links");
+
+        WorkRepository::new(pool.clone())
+            .merge_work(from, into, "same", "test")
+            .await
+            .expect("merge");
+
+        let after: serde_json::Value =
+            sqlx::query_scalar("select context_links from reader.list_node where id = $1")
+                .bind(nodes[0])
+                .fetch_one(&pool)
+                .await
+                .expect("links");
+        let ids: Vec<&str> = after
+            .as_array()
+            .expect("array")
+            .iter()
+            .map(|link| link["work_id"].as_str().expect("id"))
+            .collect();
+        assert_eq!(
+            ids,
+            vec![into.as_uuid().to_string(), other.as_uuid().to_string()],
+            "from repointed, the duplicate survivor link collapsed"
+        );
+    }
+
+    #[tokio::test]
+    async fn should_drop_prerequisite_edge_when_folding_would_close_a_cycle() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let from = test_support::new_work(&pool).await;
+        let into = test_support::new_work(&pool).await;
+        let middle = test_support::new_work(&pool).await;
+        let free = test_support::new_work(&pool).await;
+        let (list, nodes) = list_with_nodes(&pool, &[from, into, middle, free]).await;
+        let (f, i, m, x) = (nodes[0], nodes[1], nodes[2], nodes[3]);
+        // into -> middle, middle -> from: folding from into into closes middle -> into.
+        prerequisite(&pool, list, i, m).await;
+        prerequisite(&pool, list, m, f).await;
+        // from -> free folds cleanly.
+        prerequisite(&pool, list, f, x).await;
+
+        WorkRepository::new(pool.clone())
+            .merge_work(from, into, "same", "test")
+            .await
+            .expect("merge");
+
+        let edges: Vec<(Uuid, Uuid)> = sqlx::query_as(
+            "select from_node, to_node from reader.list_edge where list_id = $1 \
+             order by from_node, to_node",
+        )
+        .bind(list)
+        .fetch_all(&pool)
+        .await
+        .expect("edges");
+        assert!(edges.contains(&(i, m)));
+        assert!(edges.contains(&(i, x)), "the clean edge moved");
+        assert!(
+            !edges.contains(&(m, i)),
+            "the cycle-closing edge is dropped"
+        );
+        assert_eq!(edges.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn should_null_via_work_when_merge_would_point_a_node_at_itself() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let from = test_support::new_work(&pool).await;
+        let into = test_support::new_work(&pool).await;
+        let (_, nodes) = list_with_nodes(&pool, &[from, into]).await;
+        sqlx::query("update reader.list_node set via_work_id = $2 where id = $1")
+            .bind(nodes[1])
+            .bind(from.as_uuid())
+            .execute(&pool)
+            .await
+            .expect("via");
+
+        WorkRepository::new(pool.clone())
+            .merge_work(from, into, "same", "test")
+            .await
+            .expect("merge");
+
+        let via: Option<Uuid> =
+            sqlx::query_scalar("select via_work_id from reader.list_node where id = $1")
+                .bind(nodes[1])
+                .fetch_one(&pool)
+                .await
+                .expect("via");
+        assert_eq!(via, None);
     }
 
     #[tokio::test]

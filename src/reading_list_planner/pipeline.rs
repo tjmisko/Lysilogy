@@ -38,6 +38,8 @@ use crate::lists::OrderStrategy;
 use crate::{AppState, Error};
 
 /// Most anchors a request may name.
+/// Claims a run may add regardless of size; past it, `max(this, size / 2)` caps claims.
+const CLAIMS_MIN_CAP: usize = 5;
 const ANCHORS_MAX: usize = 20;
 /// Most keywords the goal contributes to the title search.
 const KEYWORDS_MAX: usize = 6;
@@ -304,11 +306,18 @@ fn classify(
             kept.push(item);
         }
     }
+    let claim_cap = (room.size / 2).max(CLAIMS_MIN_CAP);
+    let mut claim_count = 0;
     for item in claims {
+        if claim_count >= claim_cap {
+            report.candidates.over_size += 1;
+            continue;
+        }
         if kept.len() >= room.capacity {
             report.candidates.list_full += 1;
             continue;
         }
+        claim_count += 1;
         count_fate(&mut report.candidates, item.fate);
         kept.push(item);
     }
@@ -1643,6 +1652,25 @@ mod tests {
         assert_eq!(unverified, 1, "claims ride along past the size");
         assert_eq!(kept.len(), 2);
         assert_eq!(report.candidates.accounted(), report.candidates.seen);
+    }
+
+    #[test]
+    fn should_cap_claims_and_count_them_when_claims_exceed_the_cap() {
+        let items: Vec<Item> = (0..9).map(|_| claim_item(Fate::Unverified)).collect();
+        let mut report = Report::default();
+        report.candidates.seen = 9;
+        let kept = classify(
+            items,
+            &HashSet::new(),
+            Room {
+                size: 4,
+                capacity: 50,
+            },
+            &mut report,
+        );
+        assert_eq!(kept.len(), 5);
+        assert_eq!(report.candidates.over_size, 4);
+        assert_eq!(report.candidates.accounted(), 9);
     }
 
     #[test]
