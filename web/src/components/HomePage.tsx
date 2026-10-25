@@ -63,7 +63,7 @@ function TitleLines({ id, title }: { id: string; title: string }) {
   const match = /^(.+?)\s*(?:—|–|:)\s+(.+)$/u.exec(title);
   return <>
     <h2 id={id} title={title}>{match?.[1] ?? title}</h2>
-    {match?.[2] !== undefined && <span className="paper-card-subtitle" aria-hidden="true">{match[2]}</span>}
+    <span className="paper-card-subtitle" aria-hidden="true">{match?.[2]}</span>
   </>;
 }
 
