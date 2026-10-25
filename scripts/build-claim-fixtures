@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Build the claim verifier's fixtures from real citations in the vault.
+#
+# Reads bibliography entries of held papers from the dev database (read only), builds the
+# real, fake and near-miss claim sets, runs the verifier once against OpenAlex and Crossref
+# while recording every response, and writes tests/fixtures/claims/{cases,responses}.json.
+# tests/claims_eval.rs replays the recording, so tests never touch the network.
+#
+# Usage: scripts/build-claim-fixtures [--rerecord] [--out DIR] [--max-searches N]
+#
+#   --rerecord        replace existing fixtures (refused without it)
+#   --max-searches N  stop after N live OpenAlex title searches (default 80). The free tier
+#                     charges $0.001 per search against a shared $0.10 daily budget; what was
+#                     recorded is kept in ~/.cache/lysilogy-scratch/claims-responses.json and
+#                     the next run resumes from it.
+#
+# Environment: LYSILOGY_DATABASE_URL (dev database, default the scripts/db cluster) and
+# LYSILOGY_TEST_DATABASE_URL (a server to create a scratch database on; it is dropped after).
+# LYSILOGY_CONTACT_EMAIL, if set, is sent to OpenAlex as the polite-pool contact.
+set -euo pipefail
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+exec cargo run --quiet --example build_claim_fixtures -- "$@"
