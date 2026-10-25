@@ -647,11 +647,12 @@ impl AppState {
         if let Some(seed) = seed {
             let mut node = NewNode::work(seed.id);
             node.source = lysilogy_core::NodeSource::Walk;
-            graph
-                .lists
-                .add_node(list.id, node)
-                .await
-                .map_err(|error| list_failure(&error))?;
+            if let Err(error) = graph.lists.add_node(list.id, node).await {
+                if let Err(cleanup) = graph.lists.delete(workspace, list.id).await {
+                    tracing::warn!(%cleanup, "could not remove a list left without its seed");
+                }
+                return Err(list_failure(&error));
+            }
         }
         self.list_detail(list.id).await
     }
@@ -826,8 +827,8 @@ impl AppState {
             )
         };
         if let Err(error) = self.run_literature_flow(paper, false).await {
-            tracing::warn!(%error, %paper, "could not link a paper to add it to a list");
-            return Err(unlinked());
+            // The flow may have linked the paper before a later step failed.
+            tracing::warn!(%error, %paper, "literature flow failed while linking a paper for a list");
         }
         self.linked_work_quiet(graph, paper)
             .await?
@@ -1488,8 +1489,10 @@ impl AppState {
                     let mut replacement = claim_node(claim_json_of(&node)?, state, &candidates);
                     replacement.note.clone_from(&node.note);
                     let moved = Self::replace_node(graph, list, &node, replacement).await?;
-                    report.replaced.push(moved);
-                    report.reclassified += 1;
+                    if let Some(moved) = moved {
+                        report.replaced.push(moved);
+                        report.reclassified += 1;
+                    }
                 }
             }
         }
@@ -1523,8 +1526,10 @@ impl AppState {
         if node.review == ListReview::Proposed {
             let replacement = work_node(work, None, Vec::new(), node.note.clone());
             let moved = Self::replace_node(graph, list, node, replacement).await?;
-            report.replaced.push(moved);
-            report.resolved += 1;
+            if let Some(moved) = moved {
+                report.replaced.push(moved);
+                report.resolved += 1;
+            }
             return Ok(());
         }
         graph
@@ -1537,48 +1542,60 @@ impl AppState {
     }
 
     /// Replace `node` by `replacement` at the same position, carrying over its provenance
-    /// and review state. The replacement is added before the old node goes, so a refusal
-    /// leaves the list unchanged.
+    /// and review state. The old node goes first so a full list can still settle; a refused
+    /// replacement restores it. `None` when the node was already gone.
     async fn replace_node(
         graph: &GraphState,
         list: ListId,
         node: &ListNode,
         mut replacement: NewNode,
-    ) -> Result<NodeReplacement, ListServiceError> {
+    ) -> Result<Option<NodeReplacement>, ListServiceError> {
         replacement.rationale.clone_from(&node.rationale);
         replacement.context_links.clone_from(&node.context_links);
         replacement.source = node.source;
         replacement.review = node.review;
         replacement.generation_id = node.generation_id;
-        let added = graph
-            .lists
-            .add_node(list, replacement)
-            .await
-            .map_err(|error| list_failure(&error))?;
-        let order: Vec<NodeId> = graph
+        let mut order: Vec<NodeId> = graph
             .lists
             .nodes(list)
             .await
             .map_err(|error| list_failure(&error))?
             .into_iter()
             .map(|existing| existing.id)
-            .filter(|id| *id != added.id)
-            .map(|id| if id == node.id { added.id } else { id })
             .collect();
-        graph
+        let Some(removed) = graph
             .lists
             .remove_node(list, node.id)
             .await
-            .map_err(|error| list_failure(&error))?;
+            .map_err(|error| list_failure(&error))?
+        else {
+            // Another verify settled this claim first.
+            return Ok(None);
+        };
+        let added = match graph.lists.add_node(list, replacement).await {
+            Ok(added) => added,
+            Err(error) => {
+                // Claim nodes carry no edges, so restoring the node loses nothing.
+                if let Err(restore) = graph.lists.restore_node(list, &removed).await {
+                    tracing::warn!(%restore, "could not restore a claim after a refused replacement");
+                }
+                return Err(list_failure(&error));
+            }
+        };
+        for id in &mut order {
+            if *id == node.id {
+                *id = added.id;
+            }
+        }
         graph
             .lists
             .reorder(list, &order)
             .await
             .map_err(|error| list_failure(&error))?;
-        Ok(NodeReplacement {
+        Ok(Some(NodeReplacement {
             from: node.id,
             to: added.id,
-        })
+        }))
     }
 
     /// A list from a `p...` ID or a unique case-insensitive title prefix.

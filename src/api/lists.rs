@@ -1521,7 +1521,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_list_summaries_with_work_and_archive_filters() {
+    async fn should_filter_summaries_when_work_and_archive_filters_are_given() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -1578,7 +1578,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_patch_list_title_description_and_archive_state() {
+    async fn should_update_list_fields_when_title_description_and_archive_are_patched() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -1623,7 +1623,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_delete_list_and_then_report_it_missing() {
+    async fn should_report_list_not_found_when_reading_a_deleted_list() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -1645,7 +1645,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_add_work_node_and_report_duplicate_unknown_and_via_errors() {
+    async fn should_report_errors_when_adding_duplicate_unknown_or_bad_via_work_nodes() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -1776,7 +1776,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_add_topics_and_reject_duplicate_labels_case_insensitively() {
+    async fn should_reject_duplicate_topic_when_labels_differ_only_by_case() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -1910,7 +1910,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_add_paper_through_its_linked_work_and_refuse_unlinked_or_unknown_papers() {
+    async fn should_refuse_paper_node_when_the_paper_is_unlinked_or_unknown() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -2149,7 +2149,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_patch_node_notes_topic_fields_review_and_claim_resolution() {
+    async fn should_update_node_fields_when_notes_topic_review_or_claim_are_patched() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -2364,7 +2364,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_add_edges_and_report_cycles_kinds_and_missing_nodes() {
+    async fn should_report_edge_errors_when_edges_cycle_misfit_or_miss_nodes() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -2484,7 +2484,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_accept_proposed_edge_and_report_missing_edge() {
+    async fn should_accept_proposed_edge_when_it_exists_and_report_missing_otherwise() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -2750,7 +2750,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_list_memberships_of_a_work_without_archived_lists() {
+    async fn should_omit_archived_lists_when_listing_memberships_of_a_work() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -2838,7 +2838,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_search_works_in_the_graph_and_the_provider() {
+    async fn should_include_provider_hits_when_searching_works_with_provider_set() {
         let down = Arc::new(AtomicBool::new(false));
         let needle = marker();
         let title = format!("Provider only paper {needle}");
@@ -2925,7 +2925,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_search_held_papers_by_title_words() {
+    async fn should_match_held_papers_when_searching_by_title_words() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -2950,6 +2950,51 @@ mod tests {
         let (_, json) = request(&state, "GET", &format!("/api/works/search?q={word}"), None).await;
         assert_eq!(json["results"][0]["work_id"], linked.to_string());
         assert_eq!(json["results"][0]["in_graph"], true);
+    }
+
+    #[tokio::test]
+    async fn should_reclassify_pending_claim_when_the_list_is_full() {
+        let down = Arc::new(AtomicBool::new(false));
+        let Some(fixture) = Fixture::with_transport(provider(Vec::new(), &down)).await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let list = fixture.create("Full verify").await;
+        let list_id = Fixture::list_id(&list);
+        let pending = fixture
+            .graph
+            .lists
+            .add_node(
+                list_id,
+                NewNode::claim(
+                    json!({"title": format!("Nothing like this exists ww{}", fixture.marker)}),
+                    ClaimState::Pending,
+                ),
+            )
+            .await
+            .expect("claim");
+        sqlx::query(
+            "insert into reader.list_node (list_id, kind, claim, claim_state, position, source) \
+             select $1, 'claim', '{}'::jsonb, 'unverified', g, 'user' \
+             from generate_series(1, 499) g",
+        )
+        .bind(list_id.as_uuid())
+        .execute(&test_pool().await)
+        .await
+        .expect("bulk claims");
+        let uri = format!("/api/lists/{list}/verify");
+        let (status, json) = request(&fixture.state, "POST", &uri, None).await;
+        assert_eq!(status, StatusCode::OK, "{json}");
+        assert_eq!(json["reclassified"], 1, "{json}");
+        let nodes = fixture.graph.lists.nodes(list_id).await.expect("nodes");
+        assert_eq!(nodes.len(), 500);
+        assert_eq!(
+            nodes[0]
+                .claim_state
+                .map(|state| state != ClaimState::Pending),
+            Some(true)
+        );
+        assert!(nodes.iter().all(|node| node.id != pending.id));
     }
 
     #[tokio::test]
@@ -3033,7 +3078,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_show_detail_with_citations_expansions_and_defaults() {
+    async fn should_show_detail_with_defaults_when_the_list_has_citations_and_expansions() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -3322,7 +3367,11 @@ mod tests {
         let library = tempfile::tempdir().expect("library");
         let data = tempfile::tempdir().expect("data");
         let file_name = format!("Autor - 2013 - {title}.pdf");
-        std::fs::write(library.path().join(&file_name), b"placeholder").expect("write");
+        std::fs::write(
+            library.path().join(&file_name),
+            crate::source_index::test_support::native_pdf(&title),
+        )
+        .expect("write");
         let state = AppState::new(library.path(), data.path())
             .await
             .expect("state")
