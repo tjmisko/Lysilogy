@@ -2,13 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "../../lib/api";
 import { acquisitionStatusText } from "../../lib/acquisition";
+import { jobAfterPoll, type AcquireJob } from "../../lib/acquireJobs";
 import { acquire } from "../../lib/listViews";
 import { StubRow } from "./StubRow";
 import type { ListViewProps } from "./props";
 
 const POLL_MILLISECONDS = 2000;
 
-type Job = { state: "running" | "failed"; message: string | null };
+type Job = AcquireJob;
 
 function isEditable(target: EventTarget | null): boolean {
   return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
@@ -26,7 +27,6 @@ export function Acquire(props: ListViewProps) {
     jobsRef.current = jobs;
   }, [jobs]);
   const fetchable = useMemo(() => new Set(model.fetchable), [model]);
-  const runningKey = [...jobs].filter(([, job]) => job.state === "running").map(([workId]) => workId).sort().join(",");
 
   const setJob = (workId: string, job: Job | null): void => {
     setJobs((current) => {
@@ -37,30 +37,43 @@ export function Acquire(props: ListViewProps) {
     });
   };
 
-  // Poll each running fetch; when its job ends, show a failure or reload to see the new state.
+  const mounted = useRef(true);
+  const isMounted = (): boolean => mounted.current;
   useEffect(() => {
-    if (runningKey === "") return;
-    const controller = new AbortController();
-    const timer = window.setInterval(() => {
-      for (const workId of runningKey.split(",")) {
-        void (async () => {
-          try {
-            const status = await api.workAcquisition(workId, controller.signal);
-            if (controller.signal.aborted || status.job.state === "running") return;
-            setJob(workId, status.job.state === "failed" ? { state: "failed", message: status.job.message ?? null } : null);
-            void actions.reload();
-          } catch (reason: unknown) {
-            if (controller.signal.aborted) return;
-            setJob(workId, { state: "failed", message: reason instanceof Error ? reason.message : null });
-          }
-        })();
-      }
-    }, POLL_MILLISECONDS);
+    mounted.current = true;
     return () => {
-      controller.abort();
-      window.clearInterval(timer);
+      mounted.current = false;
     };
-  }, [actions, runningKey]);
+  }, []);
+
+  // Fetch one Work: queue it, then poll it alone until its job ends.
+  const fetchOne = async (workId: string): Promise<void> => {
+    try {
+      await api.fetchWork(workId);
+    } catch (reason: unknown) {
+      setJob(workId, null);
+      actions.fail(reason instanceof Error ? reason.message : "The fetch failed.");
+      return;
+    }
+    // The POST has returned, so an idle status now means the job is over.
+    for (;;) {
+      await new Promise<void>((resolve) => window.setTimeout(resolve, POLL_MILLISECONDS));
+      if (!isMounted()) return;
+      try {
+        const status = await api.workAcquisition(workId);
+        const step = jobAfterPoll(status.job.state, status.job.message);
+        if (!step.finished) continue;
+        if (!isMounted()) return;
+        setJob(workId, step.job);
+        void actions.reload();
+        return;
+      } catch (reason: unknown) {
+        if (!isMounted()) return;
+        setJob(workId, { state: "failed", message: reason instanceof Error ? reason.message : null });
+        return;
+      }
+    }
+  };
 
   const fetchWorks = (requested: readonly string[]): void => {
     if (requested.length === 0) {
@@ -72,20 +85,16 @@ export function Acquire(props: ListViewProps) {
       actions.notify("Those fetches are already running.");
       return;
     }
+    // All show as running (queued) at once; the loop below runs them strictly one after another.
     setJobs((current) => {
       const next = new Map(current);
       for (const workId of workIds) next.set(workId, { state: "running", message: null });
       return next;
     });
-    // One at a time, as the acquisition jobs expect.
     void (async () => {
       for (const workId of workIds) {
-        try {
-          await api.fetchWork(workId);
-        } catch (reason: unknown) {
-          setJob(workId, null);
-          actions.fail(reason instanceof Error ? reason.message : "The fetch failed.");
-        }
+        if (!isMounted()) return;
+        await fetchOne(workId);
       }
     })();
   };

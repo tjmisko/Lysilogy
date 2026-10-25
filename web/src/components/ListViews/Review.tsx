@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../lib/api";
 import { candidateLabel, matchCandidateWork, nextCandidateIndex } from "../../lib/claimCandidates";
 import { review } from "../../lib/listViews";
+import { routeReviewKey, type EdgeSelection } from "../../lib/reviewKeys";
 import "./ListViewsReview.css";
 import type { ListViewProps } from "./props";
 
@@ -52,7 +53,11 @@ export function Review(props: ListViewProps) {
       const { results } = await api.searchWorks(candidate.title, true);
       const workId = matchCandidateWork(candidate, results);
       if (workId === null) {
-        actions.notify(`“${candidate.title}” is not in the library yet. Switch to view 1 and press a to add it as a paper, then press c again.`);
+        // Not a Work yet: add the candidate in place, then drop the claim it answers.
+        const added = await actions.addNode({ claim: { title: candidate.title, authors: candidate.authors, year: candidate.year, doi: candidate.doi } });
+        if (added === null) return;
+        if (added.kind === "work") await actions.remove(nodeId);
+        else actions.notify(`“${candidate.title}” was added as a claim to verify. Remove the original claim with x once it resolves.`);
         return;
       }
       await actions.resolveClaim(nodeId, workId);
@@ -67,42 +72,30 @@ export function Review(props: ListViewProps) {
     if (!keyboardEnabled) return;
     const onKey = (event: KeyboardEvent): void => {
       if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || isEditable(event.target)) return;
-      if (chooser !== null && chooserNode !== undefined) {
-        if (event.key === "Escape") {
-          event.preventDefault();
-          setChooser(null);
-          return;
-        }
-        if (event.key === "Enter") {
-          event.preventDefault();
-          void resolveCandidate(chooser.nodeId, chooser.index);
-          return;
-        }
-        if (event.key === "c") {
-          event.preventDefault();
-          setChooser({ nodeId: chooser.nodeId, index: nextCandidateIndex(chooser.index, chooserNode.candidates.length) });
-          return;
-        }
+      const edge = selectedEdge === null ? undefined : detail.edges.find((entry) => sameEdge(selectedEdge, entry));
+      const selection: EdgeSelection = selectedEdge === null ? "none" : edge === undefined ? "missing" : edge.review === "proposed" ? "proposed" : "settled";
+      const { route, clearEdge } = routeReviewKey(event.key, chooser !== null && chooserNode !== undefined, selection);
+      if (clearEdge) setSelectedEdge(null);
+      if (route === "chooser-close" || route === "chooser-resolve" || route === "chooser-next") {
+        if (chooser === null || chooserNode === undefined) return;
+        event.preventDefault();
+        if (route === "chooser-close") setChooser(null);
+        else if (route === "chooser-resolve") void resolveCandidate(chooser.nodeId, chooser.index);
+        else setChooser({ nodeId: chooser.nodeId, index: nextCandidateIndex(chooser.index, chooserNode.candidates.length) });
+        return;
       }
-      if (selectedEdge !== null && (event.key === "a" || event.key === "x")) {
-        const edge = detail.edges.find((entry) => sameEdge(selectedEdge, entry));
-        if (edge === undefined) {
-          setSelectedEdge(null);
-        } else {
-          event.preventDefault();
-          setSelectedEdge(null);
-          const key = { from: edge.from, to: edge.to, kind: edge.kind };
-          if (event.key === "x") void actions.removeEdge(key);
-          else if (edge.review === "proposed") void actions.acceptEdge(key);
-          else actions.notify("That link is already accepted.");
-          return;
-        }
+      if ((route === "edge-accept" || route === "edge-reject") && edge !== undefined) {
+        event.preventDefault();
+        const key = { from: edge.from, to: edge.to, kind: edge.kind };
+        if (route === "edge-reject") void actions.removeEdge(key);
+        else void actions.acceptEdge(key);
+        return;
       }
-      if (selectedId === null || (event.key !== "a" && event.key !== "x" && event.key !== "c")) return;
+      if (selectedId === null || (route !== "node-accept" && route !== "node-reject" && route !== "node-resolve")) return;
       const node = detail.nodes.find((entry) => entry.id === selectedId);
       if (node === undefined) return;
       event.preventDefault();
-      if (event.key === "c") {
+      if (route === "node-resolve") {
         if (node.kind !== "claim") {
           actions.notify("Only a claim can be resolved to a candidate.");
         } else if (node.candidates.length === 0) {
@@ -112,7 +105,7 @@ export function Review(props: ListViewProps) {
         } else {
           setChooser({ nodeId: node.id, index: 0 });
         }
-      } else if (event.key === "x") void actions.remove(node.id);
+      } else if (route === "node-reject") void actions.remove(node.id);
       else if (node.review === "proposed") void actions.acceptNode(node.id);
       else actions.notify("That item is already accepted.");
     };
@@ -140,8 +133,8 @@ export function Review(props: ListViewProps) {
                 <span className="list-row-line">
                   <span className="list-row-title">{item.fromTitle} → {item.toTitle}</span>
                   <span className="list-row-held">{edge.kind}</span>
-                  <button type="button" className="list-row-action" onClick={() => void actions.acceptEdge({ from: edge.from, to: edge.to, kind: edge.kind })}><kbd>a</kbd> accept</button>
-                  <button type="button" className="list-row-action" onClick={() => void actions.removeEdge({ from: edge.from, to: edge.to, kind: edge.kind })}><kbd>x</kbd> reject</button>
+                  <button type="button" className="list-row-action" onClick={(event) => { event.stopPropagation(); void actions.acceptEdge({ from: edge.from, to: edge.to, kind: edge.kind }); }}><kbd>a</kbd> accept</button>
+                  <button type="button" className="list-row-action" onClick={(event) => { event.stopPropagation(); void actions.removeEdge({ from: edge.from, to: edge.to, kind: edge.kind }); }}><kbd>x</kbd> reject</button>
                 </span>
               </span>
             </li>;
@@ -149,7 +142,7 @@ export function Review(props: ListViewProps) {
           const node = rowOf(item.node.id);
           if (node === undefined) return null;
           const choosing = chooser?.nodeId === node.id;
-          return <li key={node.id} className={`list-row ${selectedId === node.id ? "is-selected" : ""}`} data-node-id={node.id} onClick={() => props.onSelect(node.id)}>
+          return <li key={node.id} className={`list-row ${selectedId === node.id ? "is-selected" : ""}`} data-node-id={node.id} onClick={() => { setSelectedEdge(null); props.onSelect(node.id); }}>
             <span className="list-row-main">
               <span className="list-row-line">
                 <span className="list-row-title">{item.title}</span>
@@ -164,8 +157,9 @@ export function Review(props: ListViewProps) {
                   className={`list-candidate ${chooser.index === index ? "is-highlighted" : ""}`}
                   onClick={(event) => { event.stopPropagation(); void resolveCandidate(node.id, index); }}
                 >
-                  <span className="list-candidate-index">{index + 1}</span>{candidateLabel(candidate)}
+                  {candidateLabel(candidate)}
                 </li>)}
+                <li className="list-candidate-hint"><kbd>c</kbd> next · <kbd>Enter</kbd> resolve · <kbd>Esc</kbd> close</li>
               </ol>}
             </span>
           </li>;
