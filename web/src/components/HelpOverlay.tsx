@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { helpGroups } from "../lib/keymap";
 
 type HelpOverlayProps = { onClose: () => void };
 
@@ -34,8 +35,9 @@ const GROUPS = [
       ["f (graph, Work open)", "Fetch an open-access copy of the selected work"],
       ["s (graph, Work open)", "Sources: every claimed title, year, author list, venue and DOI by source; override any field"],
       ["w / double-click (graph)", "Expand / collapse the selected work's references in place (up to 3 hops, 6 expansions) (radial view)"],
-      ["y (graph)", "Add the selected work to the reading ramp, with the works that lead to it; starts a ramp if none exists (radial view)"],
-      ["R (graph)", "Show / hide the reading ramp sidebar: status, notes, order, open or fetch each work (radial view)"],
+      ["y (graph)", "Add the selected work to the current reading list, with the works that lead to it; starts a list if none exists (radial view)"],
+      ["R (graph)", "Show / hide the reading list sidebar: status, notes, order, open or fetch each work (radial view)"],
+      ["Y / M (graph)", "Add the selected work to any list / show the lists it is on"],
       ["v (graph)", "Switch between the radial graph and the year histogram"],
       ["h / l · j / k (year view)", "Move between years / within a year; hovering a card also moves; the open Work panel follows"],
       ["g", "Open the technical glossary (pause after one g)"],
@@ -104,6 +106,12 @@ const GROUPS = [
   {
     title: "Application",
     commands: [
+      ["g l", "Open the lists index (type both within a moment)"],
+      ["g r", "Open the reading history"],
+      ["Y", "Add the paper, selected card or graph work to a list (picker)"],
+      ["M", "Lists this paper or work is on: j/k, Enter open, x remove, u undo"],
+      [":lists · :list · :list-new · :generate · :history", "Open or create a list, generate one, open history"],
+      [":read · :reading · :unread", "Set the current work's reading status"],
       ["b", "Toggle the library"],
       ["F1", "Toggle the library outside the notes buffer"],
       ["F10", "Fuzzy-find and switch articles"],
@@ -120,6 +128,11 @@ const GROUPS = [
     ],
   },
 ] as const;
+
+type HelpGroup = { title: string; commands: readonly (readonly [string, string])[] };
+
+// The list surfaces render from the audited keymap table, after the application group.
+const ALL_GROUPS: readonly HelpGroup[] = [...GROUPS, ...helpGroups()];
 
 export function HelpOverlay({ onClose }: HelpOverlayProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -155,11 +168,11 @@ export function HelpOverlay({ onClose }: HelpOverlayProps) {
           </button>
         </header>
         <div className="key-groups">
-          {GROUPS.map((group) => (
+          {ALL_GROUPS.map((group) => (
             <section key={group.title}>
               <h3>{group.title}</h3>
               {group.commands.map(([keys, action]) => (
-                <div key={keys}>
+                <div key={`${keys}|${action}`}>
                   <kbd>{keys}</kbd>
                   <span>{action}</span>
                 </div>
