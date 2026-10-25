@@ -20,6 +20,7 @@ pub mod prominence;
 pub mod reference;
 pub mod scan;
 pub mod title_match;
+pub mod verify_claim;
 
 /// Errors returned by ingestion.
 #[derive(Debug, thiserror::Error)]
