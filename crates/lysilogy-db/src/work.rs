@@ -890,7 +890,8 @@ async fn move_work_content(
     .execute(&mut *transaction)
     .await?;
     move_curation(transaction, from_id, into_id).await?;
-    move_ramps(transaction, from_id, into_id).await
+    move_lists(transaction, from_id, into_id).await?;
+    move_expansion(transaction, from_id, into_id).await
 }
 
 /// Move private tags and the mark to the surviving Work (its own mark wins) and
@@ -930,22 +931,58 @@ async fn move_curation(transaction: &mut PgConnection, from_id: Uuid, into_id: U
     Ok(())
 }
 
-/// Make ramps and the expansion ledger follow the surviving Work. In a ramp that already
-/// holds `into`, the merged Work's item is dropped (the survivor's row wins); otherwise it
-/// is repointed. Every path, `via_work_id`, and ramp seed is repointed, and the merged
-/// Work's expansion row moves only when the survivor has none. Consecutive duplicates a
-/// merge leaves in a path are kept.
-async fn move_ramps(transaction: &mut PgConnection, from_id: Uuid, into_id: Uuid) -> Result<()> {
+/// Make reading lists, reading status and history follow the surviving Work.
+///
+/// In a list that already holds `into`, the merged Work's node is deleted: its note is
+/// appended to the survivor's (or fills it when empty) and its edges move to the survivor,
+/// dropping duplicates and edges that would become self edges. Otherwise the node is
+/// repointed. Every path, `via_work_id` and list seed is repointed. Reading status keeps the
+/// furthest of the two (read > reading > unread), and history rows are repointed.
+async fn move_lists(transaction: &mut PgConnection, from_id: Uuid, into_id: Uuid) -> Result<()> {
+    // Lists holding both: fold the merged node into the survivor.
     sqlx::query(
-        "delete from reader.ramp_item f where f.work_id = $1 and exists ( \
-             select 1 from reader.ramp_item i where i.ramp_id = f.ramp_id and i.work_id = $2)",
+        "insert into reader.list_edge (list_id, from_node, to_node, kind, source, review, created_at) \
+         select e.list_id, \
+                case when e.from_node = f.id then i.id else e.from_node end, \
+                case when e.to_node = f.id then i.id else e.to_node end, \
+                e.kind, e.source, e.review, e.created_at \
+         from reader.list_node f \
+         join reader.list_node i \
+             on i.list_id = f.list_id and i.kind = 'work' and i.work_id = $2 \
+         join reader.list_edge e on e.from_node = f.id or e.to_node = f.id \
+         where f.kind = 'work' and f.work_id = $1 \
+           and not (e.from_node in (f.id, i.id) and e.to_node in (f.id, i.id)) \
+         on conflict do nothing",
     )
     .bind(from_id)
     .bind(into_id)
     .execute(&mut *transaction)
     .await?;
     sqlx::query(
-        "update reader.ramp_item set work_id = $2, updated_at = now(), \
+        "update reader.list_node i set \
+             note = left(case when i.note is null then f.note \
+                              when f.note is null then i.note \
+                              else i.note || E'\\n\\n' || f.note end, 2000), \
+             updated_at = now() \
+         from reader.list_node f \
+         where f.list_id = i.list_id and f.kind = 'work' and f.work_id = $1 \
+           and i.kind = 'work' and i.work_id = $2 and f.note is not null",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
+    sqlx::query(
+        "delete from reader.list_node f where f.kind = 'work' and f.work_id = $1 and exists ( \
+             select 1 from reader.list_node i \
+             where i.list_id = f.list_id and i.kind = 'work' and i.work_id = $2)",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
+    sqlx::query(
+        "update reader.list_node set work_id = $2, updated_at = now(), \
              path_work_ids = array_replace(path_work_ids, $1, $2) \
          where work_id = $1",
     )
@@ -954,28 +991,63 @@ async fn move_ramps(transaction: &mut PgConnection, from_id: Uuid, into_id: Uuid
     .execute(&mut *transaction)
     .await?;
     sqlx::query(
-        "update reader.ramp_item set path_work_ids = array_replace(path_work_ids, $1, $2) \
+        "update reader.list_node set path_work_ids = array_replace(path_work_ids, $1, $2) \
          where $1 = any(path_work_ids)",
     )
     .bind(from_id)
     .bind(into_id)
     .execute(&mut *transaction)
     .await?;
-    sqlx::query("update reader.ramp_item set via_work_id = $2 where via_work_id = $1")
+    sqlx::query("update reader.list_node set via_work_id = $2 where via_work_id = $1")
         .bind(from_id)
         .bind(into_id)
         .execute(&mut *transaction)
         .await?;
     sqlx::query(
-        "update reader.ramp set seed_work_id = $2, updated_at = now() where seed_work_id = $1",
+        "update reader.reading_list set seed_work_id = $2, updated_at = now() \
+         where seed_work_id = $1",
     )
     .bind(from_id)
     .bind(into_id)
     .execute(&mut *transaction)
     .await?;
+
+    sqlx::query(
+        "insert into reader.work_reading_state as s (workspace_id, work_id, status, changed_at) \
+         select workspace_id, $2, status, changed_at \
+         from reader.work_reading_state where work_id = $1 \
+         on conflict (workspace_id, work_id) do update set \
+             status = excluded.status, changed_at = excluded.changed_at \
+         where (case excluded.status when 'read' then 2 when 'reading' then 1 else 0 end) \
+             > (case s.status when 'read' then 2 when 'reading' then 1 else 0 end)",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
+    sqlx::query("delete from reader.work_reading_state where work_id = $1")
+        .bind(from_id)
+        .execute(&mut *transaction)
+        .await?;
+    sqlx::query("update reader.history_event set work_id = $2 where work_id = $1")
+        .bind(from_id)
+        .bind(into_id)
+        .execute(&mut *transaction)
+        .await?;
+    Ok(())
+}
+
+/// Move the merged Work's expansion rows to the survivor, per direction, only where the
+/// survivor has no row of that direction.
+async fn move_expansion(
+    transaction: &mut PgConnection,
+    from_id: Uuid,
+    into_id: Uuid,
+) -> Result<()> {
     sqlx::query(
         "delete from ops.work_expansion f where f.work_id = $1 and exists ( \
-             select 1 from ops.work_expansion i where i.work_id = $2)",
+             select 1 from ops.work_expansion i \
+             where i.work_id = $2 and i.direction = f.direction)",
     )
     .bind(from_id)
     .bind(into_id)
@@ -2021,5 +2093,85 @@ mod tests {
             vec![into],
             "the merged Work's row is gone; the survivor's is kept"
         );
+    }
+
+    #[tokio::test]
+    async fn should_move_expansion_rows_per_direction_when_merging_works() {
+        use crate::expansion::{ExpansionRepository, NewExpansion};
+        use lysilogy_core::{ExpansionDirection, ExpansionMethod, ExpansionState};
+
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            return;
+        };
+        let works = WorkRepository::new(pool.clone());
+        let expansions = ExpansionRepository::new(pool.clone());
+        let record = |work: WorkId, references: i32| NewExpansion {
+            work_id: work,
+            state: ExpansionState::Expanded,
+            method: Some(ExpansionMethod::Local),
+            unavailable_reason: None,
+            provider_key: None,
+            source_record_id: None,
+            references_count: references,
+            new_works: 0,
+            warnings: Vec::new(),
+        };
+        let count =
+            |row: Option<crate::expansion::ExpansionRow>| row.map(|row| row.references_count);
+
+        // The survivor has no row: the merged Work's moves. With its own, the survivor's wins.
+        let from = test_support::new_work(&pool).await;
+        let into = test_support::new_work(&pool).await;
+        expansions.record(record(from, 7)).await.expect("record");
+        works
+            .merge_work(from, into, "dup", "test")
+            .await
+            .expect("merge");
+        assert_eq!(count(expansions.get(from).await.expect("get")), None);
+        assert_eq!(count(expansions.get(into).await.expect("get")), Some(7));
+
+        let from = test_support::new_work(&pool).await;
+        let into = test_support::new_work(&pool).await;
+        expansions.record(record(from, 7)).await.expect("record");
+        expansions.record(record(into, 2)).await.expect("record");
+        works
+            .merge_work(from, into, "dup", "test")
+            .await
+            .expect("merge");
+        assert_eq!(count(expansions.get(from).await.expect("get")), None);
+        assert_eq!(count(expansions.get(into).await.expect("get")), Some(2));
+
+        // Directions are independent: only the direction the survivor lacks moves.
+        let from = test_support::new_work(&pool).await;
+        let into = test_support::new_work(&pool).await;
+        let cited_by = |work: WorkId| NewExpansion {
+            method: Some(ExpansionMethod::Provider),
+            ..record(work, 5)
+        };
+        expansions.record(record(from, 7)).await.expect("record");
+        expansions
+            .record_directed(ExpansionDirection::CitedBy, cited_by(from))
+            .await
+            .expect("record");
+        expansions
+            .record_directed(ExpansionDirection::CitedBy, cited_by(into))
+            .await
+            .expect("record");
+        works
+            .merge_work(from, into, "dup", "test")
+            .await
+            .expect("merge");
+        assert_eq!(
+            count(expansions.get(into).await.expect("get")),
+            Some(7),
+            "the references row moved"
+        );
+        let kept = expansions
+            .get_directed(into, ExpansionDirection::CitedBy)
+            .await
+            .expect("get");
+        assert_eq!(count(kept), Some(5));
+        assert_eq!(count(expansions.get(from).await.expect("get")), None);
     }
 }
