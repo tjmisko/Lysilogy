@@ -21,6 +21,7 @@ pub mod curation;
 pub mod document;
 pub mod evidence;
 pub mod expansion;
+pub mod generation;
 pub mod history;
 pub mod list;
 pub mod prominence;

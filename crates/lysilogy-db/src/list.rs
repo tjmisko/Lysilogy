@@ -949,7 +949,7 @@ fn like_pattern(text: &str) -> String {
     escaped
 }
 
-async fn lock_list(transaction: &mut PgConnection, list: ListId) -> Result<()> {
+pub(crate) async fn lock_list(transaction: &mut PgConnection, list: ListId) -> Result<()> {
     let locked: Option<Uuid> =
         sqlx::query_scalar("select id from reader.reading_list where id = $1 for update")
             .bind(list.as_uuid())
@@ -961,7 +961,7 @@ async fn lock_list(transaction: &mut PgConnection, list: ListId) -> Result<()> {
     Ok(())
 }
 
-async fn touch_list(transaction: &mut PgConnection, list: ListId) -> Result<()> {
+pub(crate) async fn touch_list(transaction: &mut PgConnection, list: ListId) -> Result<()> {
     sqlx::query("update reader.reading_list set updated_at = now() where id = $1")
         .bind(list.as_uuid())
         .execute(&mut *transaction)
@@ -1014,7 +1014,7 @@ fn json_array_within(value: &Value, max: usize) -> bool {
     clippy::cast_possible_truncation,
     clippy::too_many_lines
 )]
-async fn insert_new_node(
+pub(crate) async fn insert_new_node(
     transaction: &mut PgConnection,
     list: ListId,
     new: NewNode,
@@ -1186,7 +1186,7 @@ async fn path_via(
 }
 
 /// Validate and store an edge under the list lock.
-async fn insert_edge(
+pub(crate) async fn insert_edge(
     transaction: &mut PgConnection,
     list: ListId,
     new: NewEdge,
