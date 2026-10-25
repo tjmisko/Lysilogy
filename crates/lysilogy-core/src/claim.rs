@@ -33,6 +33,9 @@ pub struct Claim {
     pub doi: Option<String>,
     #[serde(default)]
     pub arxiv: Option<String>,
+    /// The free text the user typed for the claim, kept as entered.
+    #[serde(default)]
+    pub raw: Option<String>,
 }
 
 /// A Work already in the graph.
@@ -216,8 +219,10 @@ fn plausible<'a>(claim: &Claim, records: &'a [ProviderRecord]) -> Vec<Scored<'a>
 ///
 /// 1. **Local exact**: a Work with the same title key and a year within one (or no year on
 ///    either side) is `Matched`; the smallest Work ID if several.
-/// 2. **Identifier**: a lookup that resolves to a record whose title does not disagree is
-///    `Verified`. A record whose title disagrees marks the claim contradicted, and an
+/// 2. **Identifier**: a lookup that resolves to a record whose title does not disagree, whose
+///    year is within one and that shares a claimed author surname (when both sides give
+///    them) is `Verified`. A record that disagrees on any of these marks the claim
+///    contradicted, and an
 ///    identifier that does not resolve is set aside; both fall through to rule 3.
 /// 3. **Title search**: records within a year of the claim, sharing a claimed author surname
 ///    when both sides name authors, with the same title key or a near-identical or
@@ -251,7 +256,10 @@ pub fn decide_claim(claim: &Claim, evidence: &ClaimEvidence) -> ClaimVerdict {
     for lookup in &evidence.identifiers {
         match lookup {
             IdentifierLookup::Resolved(record) => {
-                if !titles_disagree(&claim.title, &record.title) {
+                let agrees = !titles_disagree(&claim.title, &record.title)
+                    && years_agree(claim.year, record.year)
+                    && authors_agree(&claim.authors, &record.authors);
+                if agrees {
                     return verdict(ClaimOutcome::Verified(record.clone()), false);
                 }
                 contradicted = true;
@@ -688,5 +696,40 @@ mod tests {
         assert_eq!(parsed.year, Some(2020));
         assert!(parsed.authors.is_empty());
         assert!(parsed.doi.is_none());
+        assert!(parsed.raw.is_none());
+    }
+
+    #[test]
+    fn should_keep_raw_text_when_claim_round_trips_through_json() {
+        let claim = Claim {
+            raw: Some("Smith 2020, the big paper".into()),
+            ..claim("T")
+        };
+        let json = serde_json::to_string(&claim).expect("serialize");
+        let parsed: Claim = serde_json::from_str(&json).expect("parse");
+        assert_eq!(parsed, claim);
+        assert_eq!(parsed.raw.as_deref(), Some("Smith 2020, the big paper"));
+    }
+
+    #[test]
+    fn should_not_verify_by_identifier_when_year_or_authors_are_wrong() {
+        let real = record("W1", TITLE, Some(2020), &["Nisan Stiennon"]);
+        let lookup = vec![IdentifierLookup::Resolved(real)];
+        let wrong_year = Claim {
+            year: Some(2010),
+            authors: vec!["Nisan Stiennon".into()],
+            ..claim(TITLE)
+        };
+        let wrong_authors = Claim {
+            year: Some(2020),
+            authors: vec!["Jane Nobody".into()],
+            ..claim(TITLE)
+        };
+        for perturbed in [wrong_year, wrong_authors] {
+            let ev = evidence(vec![], lookup.clone(), TitleSearch::NotRun);
+            let verdict = decide_claim(&perturbed, &ev);
+            assert_eq!(verdict.outcome, ClaimOutcome::Contradicted, "{perturbed:?}");
+            assert!(verdict.identifier_dropped);
+        }
     }
 }

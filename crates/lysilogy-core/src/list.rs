@@ -62,6 +62,9 @@ pub enum ListError {
     InvalidEdgeKind,
     #[error("the order must list every item exactly once")]
     InvalidOrder,
+    /// An edge endpoint is not a node of the list (404).
+    #[error("the node is not in the list")]
+    NodeNotFound,
 }
 
 impl ListError {
@@ -86,6 +89,7 @@ impl ListError {
             Self::EdgeCycle => "edge_cycle",
             Self::InvalidEdgeKind => "invalid_edge_kind",
             Self::InvalidOrder => "invalid_order",
+            Self::NodeNotFound => "node_not_found",
         }
     }
 }

@@ -4,7 +4,7 @@
 //! `covers` (topic to Work) and `subtopic` (topic to topic); citation edges among member
 //! Works are derived by the caller and passed in as `(citing, cited)` pairs.
 
-use std::collections::{BTreeSet, HashMap, HashSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 use std::hash::BuildHasher;
 
 use crate::{EdgeKind, ListError, NodeId, NodeKind, ReadingStatus, WorkId};
@@ -24,9 +24,12 @@ pub enum EdgeRejection {
     InvalidKind,
     /// An endpoint is not a node of the list.
     UnknownNode,
-    /// The edge would close a `prerequisite` / `subtopic` cycle. The nodes are listed in edge
-    /// order starting at the new edge's source: `from`, `to`, ..., and the last one points
-    /// back at `from`. A self edge is the single node `[from]`.
+    /// The edge would close a cycle in the ordering the list is read in. When the stored
+    /// `prerequisite` / `subtopic` edges themselves cycle, the nodes are listed in edge order
+    /// starting at the new edge's source: `from`, `to`, ..., and the last one points back at
+    /// `from`. A self edge is the single node `[from]`. When the cycle only appears once
+    /// topics are expanded to their Works (D8), the nodes are those Works, starting at the
+    /// smallest node ID.
     Cycle(Vec<NodeId>),
 }
 
@@ -35,7 +38,8 @@ impl EdgeRejection {
     #[must_use]
     pub const fn list_error(&self) -> ListError {
         match self {
-            Self::InvalidKind | Self::UnknownNode => ListError::InvalidEdgeKind,
+            Self::InvalidKind => ListError::InvalidEdgeKind,
+            Self::UnknownNode => ListError::NodeNotFound,
             Self::Cycle(_) => ListError::EdgeCycle,
         }
     }
@@ -80,12 +84,19 @@ pub fn validate_edge<S: BuildHasher>(
     if !kinds_fit(edge.kind, from_kind, to_kind) {
         return Err(EdgeRejection::InvalidKind);
     }
-    if !is_ordering(edge.kind) {
-        return Ok(());
-    }
-    if edge.from == edge.to {
+    if edge.from == edge.to && is_ordering(edge.kind) {
         return Err(EdgeRejection::Cycle(vec![edge.from]));
     }
+    if is_ordering(edge.kind)
+        && let Some(cycle) = raw_cycle(existing, edge)
+    {
+        return Err(EdgeRejection::Cycle(cycle));
+    }
+    expanded_cycle(nodes, existing, edge).map_or(Ok(()), |cycle| Err(EdgeRejection::Cycle(cycle)))
+}
+
+/// The shortest cycle the new `prerequisite` / `subtopic` edge closes among the stored ones.
+fn raw_cycle(existing: &[ListEdge], edge: ListEdge) -> Option<Vec<NodeId>> {
     let mut successors: HashMap<NodeId, BTreeSet<NodeId>> = HashMap::new();
     for stored in existing.iter().filter(|stored| is_ordering(stored.kind)) {
         successors.entry(stored.from).or_default().insert(stored.to);
@@ -106,7 +117,7 @@ pub fn validate_edge<S: BuildHasher>(
             // `path` runs to ..= from; the cycle starts at from and stops before it returns.
             let mut cycle = vec![edge.from];
             cycle.extend(&path[..path.len() - 1]);
-            return Err(EdgeRejection::Cycle(cycle));
+            return Some(cycle);
         }
         let Some(next) = successors.get(&node) else {
             continue;
@@ -118,7 +129,104 @@ pub fn validate_edge<S: BuildHasher>(
             }
         }
     }
-    Ok(())
+    None
+}
+
+/// The Works a node stands for: itself, or every Work under a topic (subtopics included).
+fn work_members<S: BuildHasher>(
+    nodes: &HashMap<NodeId, NodeKind, S>,
+    covered: &HashMap<NodeId, BTreeSet<NodeId>>,
+    node: NodeId,
+) -> BTreeSet<NodeId> {
+    let mut found = BTreeSet::new();
+    let mut seen = HashSet::new();
+    let mut stack = vec![node];
+    while let Some(current) = stack.pop() {
+        if !seen.insert(current) {
+            continue;
+        }
+        if nodes.get(&current) == Some(&NodeKind::Work) {
+            found.insert(current);
+            continue;
+        }
+        if let Some(children) = covered.get(&current) {
+            stack.extend(children);
+        }
+    }
+    found
+}
+
+/// The Work-to-Work "read first" relation that `linearize` and `frontier` enforce: every
+/// `prerequisite` edge expanded through `covers` and `subtopic`, minus a Work with itself.
+fn work_order<S: BuildHasher>(
+    nodes: &HashMap<NodeId, NodeKind, S>,
+    edges: impl Iterator<Item = ListEdge> + Clone,
+) -> BTreeMap<NodeId, BTreeSet<NodeId>> {
+    let mut covered: HashMap<NodeId, BTreeSet<NodeId>> = HashMap::new();
+    for edge in edges.clone() {
+        if matches!(edge.kind, EdgeKind::Covers | EdgeKind::Subtopic) {
+            covered.entry(edge.from).or_default().insert(edge.to);
+        }
+    }
+    let mut order: BTreeMap<NodeId, BTreeSet<NodeId>> = BTreeMap::new();
+    for edge in edges.filter(|e| e.kind == EdgeKind::Prerequisite) {
+        let after = work_members(nodes, &covered, edge.to);
+        for first in work_members(nodes, &covered, edge.from) {
+            order
+                .entry(first)
+                .or_default()
+                .extend(after.iter().copied().filter(|second| *second != first));
+        }
+    }
+    order
+}
+
+/// A cycle in a Work order, starting at its smallest node, or `None` when it is acyclic.
+fn find_work_cycle(order: &BTreeMap<NodeId, BTreeSet<NodeId>>) -> Option<Vec<NodeId>> {
+    fn visit(
+        order: &BTreeMap<NodeId, BTreeSet<NodeId>>,
+        node: NodeId,
+        path: &mut Vec<NodeId>,
+        done: &mut HashSet<NodeId>,
+    ) -> Option<Vec<NodeId>> {
+        if let Some(from) = path.iter().position(|seen| *seen == node) {
+            let mut cycle = path[from..].to_vec();
+            let smallest = (0..cycle.len()).min_by_key(|&i| cycle[i])?;
+            cycle.rotate_left(smallest);
+            return Some(cycle);
+        }
+        if done.contains(&node) {
+            return None;
+        }
+        path.push(node);
+        for &next in order.get(&node).into_iter().flatten() {
+            if let Some(cycle) = visit(order, next, path, done) {
+                return Some(cycle);
+            }
+        }
+        path.pop();
+        done.insert(node);
+        None
+    }
+    let mut done = HashSet::new();
+    order
+        .keys()
+        .find_map(|&start| visit(order, start, &mut Vec::new(), &mut done))
+}
+
+/// The cycle the new edge adds to the expanded Work order, if it adds one. A list whose
+/// stored edges already cycle accepts further edges that add nothing new.
+fn expanded_cycle<S: BuildHasher>(
+    nodes: &HashMap<NodeId, NodeKind, S>,
+    existing: &[ListEdge],
+    edge: ListEdge,
+) -> Option<Vec<NodeId>> {
+    let with_edge = work_order(nodes, existing.iter().copied().chain(std::iter::once(edge)));
+    let cycle = find_work_cycle(&with_edge)?;
+    if find_work_cycle(&work_order(nodes, existing.iter().copied())).is_some() {
+        return None;
+    }
+    Some(cycle)
 }
 
 /// What `linearize` needs to know about one Work or claim node.
@@ -311,7 +419,8 @@ pub fn linearize(
 }
 
 /// Each item's grouping topic: the directly covering topic with the most items under it,
-/// then the smallest ID.
+/// then the smallest ID. Grouping is by that direct topic only: Works under a subtopic do
+/// not join their parent topic's direct Works.
 fn primary_topics(
     body: &[&LinearItem],
     edges: &[ListEdge],
@@ -337,6 +446,36 @@ fn primary_topics(
         .collect()
 }
 
+/// For every Work, the unread-or-reading Works that must be read before it, in node ID
+/// order. Built in one pass: each topic endpoint is expanded once.
+fn blockers_by_work(
+    works: &[(NodeId, ReadingStatus)],
+    edges: &[ListEdge],
+) -> HashMap<NodeId, BTreeSet<NodeId>> {
+    let status: HashMap<NodeId, ReadingStatus> = works.iter().copied().collect();
+    let mut covered: HashMap<NodeId, BTreeSet<NodeId>> = HashMap::new();
+    for edge in edges {
+        if matches!(edge.kind, EdgeKind::Covers | EdgeKind::Subtopic) {
+            covered.entry(edge.from).or_default().insert(edge.to);
+        }
+    }
+    let kinds: HashMap<NodeId, NodeKind> = status.keys().map(|id| (*id, NodeKind::Work)).collect();
+    let mut blockers: HashMap<NodeId, BTreeSet<NodeId>> = HashMap::new();
+    for edge in edges.iter().filter(|e| e.kind == EdgeKind::Prerequisite) {
+        let unread: BTreeSet<NodeId> = work_members(&kinds, &covered, edge.from)
+            .into_iter()
+            .filter(|node| status[node] != ReadingStatus::Read)
+            .collect();
+        for target in work_members(&kinds, &covered, edge.to) {
+            blockers
+                .entry(target)
+                .or_default()
+                .extend(unread.iter().copied().filter(|node| *node != target));
+        }
+    }
+    blockers
+}
+
 /// The unread-or-reading Works that must be read before `target`, in node ID order.
 ///
 /// A `prerequisite` edge into `target` or into a topic above it (subtopics included) names
@@ -349,43 +488,9 @@ pub fn unmet_prerequisites(
     edges: &[ListEdge],
     target: NodeId,
 ) -> Vec<NodeId> {
-    let status: HashMap<NodeId, ReadingStatus> = works.iter().copied().collect();
-    let mut covered: HashMap<NodeId, Vec<NodeId>> = HashMap::new();
-    for edge in edges {
-        if matches!(edge.kind, EdgeKind::Covers | EdgeKind::Subtopic) {
-            covered.entry(edge.from).or_default().push(edge.to);
-        }
-    }
-    let members = |node: NodeId| -> HashSet<NodeId> {
-        let mut found = HashSet::new();
-        let mut seen = HashSet::new();
-        let mut stack = vec![node];
-        while let Some(current) = stack.pop() {
-            if !seen.insert(current) {
-                continue;
-            }
-            if status.contains_key(&current) {
-                found.insert(current);
-                continue;
-            }
-            if let Some(children) = covered.get(&current) {
-                stack.extend(children);
-            }
-        }
-        found
-    };
-    let mut blockers = BTreeSet::new();
-    for edge in edges.iter().filter(|e| e.kind == EdgeKind::Prerequisite) {
-        if !members(edge.to).contains(&target) {
-            continue;
-        }
-        blockers.extend(
-            members(edge.from)
-                .into_iter()
-                .filter(|node| *node != target && status[node] != ReadingStatus::Read),
-        );
-    }
-    blockers.into_iter().collect()
+    blockers_by_work(works, edges)
+        .remove(&target)
+        .map_or_else(Vec::new, |found| found.into_iter().collect())
 }
 
 /// "Next up": Works that are `unread` and whose prerequisites are all `read`, in the order
@@ -402,11 +507,12 @@ pub fn frontier(
         .rev()
         .map(|(index, id)| (*id, index))
         .collect();
+    let blockers = blockers_by_work(works, edges);
     let mut ready: Vec<NodeId> = works
         .iter()
         .filter(|(_, status)| *status == ReadingStatus::Unread)
         .map(|(id, _)| *id)
-        .filter(|id| unmet_prerequisites(works, edges, *id).is_empty())
+        .filter(|id| blockers.get(id).is_none_or(BTreeSet::is_empty))
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect();
@@ -507,7 +613,7 @@ mod tests {
         let rejection =
             validate_edge(&nodes, &[], edge(1, 9, EdgeKind::Prerequisite)).expect_err("unknown");
         assert_eq!(rejection, EdgeRejection::UnknownNode);
-        assert_eq!(rejection.list_error().code(), "invalid_edge_kind");
+        assert_eq!(rejection.list_error().code(), "node_not_found");
         assert!(rejection.cycle().is_none());
     }
 
@@ -869,5 +975,114 @@ mod tests {
             edge(1, 1, EdgeKind::Prerequisite),
         ];
         assert_eq!(frontier(&works, &edges, &[]), ids(&[1]));
+    }
+
+    #[test]
+    fn should_reject_edge_when_it_closes_a_cycle_through_a_topic() {
+        let nodes = kinds(&[
+            (1, NodeKind::Work),
+            (2, NodeKind::Work),
+            (10, NodeKind::Topic),
+        ]);
+        // Topic 10 covers work 2; work 1 precedes the topic (so work 2); work 2 then cannot
+        // precede work 1.
+        let existing = [
+            edge(10, 2, EdgeKind::Covers),
+            edge(1, 10, EdgeKind::Prerequisite),
+        ];
+        let rejection = validate_edge(&nodes, &existing, edge(2, 1, EdgeKind::Prerequisite))
+            .expect_err("cycle");
+        assert_eq!(rejection.cycle(), Some(ids(&[1, 2]).as_slice()));
+        assert_eq!(rejection.list_error().code(), "edge_cycle");
+        // Order of arrival does not matter: the covers edge can be the one that closes it.
+        let existing = [
+            edge(1, 10, EdgeKind::Prerequisite),
+            edge(2, 1, EdgeKind::Prerequisite),
+        ];
+        let rejection =
+            validate_edge(&nodes, &existing, edge(10, 2, EdgeKind::Covers)).expect_err("cycle");
+        assert_eq!(rejection.cycle(), Some(ids(&[1, 2]).as_slice()));
+        // A subtopic edge changes membership too.
+        let nodes = kinds(&[
+            (1, NodeKind::Work),
+            (2, NodeKind::Work),
+            (10, NodeKind::Topic),
+            (11, NodeKind::Topic),
+        ]);
+        let existing = [
+            edge(11, 2, EdgeKind::Covers),
+            edge(1, 10, EdgeKind::Prerequisite),
+            edge(2, 1, EdgeKind::Prerequisite),
+        ];
+        assert!(validate_edge(&nodes, &existing, edge(10, 11, EdgeKind::Subtopic)).is_err());
+    }
+
+    #[test]
+    fn should_accept_edge_when_a_work_precedes_its_own_topic() {
+        let nodes = kinds(&[
+            (1, NodeKind::Work),
+            (2, NodeKind::Work),
+            (10, NodeKind::Topic),
+        ]);
+        let existing = [
+            edge(10, 1, EdgeKind::Covers),
+            edge(10, 2, EdgeKind::Covers),
+            edge(1, 10, EdgeKind::Prerequisite),
+        ];
+        // 1 before 2 is implied; repeating the stored edge stays fine.
+        assert_eq!(
+            validate_edge(&nodes, &existing, edge(1, 10, EdgeKind::Prerequisite)),
+            Ok(())
+        );
+        assert!(validate_edge(&nodes, &existing, edge(2, 1, EdgeKind::Prerequisite)).is_err());
+    }
+
+    #[test]
+    #[allow(clippy::cast_possible_truncation)] // the remainder is below the list length
+    fn should_never_block_every_unread_work_when_edges_pass_validation() {
+        use ReadingStatus::Unread;
+        let nodes = kinds(&[
+            (1, NodeKind::Work),
+            (2, NodeKind::Work),
+            (3, NodeKind::Work),
+            (10, NodeKind::Topic),
+            (11, NodeKind::Topic),
+        ]);
+        let mut candidates = Vec::new();
+        for topic in [10, 11] {
+            for work in [1, 2, 3] {
+                candidates.push(edge(topic, work, EdgeKind::Covers));
+            }
+        }
+        candidates.push(edge(10, 11, EdgeKind::Subtopic));
+        for from in [1, 2, 3, 10, 11] {
+            for to in [1, 2, 3, 10, 11] {
+                if from != to {
+                    candidates.push(edge(from, to, EdgeKind::Prerequisite));
+                }
+            }
+        }
+        let works = status(&[(1, Unread), (2, Unread), (3, Unread)]);
+        let mut state: u64 = 0x9e37_79b9_7f4a_7c15;
+        for _ in 0..400 {
+            // Fisher-Yates with a fixed xorshift stream, so the trials are reproducible.
+            let mut shuffled = candidates.clone();
+            for i in (1..shuffled.len()).rev() {
+                state ^= state << 13;
+                state ^= state >> 7;
+                state ^= state << 17;
+                shuffled.swap(i, (state % (i as u64 + 1)) as usize);
+            }
+            let mut accepted: Vec<ListEdge> = Vec::new();
+            for candidate in shuffled {
+                if validate_edge(&nodes, &accepted, candidate).is_ok() {
+                    accepted.push(candidate);
+                }
+            }
+            assert!(
+                !frontier(&works, &accepted, &[]).is_empty(),
+                "all blocked by {accepted:?}"
+            );
+        }
     }
 }

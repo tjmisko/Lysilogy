@@ -685,4 +685,75 @@ mod tests {
             "\"provider_not_found\""
         );
     }
+
+    /// Pin every wire string (they must match the migration CHECK constraints), parse it
+    /// back, and refuse its capitalised form.
+    fn assert_wire<T>(variants: &[(T, &str)])
+    where
+        T: std::str::FromStr + PartialEq + std::fmt::Debug,
+        T::Err: std::fmt::Debug,
+    {
+        for (variant, wire) in variants {
+            assert_eq!(&wire.parse::<T>().unwrap(), variant, "{wire}");
+            let mut capitalised = (*wire).to_owned();
+            capitalised[..1].make_ascii_uppercase();
+            assert!(capitalised.parse::<T>().is_err(), "{capitalised}");
+            assert!(format!("{wire} ").parse::<T>().is_err(), "{wire} + space");
+        }
+        assert!("".parse::<T>().is_err());
+    }
+
+    #[test]
+    fn should_pin_wire_strings_when_round_tripping_list_enums() {
+        assert_wire(&[
+            (ListOrigin::Manual, "manual"),
+            (ListOrigin::Walk, "walk"),
+            (ListOrigin::Generated, "generated"),
+        ]);
+        assert_wire(&[
+            (NodeKind::Work, "work"),
+            (NodeKind::Topic, "topic"),
+            (NodeKind::Claim, "claim"),
+        ]);
+        assert_wire(&[
+            (EdgeKind::Prerequisite, "prerequisite"),
+            (EdgeKind::Covers, "covers"),
+            (EdgeKind::Subtopic, "subtopic"),
+        ]);
+        assert_wire(&[
+            (NodeSource::User, "user"),
+            (NodeSource::Walk, "walk"),
+            (NodeSource::Citation, "citation"),
+            (NodeSource::Agent, "agent"),
+        ]);
+        assert_wire(&[(EdgeSource::User, "user"), (EdgeSource::Agent, "agent")]);
+        assert_wire(&[
+            (ListReview::Accepted, "accepted"),
+            (ListReview::Proposed, "proposed"),
+        ]);
+        assert_wire(&[
+            (ClaimState::Unverified, "unverified"),
+            (ClaimState::Ambiguous, "ambiguous"),
+            (ClaimState::Contradicted, "contradicted"),
+            (ClaimState::Pending, "pending"),
+        ]);
+        assert_wire(&[
+            (ExpansionDirection::References, "references"),
+            (ExpansionDirection::CitedBy, "cited_by"),
+        ]);
+        assert_wire(&[
+            (GenerationState::Running, "running"),
+            (GenerationState::Succeeded, "succeeded"),
+            (GenerationState::Failed, "failed"),
+            (GenerationState::OverBudget, "over_budget"),
+        ]);
+        assert_wire(&[
+            (ContextRelation::BuildsOn, "builds_on"),
+            (ContextRelation::Extends, "extends"),
+            (ContextRelation::Contrasts, "contrasts"),
+            (ContextRelation::SameMethod, "same_method"),
+            (ContextRelation::SameProblem, "same_problem"),
+        ]);
+        assert!("bogus".parse::<NodeKind>().is_err());
+    }
 }
