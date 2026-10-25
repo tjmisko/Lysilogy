@@ -2,17 +2,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { acquisitionStatusText, canFetch, isRetry } from "../lib/acquisition";
 import { api } from "../lib/api";
-import { nextStatus, pathBreadcrumb } from "../lib/ramp";
-import type { RampsApi } from "../lib/useRamps";
-import type { AcquisitionJobState, ExpansionView, RampItemView } from "../types";
+import { nextReadingStatus } from "../lib/listKeys";
+import { pathBreadcrumb } from "../lib/listSidebar";
+import { itemRows, statusGlyph, type ItemRow } from "../lib/listViews";
+import type { WalkListsApi } from "../lib/useWalkLists";
+import type { AcquisitionJobState, ExpansionView } from "../types";
 
 const POLL_MILLISECONDS = 1000;
 const BREADCRUMB_LIMIT = 3;
 const CRUMB_TITLE_LIMIT = 28;
-const NEW_RAMP_VALUE = "__new__";
+const NEW_LIST_VALUE = "__new__";
 
-type LiteratureRampProps = {
-  ramps: RampsApi;
+type LiteratureListSidebarProps = {
+  lists: WalkListsApi;
   selectedWorkId: string | null;
   /** Show the Work on the canvas when it is there. */
   onSelectWork: (workId: string) => void;
@@ -25,9 +27,8 @@ function crumb(title: string): string {
   return title.length <= CRUMB_TITLE_LIMIT ? title : `${title.slice(0, CRUMB_TITLE_LIMIT - 1).trimEnd()}…`;
 }
 
-function itemTitle(item: RampItemView): string {
-  const title = item.work.display_title?.trim() ?? "";
-  return title === "" ? `Untitled (${item.work.id.slice(0, 8)}…)` : title;
+function rowTitle(row: ItemRow): string {
+  return row.title === "Untitled" && row.workId !== null ? `Untitled (${row.workId.slice(0, 8)}…)` : row.title;
 }
 
 function expansionBadge(view: ExpansionView | undefined): string | null {
@@ -35,11 +36,6 @@ function expansionBadge(view: ExpansionView | undefined): string | null {
   if (view.state === "unavailable") return "refs unavailable";
   if (view.state === "known") return `${view.references_count} refs`;
   return `expanded · ${view.references_count}`;
-}
-
-function statusSymbol(status: RampItemView["status"]): string {
-  if (status === "read") return "●";
-  return status === "reading" ? "◐" : "○";
 }
 
 function failureMessage(reason: unknown): string {
@@ -88,8 +84,8 @@ function InlineInput(props: {
   );
 }
 
-export function LiteratureRamp({ ramps, selectedWorkId, onSelectWork, onOpenPaper }: LiteratureRampProps) {
-  const { detail, error, loaded, reload } = ramps;
+export function LiteratureListSidebar({ lists, selectedWorkId, onSelectWork, onOpenPaper }: LiteratureListSidebarProps) {
+  const { detail, error, loaded, reload } = lists;
   const [editingTitle, setEditingTitle] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [fetches, setFetches] = useState<ReadonlyMap<string, RowFetch>>(() => new Map());
@@ -139,25 +135,26 @@ export function LiteratureRamp({ ramps, selectedWorkId, onSelectWork, onOpenPape
     });
   }, []);
 
-  const listed = ramps.ramps;
+  const listed = lists.lists;
   const shownError = error ?? fetchError;
+  const rows = detail === null ? [] : itemRows(detail).filter((row) => row.kind === "work" && row.workId !== null);
 
   return (
-    <aside className="literature-ramp" aria-label="Reading ramp" data-ramp-id={detail?.ramp.id}>
+    <aside className="literature-ramp" aria-label="Reading list" data-ramp-id={detail?.list.id}>
       <header className="literature-ramp-head">
-        <h3>Reading ramp</h3>
+        <h3>Reading list</h3>
         <label className="literature-ramp-picker">
           <select
-            aria-label="Ramp"
-            value={detail?.ramp.id ?? ""}
+            aria-label="List"
+            value={detail?.list.id ?? ""}
             onChange={(event) => {
-              if (event.target.value === NEW_RAMP_VALUE) void ramps.create();
-              else void ramps.select(event.target.value);
+              if (event.target.value === NEW_LIST_VALUE) void lists.create();
+              else void lists.select(event.target.value);
             }}
           >
-            {detail === null && <option value="">No ramp yet</option>}
-            {listed.map((ramp) => <option key={ramp.id} value={ramp.id}>{ramp.title} ({ramp.item_count})</option>)}
-            <option value={NEW_RAMP_VALUE}>New ramp</option>
+            {detail === null && <option value="">No list yet</option>}
+            {listed.map((list) => <option key={list.id} value={list.id}>{list.title} ({list.item_count})</option>)}
+            <option value={NEW_LIST_VALUE}>New list</option>
           </select>
         </label>
       </header>
@@ -166,9 +163,9 @@ export function LiteratureRamp({ ramps, selectedWorkId, onSelectWork, onOpenPape
 
       {detail === null && (
         <div className="literature-ramp-empty" data-ramp-empty="true">
-          <p>{loaded ? "No reading ramp for this paper yet." : "Loading ramps…"}</p>
-          <p className="literature-hint">Select a work and press <kbd>y</kbd> to start one, or</p>
-          <button type="button" className="literature-action" disabled={!loaded} onClick={() => void ramps.create()}>New ramp</button>
+          <p>{loaded ? "No reading list for this paper yet." : "Loading lists…"}</p>
+          <p className="literature-hint">Select a work and press <kbd>y</kbd> to start one, <kbd>Y</kbd> to pick any list, or</p>
+          <button type="button" className="literature-action" disabled={!loaded} onClick={() => void lists.create()}>New list</button>
         </div>
       )}
 
@@ -178,59 +175,59 @@ export function LiteratureRamp({ ramps, selectedWorkId, onSelectWork, onOpenPape
             {editingTitle
               ? (
                 <InlineInput
-                  label="Ramp title"
+                  label="List title"
                   className="literature-ramp-input"
-                  initial={detail.ramp.title}
+                  initial={detail.list.title}
                   onSave={(value) => {
                     setEditingTitle(false);
                     const title = value.trim();
-                    if (title !== "" && title !== detail.ramp.title) void ramps.rename(title);
+                    if (title !== "" && title !== detail.list.title) void lists.rename(title);
                   }}
                   onCancel={() => setEditingTitle(false)}
                 />
               )
-              : <button type="button" className="literature-ramp-name" title="Rename" onClick={() => setEditingTitle(true)}>{detail.ramp.title}</button>}
+              : <button type="button" className="literature-ramp-name" title="Rename" onClick={() => setEditingTitle(true)}>{detail.list.title}</button>}
           </div>
           <p className="literature-ramp-counts" data-ramp-counts="true">
-            {detail.ramp.status_counts.read} read · {detail.ramp.status_counts.reading} reading · {detail.ramp.status_counts.unread} unread
+            {detail.list.status_counts.read} read · {detail.list.status_counts.reading} reading · {detail.list.status_counts.unread} unread
           </p>
-          <button type="button" className="literature-action" onClick={() => void ramps.suggest()}>Suggest order</button>
+          <button type="button" className="literature-action" onClick={() => void lists.suggest()}>Suggest order</button>
 
           <ol className="literature-ramp-items">
-            {detail.items.map((item, index) => {
-              const workId = item.work.id;
-              const isSeed = workId === detail.ramp.seed_work_id;
+            {rows.map((row, index) => {
+              const workId = row.workId ?? row.id;
               const papers = detail.local_papers[workId] ?? [];
               const held = papers[0];
               const view = detail.acquisitions[workId] ?? null;
               const rowFetch = fetches.get(workId);
               const jobState = rowFetch?.job ?? "none";
               const fetchable = held === undefined && canFetch(workId, detail.local_papers, detail.acquisitions, jobState);
-              const crumbs = pathBreadcrumb(item.path, BREADCRUMB_LIMIT);
+              const crumbs = pathBreadcrumb(row.node.path_steps, BREADCRUMB_LIMIT);
               const badge = expansionBadge(detail.expansions[workId]);
-              const upcoming = nextStatus(item.status);
+              const upcoming = nextReadingStatus(row.status);
+              const title = rowTitle(row);
               return (
                 <li
-                  key={workId}
+                  key={row.id}
                   className={`literature-ramp-item ${selectedWorkId === workId ? "is-selected" : ""}`}
                   data-ramp-item={workId}
-                  data-status={item.status}
-                  data-depth={item.depth}
-                  style={{ paddingLeft: `${8 + Math.min(item.depth, 4) * 10}px` }}
+                  data-status={row.status}
+                  data-depth={row.node.depth}
+                  style={{ paddingLeft: `${8 + Math.min(row.node.depth, 4) * 10}px` }}
                 >
                   <div className="literature-ramp-line">
-                    <span className="literature-ramp-ordinal">{item.ordinal}</span>
+                    <span className="literature-ramp-ordinal">{row.ordinal}</span>
                     <button
                       type="button"
                       className="literature-ramp-status"
-                      data-status-button={item.status}
-                      aria-label={`${item.status}: mark as ${upcoming}`}
-                      title={`${item.status} — click to mark as ${upcoming}`}
-                      onClick={() => void ramps.setStatus(workId, upcoming)}
-                    >{statusSymbol(item.status)}</button>
+                      data-status-button={row.status}
+                      aria-label={`${row.status}: mark as ${upcoming}`}
+                      title={`${row.status} — click to mark as ${upcoming}`}
+                      onClick={() => void lists.setStatus(workId, upcoming)}
+                    >{statusGlyph(row.status)}</button>
                     <button type="button" className="literature-ramp-work" onClick={() => onSelectWork(workId)}>
-                      <span className="literature-ramp-work-title">{itemTitle(item)}</span>
-                      {item.work.display_year !== null && <span className="literature-ramp-year"> · {item.work.display_year}</span>}
+                      <span className="literature-ramp-work-title">{title}</span>
+                      {row.year !== null && <span className="literature-ramp-year"> · {row.year}</span>}
                     </button>
                   </div>
                   {crumbs.length > 0 && (
@@ -252,31 +249,29 @@ export function LiteratureRamp({ ramps, selectedWorkId, onSelectWork, onOpenPape
                     )}
                     {badge !== null && <span className="literature-ramp-badge" data-ramp-badge={detail.expansions[workId]?.state}>{badge}</span>}
                     <span className="literature-ramp-actions">
-                      <button type="button" aria-label={`Move ${itemTitle(item)} up`} disabled={index === 0} onClick={() => void ramps.move(workId, -1)}>↑</button>
-                      <button type="button" aria-label={`Move ${itemTitle(item)} down`} disabled={index === detail.items.length - 1} onClick={() => void ramps.move(workId, 1)}>↓</button>
-                      {!isSeed && (
-                        <button type="button" aria-label={`Remove ${itemTitle(item)} from ramp`} onClick={() => void ramps.remove(workId)}>×</button>
-                      )}
+                      <button type="button" aria-label={`Move ${title} up`} disabled={index === 0} onClick={() => void lists.move(row.id, -1)}>↑</button>
+                      <button type="button" aria-label={`Move ${title} down`} disabled={index === rows.length - 1} onClick={() => void lists.move(row.id, 1)}>↓</button>
+                      <button type="button" aria-label={`Remove ${title} from list`} onClick={() => void lists.remove(row.id)}>×</button>
                     </span>
                   </div>
                   <div className="literature-ramp-note">
-                    {editingNoteId === workId
+                    {editingNoteId === row.id
                       ? (
                         <InlineInput
                           label="Note"
                           className="literature-ramp-input"
-                          initial={item.note ?? ""}
+                          initial={row.note ?? ""}
                           onSave={(value) => {
                             setEditingNoteId(null);
                             const note = value.trim();
-                            if (note !== (item.note ?? "")) void ramps.setNote(workId, note === "" ? null : note);
+                            if (note !== (row.note ?? "")) void lists.setNote(row.id, note === "" ? null : note);
                           }}
                           onCancel={() => setEditingNoteId(null)}
                         />
                       )
                       : (
-                        <button type="button" className="literature-ramp-note-text" onClick={() => setEditingNoteId(workId)}>
-                          {item.note ?? "Add a note"}
+                        <button type="button" className="literature-ramp-note-text" onClick={() => setEditingNoteId(row.id)}>
+                          {row.note ?? "Add a note"}
                         </button>
                       )}
                   </div>

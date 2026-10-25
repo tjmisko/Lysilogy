@@ -22,8 +22,8 @@ import {
   EXPANSION_TOP_N, MAX_UI_DEPTH, MAX_UI_EXPANSIONS, addExpansion, canExpand, collapseExpansion, fanoutKnown,
   walkPathTo, type WalkExpansion,
 } from "../lib/walk";
-import { useRamps } from "../lib/useRamps";
-import { LiteratureRamp } from "./LiteratureRamp";
+import { useWalkLists } from "../lib/useWalkLists";
+import { LiteratureListSidebar } from "./LiteratureListSidebar";
 import { LiteratureCuration, TAG_INPUT_CLASS } from "./LiteratureCuration";
 import { LiteratureHistogram } from "./LiteratureHistogram";
 import { LiteratureLegend, TAG_KEY_LIMIT } from "./LiteratureLegend";
@@ -429,7 +429,7 @@ export function LiteratureGraph({ paperId, paperTitle, embedded = false, onClose
   }, [activeWorkId, citationsToken]);
 
   const centerId = graph?.work.id;
-  const ramps = useRamps(centerId);
+  const walkLists = useWalkLists(centerId, graph?.work.display_title);
   const activeFetch = activeWorkId === undefined ? undefined : fetches.get(activeWorkId);
 
   const recordFetch = useCallback((workId: string, status: AcquisitionStatus, fresh: boolean): void => {
@@ -795,14 +795,14 @@ export function LiteratureGraph({ paperId, paperTitle, embedded = false, onClose
     setWalkData((current) => new Map([...current].filter(([parentId]) => kept.has(parentId))));
   }, [graph, positions, walk]);
 
-  // `y`: add the Work to the current ramp, with the Works on the walk that led to it.
-  const addToRamp = useCallback((workId: string): void => {
+  // `y`: add the Work to the current list, with the Works on the walk that led to it.
+  const addToList = useCallback((workId: string): void => {
     if (graph === null) return;
     const baseIds = new Set(placements.filter((placement) => placement.kind === "work").map((placement) => placement.id));
     const path = walkPathTo(walk, graph.work.id, workId, baseIds);
-    void ramps.addWork(workId, path).then((result) => setWalkNotice(result.message));
-  }, [graph, placements, ramps, walk]);
-  const selectRampWork = useCallback((workId: string): void => {
+    void walkLists.addWork(workId, path).then((result) => setWalkNotice(result.message));
+  }, [graph, placements, walkLists, walk]);
+  const selectListWork = useCallback((workId: string): void => {
     if (positions.has(workId)) setSelectedId(workId);
   }, [positions]);
 
@@ -875,7 +875,7 @@ export function LiteratureGraph({ paperId, paperTitle, embedded = false, onClose
     const onQuit = (event: Event): void => {
       if (!workPanelOpen && !rampOpen) return;
       event.preventDefault();
-      // One layer per press: a focused tag or ramp input, the label editor, the panel, then the ramp.
+      // One layer per press: a focused tag or list input, the label editor, the panel, then the list sidebar.
       const focused = document.activeElement;
       if (focused instanceof HTMLInputElement && (focused.classList.contains(TAG_INPUT_CLASS) || focused.classList.contains("literature-ramp-input"))) focused.blur();
       else if (editingId !== null) setEditingId(null);
@@ -904,7 +904,7 @@ export function LiteratureGraph({ paperId, paperTitle, embedded = false, onClose
       if (graphView === "histogram" && HISTOGRAM_NAV_KEYS.has(event.key)) return;
       if (graphView === "histogram" && (event.key === "w" || event.key === "y" || event.key === "R")) {
         event.preventDefault();
-        setWalkNotice("Expansion and reading ramps live in the radial view — press v to switch.");
+        setWalkNotice("Expansion and reading lists live in the radial view — press v to switch.");
         return;
       }
       if (graphView === "histogram" && (event.key === "+" || event.key === "=" || event.key === "-")) {
@@ -921,7 +921,7 @@ export function LiteratureGraph({ paperId, paperTitle, embedded = false, onClose
       if (event.key === "y") {
         if (editingId !== null || activeWork === undefined) return;
         event.preventDefault();
-        addToRamp(activeWork.id);
+        addToList(activeWork.id);
         return;
       }
       if (event.key === "R") {
@@ -992,7 +992,7 @@ export function LiteratureGraph({ paperId, paperTitle, embedded = false, onClose
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [actionableLabel, activateIndex, addToRamp, activeIndex, activeWork, applyMark, centerId, editingId, fetchable, graphView, markFor, phase.kind, allPlacements, reviewLabel, runLiterature, showInPaper, startFetch, tags, toggleGraphView, toggleTagFilter, toggleWalk, workPanelOpen]);
+  }, [actionableLabel, activateIndex, addToList, activeIndex, activeWork, applyMark, centerId, editingId, fetchable, graphView, markFor, phase.kind, allPlacements, reviewLabel, runLiterature, showInPaper, startFetch, tags, toggleGraphView, toggleTagFilter, toggleWalk, workPanelOpen]);
 
   // A Work that left the canvas (hidden, downplayed, filtered) takes its panel with it.
   const panelWorkGone = graphView === "radial" && workPanelOpen && graph !== null && selectedId !== null
@@ -1254,10 +1254,10 @@ export function LiteratureGraph({ paperId, paperTitle, embedded = false, onClose
                 />
               )}
               {rampOpen && (
-                <LiteratureRamp
-                  ramps={ramps}
+                <LiteratureListSidebar
+                  lists={walkLists}
                   selectedWorkId={activeWork?.id ?? null}
-                  onSelectWork={selectRampWork}
+                  onSelectWork={selectListWork}
                   onOpenPaper={onOpenPaper}
                 />
               )}
