@@ -26,6 +26,7 @@ pub mod validate;
 #[cfg(test)]
 pub mod fake;
 #[cfg(test)]
+#[allow(clippy::too_many_lines)] // scenario tests read top to bottom
 mod tests;
 
 /// Strict output schema of the plan pass.

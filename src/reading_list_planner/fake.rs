@@ -25,6 +25,7 @@ pub struct FakePlanner {
     plan_cost: f64,
     fill_cost: f64,
     delay: Duration,
+    panics: bool,
     recorded: Arc<Mutex<Recorded>>,
 }
 
@@ -44,6 +45,7 @@ impl FakePlanner {
             plan_cost: 0.0,
             fill_cost: 0.0,
             delay: Duration::ZERO,
+            panics: false,
             recorded: Arc::default(),
         }
     }
@@ -78,6 +80,13 @@ impl FakePlanner {
     pub const fn with_costs(mut self, plan: f64, fill: f64) -> Self {
         self.plan_cost = plan;
         self.fill_cost = fill;
+        self
+    }
+
+    /// The plan pass panics, as a bug in a real planner would.
+    #[must_use]
+    pub const fn panicking(mut self) -> Self {
+        self.panics = true;
         self
     }
 
@@ -120,6 +129,7 @@ impl ReadingListPlanner for FakePlanner {
         Box::pin(async move {
             self.recorded().plans.push(request.clone());
             tokio::time::sleep(self.delay).await;
+            assert!(!self.panics, "the fake planner was told to panic");
             self.plan.clone().map(|draft| PlannerReply {
                 draft,
                 cost_usd: self.plan_cost,

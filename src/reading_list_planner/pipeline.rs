@@ -1306,6 +1306,28 @@ impl AppState {
         ))
     }
 
+    /// Close the row of a run whose task died, and free its goal.
+    async fn abandon_generation(&self, id: GenerationId, goal_key: &str, why: &str) {
+        self.generation_jobs.release(goal_key).await;
+        let Ok(repository) = self.generation_repository() else {
+            return;
+        };
+        let error = format!("the job stopped: {why}");
+        if let Err(error) = repository
+            .finish(
+                id,
+                GenerationState::Failed,
+                &Report::default().to_json(),
+                0.0,
+                None,
+                Some(&error),
+            )
+            .await
+        {
+            tracing::error!(%error, "could not close an abandoned generation");
+        }
+    }
+
     /// Run a prepared generation to its end and close its row.
     async fn execute_generation(
         &self,
@@ -1393,8 +1415,19 @@ impl AppState {
         let id = prepared.id;
         let state = self.clone();
         tokio::spawn(async move {
-            if let Err(error) = state.execute_generation(prepared, planner).await {
-                tracing::error!(%error, "generation could not be closed");
+            let goal_key = prepared.goal_key.clone();
+            let worker = {
+                let state = state.clone();
+                tokio::spawn(async move { state.execute_generation(prepared, planner).await })
+            };
+            match worker.await {
+                Ok(Ok(_)) => {}
+                Ok(Err(error)) => tracing::error!(%error, "generation could not be closed"),
+                Err(stopped) => {
+                    state
+                        .abandon_generation(id, &goal_key, &stopped.to_string())
+                        .await;
+                }
             }
         });
         Ok(id)
