@@ -10,7 +10,7 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{get, patch, post, put},
 };
-use lysilogy_core::{RampError, RampId, RampItemStatus, WorkId};
+use lysilogy_core::{ListError, ListId, ReadingStatus, WorkId};
 use serde::{Deserialize, Deserializer};
 use serde_json::Value;
 
@@ -60,7 +60,7 @@ fn parse_object<T: serde::de::DeserializeOwned>(body: &Bytes) -> Result<T, Failu
     serde_json::from_value(value).map_err(|error| invalid_body(&error.to_string()))
 }
 
-fn parse_ramp_id(text: &str) -> Result<RampId, Failure> {
+fn parse_ramp_id(text: &str) -> Result<ListId, Failure> {
     text.parse().map_err(|_| {
         failure(
             StatusCode::BAD_REQUEST,
@@ -265,7 +265,7 @@ struct PatchItemBody {
 
 impl PatchItemBody {
     /// The status to set, if given.
-    fn status(&self) -> Result<Option<RampItemStatus>, Failure> {
+    fn status(&self) -> Result<Option<ReadingStatus>, Failure> {
         let Some(value) = &self.status else {
             return Ok(None);
         };
@@ -374,8 +374,8 @@ async fn order_ramp_inner(state: &AppState, ramp: &str, body: &Bytes) -> Result<
     let invalid_order = || {
         failure(
             StatusCode::BAD_REQUEST,
-            RampError::InvalidOrder.code(),
-            &RampError::InvalidOrder.to_string(),
+            ListError::InvalidOrder.code(),
+            &ListError::InvalidOrder.to_string(),
         )
     };
     let manual: Option<Vec<WorkId>> = match (&body.work_ids, &body.strategy) {
@@ -556,7 +556,7 @@ mod tests {
     #[tokio::test]
     async fn should_return_503_when_ramps_requested_without_graph() {
         let state = bare_state().await;
-        let ramp = RampId::new();
+        let ramp = ListId::new();
         let work = WorkId::new();
         let (status, json) = request(&state, "GET", "/api/ramps", None).await;
         assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
@@ -602,7 +602,7 @@ mod tests {
     async fn should_return_400_when_ramp_or_work_ids_are_malformed() {
         let state = bare_state().await;
         let work = WorkId::new();
-        let ramp = RampId::new();
+        let ramp = ListId::new();
         // A Work ID in the ramp slot, a ramp ID in the Work slot, garbage.
         for (method, uri, body, code) in [
             ("GET", format!("/api/ramps/{work}"), None, "invalid_ramp_id"),
@@ -786,7 +786,7 @@ mod tests {
             &json!({"title": ""}),
         )
         .await;
-        assert_eq!(json["error"], "invalid_ramp_title");
+        assert_eq!(json["error"], "invalid_list_title");
 
         let (status, renamed) = call(
             &fixture.state,
@@ -929,7 +929,7 @@ mod tests {
         let (status, json) = fixture.add(&ramp, stranger, Some(stranger)).await;
         assert_eq!(
             (status, json["error"].as_str()),
-            (StatusCode::CONFLICT, Some("via_not_in_ramp"))
+            (StatusCode::CONFLICT, Some("via_not_in_list"))
         );
         let (status, json) = fixture.add(&ramp, stranger, Some(cited)).await;
         assert_eq!(
@@ -969,7 +969,7 @@ mod tests {
             (status, json["error"].as_str()),
             (StatusCode::NOT_FOUND, Some("work_not_found"))
         );
-        let (status, json) = fixture.add(&RampId::new().to_string(), seed, None).await;
+        let (status, json) = fixture.add(&ListId::new().to_string(), seed, None).await;
         assert_eq!(
             (status, json["error"].as_str()),
             (StatusCode::NOT_FOUND, Some("ramp_not_found"))
@@ -977,7 +977,7 @@ mod tests {
         let (status, json) = request(
             &fixture.state,
             "GET",
-            &format!("/api/ramps/{}", RampId::new()),
+            &format!("/api/ramps/{}", ListId::new()),
             None,
         )
         .await;
@@ -988,7 +988,7 @@ mod tests {
         let (status, json) = call(
             &fixture.state,
             "PATCH",
-            &format!("/api/ramps/{}/items/{seed}", RampId::new()),
+            &format!("/api/ramps/{}/items/{seed}", ListId::new()),
             &json!({"status": "read"}),
         )
         .await;

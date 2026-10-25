@@ -3,8 +3,7 @@
 
 use chrono::{DateTime, Utc};
 use lysilogy_core::{
-    RAMP_ITEMS_MAX, RAMP_PATH_MAX, RampError, RampId, RampItemStatus, RampTitle, WorkId,
-    WorkspaceId,
+    LIST_WORKS_MAX, ListError, ListId, ListTitle, RAMP_PATH_MAX, ReadingStatus, WorkId, WorkspaceId,
 };
 use serde::Serialize;
 use sqlx::postgres::PgRow;
@@ -21,7 +20,7 @@ const ITEM_COLUMNS: &str = "i.ramp_id, i.work_id, i.position, i.via_work_id, i.p
 /// A reading ramp.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct Ramp {
-    pub id: RampId,
+    pub id: ListId,
     pub workspace_id: WorkspaceId,
     pub seed_work_id: WorkId,
     pub title: String,
@@ -44,13 +43,13 @@ pub struct RampSummary {
 /// One Work on a ramp.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct RampItem {
-    pub ramp_id: RampId,
+    pub ramp_id: ListId,
     pub work_id: WorkId,
     pub position: i32,
     pub via_work_id: Option<WorkId>,
     /// Seed or root through this Work, inclusive; the last element is `work_id`.
     pub path: Vec<WorkId>,
-    pub status: RampItemStatus,
+    pub status: ReadingStatus,
     pub note: Option<String>,
     pub added_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -69,7 +68,7 @@ pub struct NewRampItem {
 /// A partial change to an item. `note: Some(None)` clears the note.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RampItemPatch {
-    pub status: Option<RampItemStatus>,
+    pub status: Option<ReadingStatus>,
     pub note: Option<Option<String>>,
 }
 
@@ -82,7 +81,7 @@ pub enum RemoveOutcome {
     Seed,
 }
 
-fn conflict(error: RampError) -> DbError {
+fn conflict(error: ListError) -> DbError {
     DbError::Conflict(error.code().to_owned())
 }
 
@@ -103,7 +102,7 @@ impl RampRepository {
         &self,
         workspace: WorkspaceId,
         seed: WorkId,
-        title: &RampTitle,
+        title: &ListTitle,
     ) -> Result<Ramp> {
         let mut transaction = self.pool.begin().await?;
         let row = sqlx::query(
@@ -169,7 +168,7 @@ impl RampRepository {
     }
 
     /// One ramp of the workspace.
-    pub async fn get(&self, workspace: WorkspaceId, ramp: RampId) -> Result<Option<Ramp>> {
+    pub async fn get(&self, workspace: WorkspaceId, ramp: ListId) -> Result<Option<Ramp>> {
         let row = sqlx::query(&format!(
             "select {RAMP_COLUMNS} from reader.ramp r where r.workspace_id = $1 and r.id = $2"
         ))
@@ -181,7 +180,7 @@ impl RampRepository {
     }
 
     /// A ramp's items by position.
-    pub async fn items(&self, ramp: RampId) -> Result<Vec<RampItem>> {
+    pub async fn items(&self, ramp: ListId) -> Result<Vec<RampItem>> {
         let rows = sqlx::query(&format!(
             "select {ITEM_COLUMNS} from reader.ramp_item i where i.ramp_id = $1 \
              order by i.position, i.work_id"
@@ -193,7 +192,7 @@ impl RampRepository {
     }
 
     /// One item of a ramp.
-    pub async fn item(&self, ramp: RampId, work: WorkId) -> Result<Option<RampItem>> {
+    pub async fn item(&self, ramp: ListId, work: WorkId) -> Result<Option<RampItem>> {
         let row = sqlx::query(&format!(
             "select {ITEM_COLUMNS} from reader.ramp_item i where i.ramp_id = $1 and i.work_id = $2"
         ))
@@ -208,8 +207,8 @@ impl RampRepository {
     pub async fn rename(
         &self,
         workspace: WorkspaceId,
-        ramp: RampId,
-        title: &RampTitle,
+        ramp: ListId,
+        title: &ListTitle,
     ) -> Result<Option<Ramp>> {
         let row = sqlx::query(
             "update reader.ramp as r set title = $3, updated_at = now() \
@@ -225,7 +224,7 @@ impl RampRepository {
     }
 
     /// Delete a ramp and, by cascade, its items. Whether a ramp was removed.
-    pub async fn delete(&self, workspace: WorkspaceId, ramp: RampId) -> Result<bool> {
+    pub async fn delete(&self, workspace: WorkspaceId, ramp: ListId) -> Result<bool> {
         let result = sqlx::query("delete from reader.ramp where workspace_id = $1 and id = $2")
             .bind(workspace.as_uuid())
             .bind(ramp.as_uuid())
@@ -237,10 +236,10 @@ impl RampRepository {
     /// Append a Work to the ramp. Under a lock on the ramp row this checks that the Work is
     /// new, that `via` is an item citing it, that the path stays within
     /// [`RAMP_PATH_MAX`], and that the ramp has room, refusing with
-    /// [`DbError::Conflict`] carrying the [`RampError::code`]. A missing ramp is
+    /// [`DbError::Conflict`] carrying the [`ListError::code`]. A missing ramp is
     /// [`DbError::not_found`].
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    pub async fn add_item(&self, ramp: RampId, new: NewRampItem) -> Result<RampItem> {
+    pub async fn add_item(&self, ramp: ListId, new: NewRampItem) -> Result<RampItem> {
         let mut transaction = self.pool.begin().await?;
         let locked: Option<Uuid> =
             sqlx::query_scalar("select id from reader.ramp where id = $1 for update")
@@ -259,7 +258,7 @@ impl RampRepository {
         .fetch_one(&mut *transaction)
         .await?;
         if exists {
-            return Err(conflict(RampError::ItemExists));
+            return Err(conflict(ListError::ItemExists));
         }
 
         let path = match new.via {
@@ -274,7 +273,7 @@ impl RampRepository {
                 .fetch_optional(&mut *transaction)
                 .await?;
                 let Some(mut via_path) = via_path else {
-                    return Err(conflict(RampError::ViaNotInRamp));
+                    return Err(conflict(ListError::ViaNotInList));
                 };
                 let cites: bool = sqlx::query_scalar(
                     "select exists (select 1 from graph.citation_assertion \
@@ -286,10 +285,10 @@ impl RampRepository {
                 .fetch_one(&mut *transaction)
                 .await?;
                 if !cites {
-                    return Err(conflict(RampError::NoCitationEdge));
+                    return Err(conflict(ListError::NoCitationEdge));
                 }
                 if via_path.len() + 1 > RAMP_PATH_MAX {
-                    return Err(conflict(RampError::TooDeep));
+                    return Err(conflict(ListError::TooDeep));
                 }
                 via_path.push(new.work_id.as_uuid());
                 via_path
@@ -303,8 +302,8 @@ impl RampRepository {
         .bind(ramp.as_uuid())
         .fetch_one(&mut *transaction)
         .await?;
-        if count as usize >= RAMP_ITEMS_MAX {
-            return Err(conflict(RampError::Full));
+        if count as usize >= LIST_WORKS_MAX {
+            return Err(conflict(ListError::Full));
         }
 
         let row = sqlx::query(&format!(
@@ -329,7 +328,7 @@ impl RampRepository {
     /// `status_changed_at` moves only when the status really changes.
     pub async fn update_item(
         &self,
-        ramp: RampId,
+        ramp: ListId,
         work: WorkId,
         patch: RampItemPatch,
     ) -> Result<Option<RampItem>> {
@@ -348,7 +347,7 @@ impl RampRepository {
         ))
         .bind(ramp.as_uuid())
         .bind(work.as_uuid())
-        .bind(patch.status.map(RampItemStatus::as_str))
+        .bind(patch.status.map(ReadingStatus::as_str))
         .bind(set_note)
         .bind(note)
         .fetch_optional(&mut *transaction)
@@ -362,7 +361,7 @@ impl RampRepository {
     }
 
     /// Remove an item, leaving a gap in positions. The seed item is refused.
-    pub async fn remove_item(&self, ramp: RampId, work: WorkId) -> Result<RemoveOutcome> {
+    pub async fn remove_item(&self, ramp: ListId, work: WorkId) -> Result<RemoveOutcome> {
         let mut transaction = self.pool.begin().await?;
         let seed: Option<Uuid> =
             sqlx::query_scalar("select seed_work_id from reader.ramp where id = $1 for update")
@@ -393,7 +392,7 @@ impl RampRepository {
     /// validated the permutation; a list that is not exactly the ramp's items is refused
     /// with `Conflict("invalid_order")` and nothing changes.
     #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
-    pub async fn reorder(&self, ramp: RampId, order: &[WorkId]) -> Result<()> {
+    pub async fn reorder(&self, ramp: ListId, order: &[WorkId]) -> Result<()> {
         let ids: Vec<Uuid> = order.iter().map(|work| work.as_uuid()).collect();
         let mut transaction = self.pool.begin().await?;
         let locked: Option<Uuid> =
@@ -423,7 +422,7 @@ impl RampRepository {
             || ids.len() != distinct
             || ids.len() as i64 != total
         {
-            return Err(conflict(RampError::InvalidOrder));
+            return Err(conflict(ListError::InvalidOrder));
         }
         touch_ramp(&mut transaction, ramp).await?;
         transaction.commit().await?;
@@ -431,7 +430,7 @@ impl RampRepository {
     }
 }
 
-async fn touch_ramp(transaction: &mut sqlx::PgConnection, ramp: RampId) -> Result<()> {
+async fn touch_ramp(transaction: &mut sqlx::PgConnection, ramp: ListId) -> Result<()> {
     sqlx::query("update reader.ramp set updated_at = now() where id = $1")
         .bind(ramp.as_uuid())
         .execute(&mut *transaction)
@@ -441,7 +440,7 @@ async fn touch_ramp(transaction: &mut sqlx::PgConnection, ramp: RampId) -> Resul
 
 fn ramp_from_row(row: &PgRow) -> Result<Ramp> {
     Ok(Ramp {
-        id: RampId::from_uuid(row.try_get("id")?),
+        id: ListId::from_uuid(row.try_get("id")?),
         workspace_id: WorkspaceId::from_uuid(row.try_get("workspace_id")?),
         seed_work_id: WorkId::from_uuid(row.try_get("seed_work_id")?),
         title: row.try_get("title")?,
@@ -454,7 +453,7 @@ fn item_from_row(row: &PgRow) -> Result<RampItem> {
     let status: String = row.try_get("status")?;
     let path: Vec<Uuid> = row.try_get("path_work_ids")?;
     Ok(RampItem {
-        ramp_id: RampId::from_uuid(row.try_get("ramp_id")?),
+        ramp_id: ListId::from_uuid(row.try_get("ramp_id")?),
         work_id: WorkId::from_uuid(row.try_get("work_id")?),
         position: row.try_get("position")?,
         via_work_id: row
@@ -498,8 +497,8 @@ mod tests {
         })
     }
 
-    fn title(text: &str) -> RampTitle {
-        RampTitle::parse(text).expect("title")
+    fn title(text: &str) -> ListTitle {
+        ListTitle::parse(text).expect("title")
     }
 
     fn add(work: WorkId, via: Option<WorkId>) -> NewRampItem {
@@ -552,7 +551,7 @@ mod tests {
         assert_eq!(items[0].position, 0);
         assert_eq!(items[0].path, vec![seed]);
         assert_eq!(items[0].via_work_id, None);
-        assert_eq!(items[0].status, RampItemStatus::Unread);
+        assert_eq!(items[0].status, ReadingStatus::Unread);
         assert_eq!(items[0].note, None);
         assert_eq!(items[0].status_changed_at, None);
         let fetched = fixture
@@ -582,7 +581,7 @@ mod tests {
                 older.id,
                 child,
                 RampItemPatch {
-                    status: Some(RampItemStatus::Read),
+                    status: Some(ReadingStatus::Read),
                     note: None,
                 },
             )
@@ -594,7 +593,7 @@ mod tests {
                 older.id,
                 seed,
                 RampItemPatch {
-                    status: Some(RampItemStatus::Reading),
+                    status: Some(ReadingStatus::Reading),
                     note: None,
                 },
             )
@@ -607,7 +606,7 @@ mod tests {
             .list(fixture.workspace, None)
             .await
             .expect("list");
-        let ids: Vec<RampId> = list.iter().map(|summary| summary.ramp.id).collect();
+        let ids: Vec<ListId> = list.iter().map(|summary| summary.ramp.id).collect();
         assert_eq!(ids, vec![older.id, newer.id]);
         assert_eq!(list[0].item_count, 2);
         assert_eq!((list[0].unread, list[0].reading, list[0].read), (0, 1, 1));
@@ -646,7 +645,7 @@ mod tests {
             .list(fixture.workspace, Some(first_seed))
             .await
             .expect("list");
-        let mut ids: Vec<RampId> = filtered.iter().map(|summary| summary.ramp.id).collect();
+        let mut ids: Vec<ListId> = filtered.iter().map(|summary| summary.ramp.id).collect();
         ids.sort();
         let mut expected = vec![first.id, other.id];
         expected.sort();
@@ -725,7 +724,7 @@ mod tests {
 
         let missing_ramp = fixture
             .repo
-            .add_item(RampId::new(), add(direct, None))
+            .add_item(ListId::new(), add(direct, None))
             .await;
         assert!(matches!(missing_ramp, Err(ref error) if error.is_not_found()));
     }
@@ -769,7 +768,7 @@ mod tests {
                     .add_item(ramp.id, add(child, Some(stranger)))
                     .await
             ),
-            "via_not_in_ramp"
+            "via_not_in_list"
         );
     }
 
@@ -908,7 +907,7 @@ mod tests {
         let overflow = test_support::new_work(&fixture.pool).await;
         assert_eq!(
             conflict_code(fixture.repo.add_item(ramp.id, add(overflow, None)).await),
-            "ramp_full"
+            "list_full"
         );
         assert_eq!(fixture.repo.items(ramp.id).await.expect("items").len(), 500);
     }
@@ -943,7 +942,7 @@ mod tests {
 
         let same = fixture
             .repo
-            .update_item(ramp.id, seed, status(RampItemStatus::Unread))
+            .update_item(ramp.id, seed, status(ReadingStatus::Unread))
             .await
             .expect("same")
             .expect("item");
@@ -954,17 +953,17 @@ mod tests {
 
         let changed = fixture
             .repo
-            .update_item(ramp.id, seed, status(RampItemStatus::Reading))
+            .update_item(ramp.id, seed, status(ReadingStatus::Reading))
             .await
             .expect("change")
             .expect("item");
         let stamp = changed.status_changed_at.expect("stamped");
-        assert_eq!(changed.status, RampItemStatus::Reading);
+        assert_eq!(changed.status, ReadingStatus::Reading);
         assert_eq!(changed.note.as_deref(), Some("hello"), "note is kept");
 
         let repeated = fixture
             .repo
-            .update_item(ramp.id, seed, status(RampItemStatus::Reading))
+            .update_item(ramp.id, seed, status(ReadingStatus::Reading))
             .await
             .expect("repeat")
             .expect("item");
@@ -972,16 +971,16 @@ mod tests {
 
         let moved = fixture
             .repo
-            .update_item(ramp.id, seed, status(RampItemStatus::Read))
+            .update_item(ramp.id, seed, status(ReadingStatus::Read))
             .await
             .expect("move")
             .expect("item");
         assert!(moved.status_changed_at.expect("stamped") >= stamp);
-        assert_eq!(moved.status, RampItemStatus::Read);
+        assert_eq!(moved.status, ReadingStatus::Read);
 
         let missing = fixture
             .repo
-            .update_item(ramp.id, child, status(RampItemStatus::Read))
+            .update_item(ramp.id, child, status(ReadingStatus::Read))
             .await
             .expect("missing");
         assert_eq!(missing, None);
@@ -1047,7 +1046,7 @@ mod tests {
         assert_eq!(
             fixture
                 .repo
-                .remove_item(RampId::new(), seed)
+                .remove_item(ListId::new(), seed)
                 .await
                 .expect("no ramp"),
             RemoveOutcome::NotFound
@@ -1186,7 +1185,7 @@ mod tests {
             .map(|item| item.work_id)
             .collect();
         assert_eq!(after, order, "a refused order changes nothing");
-        let missing = fixture.repo.reorder(RampId::new(), &[seed]).await;
+        let missing = fixture.repo.reorder(ListId::new(), &[seed]).await;
         assert!(matches!(missing, Err(ref error) if error.is_not_found()));
     }
 
@@ -1529,7 +1528,7 @@ mod tests {
                 ramp.id,
                 from,
                 RampItemPatch {
-                    status: Some(RampItemStatus::Read),
+                    status: Some(ReadingStatus::Read),
                     note: Some(Some("lost note".into())),
                 },
             )
@@ -1551,7 +1550,7 @@ mod tests {
         assert_eq!(survivor.note.as_deref(), Some("survivor note"));
         assert_eq!(
             survivor.status,
-            RampItemStatus::Unread,
+            ReadingStatus::Unread,
             "the survivor's row wins"
         );
         assert_eq!(survivor.path, vec![seed, into]);

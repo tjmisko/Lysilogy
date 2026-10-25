@@ -24,7 +24,7 @@ use lysilogy::{
 use lysilogy::{
     analysis::LocalCliAnalyzer, field_extraction::SidecarFieldExtractor, labeling::SidecarLabeler,
 };
-use lysilogy_core::{ExpansionState, RampItemStatus, WALK_EXPANSIONS_MAX, WalkBounds, WorkId};
+use lysilogy_core::{ExpansionState, ReadingStatus, WALK_EXPANSIONS_MAX, WalkBounds, WorkId};
 use lysilogy_ingest::acquire::AcquisitionOutcome;
 use lysilogy_ingest::crossref::{PublisherFetch, PublisherOutcome};
 use lysilogy_ingest::field_model::{FieldHarvestSummary, FieldOptions};
@@ -220,7 +220,7 @@ enum RampCommand {
             value_parser = lysilogy::ramps::parse_status,
             required_unless_present_any = ["note", "clear_note"]
         )]
-        status: Option<RampItemStatus>,
+        status: Option<ReadingStatus>,
         #[arg(long, conflicts_with = "clear_note")]
         note: Option<String>,
         #[arg(long)]
@@ -3105,7 +3105,7 @@ mod tests {
         assert!(matches!(
             ramp_command_of(&["set", "p1", "w1", "--status", "reading"]),
             Some(RampCommand::Set {
-                status: Some(RampItemStatus::Reading),
+                status: Some(ReadingStatus::Reading),
                 clear_note: false,
                 ..
             })
@@ -3205,7 +3205,7 @@ mod tests {
                     title: Some("Child".to_owned()),
                 },
             ],
-            status: RampItemStatus::Reading,
+            status: ReadingStatus::Reading,
             note: None,
             added_at: now,
             updated_at: now,

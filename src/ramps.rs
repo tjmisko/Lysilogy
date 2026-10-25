@@ -8,7 +8,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use chrono::{DateTime, Datelike, Utc};
 use lysilogy_core::{
-    RampError, RampId, RampItemStatus, RampOrderItem, RampTitle, Work, WorkId, WorkspaceId,
+    ListError, ListId, ListOrderItem, ListTitle, ReadingStatus, Work, WorkId, WorkspaceId,
     parse_mark_note, suggest_order, title_key,
 };
 use lysilogy_db::DbError;
@@ -34,8 +34,8 @@ pub enum RampServiceError {
     /// The input was refused: a code such as `invalid_order` and a message.
     #[error("{1}")]
     Invalid(&'static str, String),
-    /// The change conflicts with the ramp: `item_exists`, `via_not_in_ramp`,
-    /// `no_citation_edge`, `ramp_too_deep`, `ramp_full`, or `seed_item`.
+    /// The change conflicts with the ramp: `item_exists`, `via_not_in_list`,
+    /// `no_citation_edge`, `ramp_too_deep`, `list_full`, or `seed_item`.
     #[error("{}", conflict_message(.0))]
     Conflict(&'static str),
     /// The graph database is missing or a query failed.
@@ -54,10 +54,10 @@ fn not_found_message(code: &str) -> &'static str {
 fn conflict_message(code: &str) -> &'static str {
     match code {
         "item_exists" => "The Work is already in the ramp.",
-        "via_not_in_ramp" => "The Work it was reached from is not in the ramp.",
+        "via_not_in_list" => "The Work it was reached from is not in the ramp.",
         "no_citation_edge" => "The Work it was reached from does not cite it.",
         "ramp_too_deep" => "The path would be too long.",
-        "ramp_full" => "The ramp is full.",
+        "list_full" => "The ramp is full.",
         "seed_item" => "The seed item cannot be removed.",
         _ => "The change conflicts with the ramp.",
     }
@@ -95,21 +95,21 @@ fn ramp_failure(error: &DbError) -> RampServiceError {
     }
     if let DbError::Conflict(code) = error {
         for conflict in [
-            RampError::ItemExists,
-            RampError::ViaNotInRamp,
-            RampError::NoCitationEdge,
-            RampError::TooDeep,
-            RampError::Full,
-            RampError::SeedItem,
+            ListError::ItemExists,
+            ListError::ViaNotInList,
+            ListError::NoCitationEdge,
+            ListError::TooDeep,
+            ListError::Full,
+            ListError::SeedItem,
         ] {
             if conflict.code() == code {
                 return RampServiceError::Conflict(conflict.code());
             }
         }
-        if code == RampError::InvalidOrder.code() {
+        if code == ListError::InvalidOrder.code() {
             return RampServiceError::Invalid(
-                RampError::InvalidOrder.code(),
-                RampError::InvalidOrder.to_string(),
+                ListError::InvalidOrder.code(),
+                ListError::InvalidOrder.to_string(),
             );
         }
     }
@@ -119,9 +119,9 @@ fn ramp_failure(error: &DbError) -> RampServiceError {
 /// Validate a ramp title.
 ///
 /// # Errors
-/// `Invalid("invalid_ramp_title", …)`.
-pub fn parse_title(text: &str) -> Result<RampTitle, RampServiceError> {
-    RampTitle::parse(text)
+/// `Invalid("invalid_list_title", …)`.
+pub fn parse_title(text: &str) -> Result<ListTitle, RampServiceError> {
+    ListTitle::parse(text)
         .map_err(|error| RampServiceError::Invalid(error.code(), error.to_string()))
 }
 
@@ -138,7 +138,7 @@ pub fn parse_note(text: Option<&str>) -> Result<Option<String>, RampServiceError
 ///
 /// # Errors
 /// `Invalid("invalid_status", …)`.
-pub fn parse_status(text: &str) -> Result<RampItemStatus, RampServiceError> {
+pub fn parse_status(text: &str) -> Result<ReadingStatus, RampServiceError> {
     text.parse().map_err(|_| {
         RampServiceError::Invalid(
             "invalid_status",
@@ -158,7 +158,7 @@ pub struct StatusCounts {
 /// A ramp as listed.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct RampSummaryView {
-    pub id: RampId,
+    pub id: ListId,
     pub title: String,
     pub seed_work_id: WorkId,
     pub seed_title: Option<String>,
@@ -203,7 +203,7 @@ pub struct RampItemView {
     pub depth: usize,
     pub via_work_id: Option<WorkId>,
     pub path: Vec<PathStep>,
-    pub status: RampItemStatus,
+    pub status: ReadingStatus,
     pub note: Option<String>,
     pub added_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -270,7 +270,7 @@ impl AppState {
         &self,
         graph: &GraphState,
         workspace: WorkspaceId,
-        ramp: RampId,
+        ramp: ListId,
     ) -> Result<lysilogy_db::ramp::Ramp, RampServiceError> {
         let _ = self;
         graph
@@ -285,7 +285,7 @@ impl AppState {
         &self,
         graph: &GraphState,
         workspace: WorkspaceId,
-        ramp: RampId,
+        ramp: ListId,
     ) -> Result<RampSummaryView, RampServiceError> {
         let _ = self;
         graph
@@ -353,7 +353,7 @@ impl AppState {
     async fn item_view(
         &self,
         graph: &GraphState,
-        ramp: RampId,
+        ramp: ListId,
         work: WorkId,
     ) -> Result<RampItemView, RampServiceError> {
         let items = graph
@@ -375,13 +375,13 @@ impl AppState {
     pub async fn create_ramp(
         &self,
         seed: WorkId,
-        title: Option<RampTitle>,
+        title: Option<ListTitle>,
     ) -> Result<RampDetail, RampServiceError> {
         let graph = graph_of(self)?;
         let seed = existing_work(graph, seed).await?;
         let workspace = workspace_of(graph).await?;
         let title = title
-            .unwrap_or_else(|| lysilogy_core::default_ramp_title(seed.display_title.as_deref()));
+            .unwrap_or_else(|| lysilogy_core::default_list_title(seed.display_title.as_deref()));
         let ramp = graph
             .ramps
             .create(workspace, seed.id, &title)
@@ -425,7 +425,7 @@ impl AppState {
     ///
     /// # Errors
     /// `NotFound("ramp_not_found")`; `Graph` for database failures.
-    pub async fn ramp_detail(&self, ramp: RampId) -> Result<RampDetail, RampServiceError> {
+    pub async fn ramp_detail(&self, ramp: ListId) -> Result<RampDetail, RampServiceError> {
         let graph = graph_of(self)?;
         let workspace = workspace_of(graph).await?;
         self.require_ramp(graph, workspace, ramp).await?;
@@ -463,8 +463,8 @@ impl AppState {
     /// `NotFound("ramp_not_found")`; `Graph` for database failures.
     pub async fn rename_ramp(
         &self,
-        ramp: RampId,
-        title: &RampTitle,
+        ramp: ListId,
+        title: &ListTitle,
     ) -> Result<RampSummaryView, RampServiceError> {
         let graph = graph_of(self)?;
         let workspace = workspace_of(graph).await?;
@@ -481,7 +481,7 @@ impl AppState {
     ///
     /// # Errors
     /// `NotFound("ramp_not_found")`; `Graph` for database failures.
-    pub async fn delete_ramp(&self, ramp: RampId) -> Result<(), RampServiceError> {
+    pub async fn delete_ramp(&self, ramp: ListId) -> Result<(), RampServiceError> {
         let graph = graph_of(self)?;
         let workspace = workspace_of(graph).await?;
         let deleted = graph
@@ -502,7 +502,7 @@ impl AppState {
     /// is not produced here (notes arrive validated).
     pub async fn add_ramp_item(
         &self,
-        ramp: RampId,
+        ramp: ListId,
         work: WorkId,
         via: Option<WorkId>,
         note: Option<String>,
@@ -542,9 +542,9 @@ impl AppState {
     /// `NotFound("ramp_not_found" | "item_not_found")`; `Graph` for database failures.
     pub async fn update_ramp_item(
         &self,
-        ramp: RampId,
+        ramp: ListId,
         work: WorkId,
-        status: Option<RampItemStatus>,
+        status: Option<ReadingStatus>,
         note: Option<Option<String>>,
     ) -> Result<RampItemView, RampServiceError> {
         let graph = graph_of(self)?;
@@ -570,7 +570,7 @@ impl AppState {
     /// `NotFound("ramp_not_found" | "item_not_found")`; `Conflict("seed_item")`.
     pub async fn remove_ramp_item(
         &self,
-        ramp: RampId,
+        ramp: ListId,
         work: WorkId,
     ) -> Result<(), RampServiceError> {
         let graph = graph_of(self)?;
@@ -589,7 +589,7 @@ impl AppState {
         {
             RemoveOutcome::Removed => Ok(()),
             RemoveOutcome::NotFound => Err(RampServiceError::NotFound("item_not_found")),
-            RemoveOutcome::Seed => Err(RampServiceError::Conflict(RampError::SeedItem.code())),
+            RemoveOutcome::Seed => Err(RampServiceError::Conflict(ListError::SeedItem.code())),
         }
     }
 
@@ -600,7 +600,7 @@ impl AppState {
     /// `NotFound("ramp_not_found")`; `Invalid("invalid_order", …)`.
     pub async fn reorder_ramp(
         &self,
-        ramp: RampId,
+        ramp: ListId,
         work_ids: &[WorkId],
     ) -> Result<RampDetail, RampServiceError> {
         let graph = graph_of(self)?;
@@ -608,8 +608,8 @@ impl AppState {
         self.require_ramp(graph, workspace, ramp).await?;
         let invalid = || {
             RampServiceError::Invalid(
-                RampError::InvalidOrder.code(),
-                RampError::InvalidOrder.to_string(),
+                ListError::InvalidOrder.code(),
+                ListError::InvalidOrder.to_string(),
             )
         };
         let mut resolved = Vec::with_capacity(work_ids.len());
@@ -647,7 +647,7 @@ impl AppState {
     ///
     /// # Errors
     /// `NotFound("ramp_not_found")`; `Graph` for database failures.
-    pub async fn suggest_ramp_order(&self, ramp: RampId) -> Result<RampDetail, RampServiceError> {
+    pub async fn suggest_ramp_order(&self, ramp: ListId) -> Result<RampDetail, RampServiceError> {
         let graph = graph_of(self)?;
         let workspace = workspace_of(graph).await?;
         let found = self.require_ramp(graph, workspace, ramp).await?;
@@ -670,11 +670,11 @@ impl AppState {
             .prominence_for(workspace, &work_ids, Utc::now().year())
             .await
             .map_err(|error| database(&error))?;
-        let order_items: Vec<RampOrderItem> = items
+        let order_items: Vec<ListOrderItem> = items
             .iter()
             .map(|item| {
                 let work = works.get(&item.work_id);
-                RampOrderItem {
+                ListOrderItem {
                     work_id: item.work_id,
                     depth: item.path.len().saturating_sub(1),
                     score: prominence.get(&item.work_id).map_or(0.0, |row| row.score),
@@ -701,11 +701,11 @@ impl AppState {
     /// # Errors
     /// `NotFound("ramp_not_found")` when nothing matches; `Invalid("ambiguous_ramp", …)`
     /// listing up to five matches when several do.
-    pub async fn ramp_reference(&self, text: &str) -> Result<RampId, RampServiceError> {
+    pub async fn ramp_reference(&self, text: &str) -> Result<ListId, RampServiceError> {
         let graph = graph_of(self)?;
         let workspace = workspace_of(graph).await?;
         let text = text.trim();
-        if let Ok(id) = text.parse::<RampId>()
+        if let Ok(id) = text.parse::<ListId>()
             && graph
                 .ramps
                 .get(workspace, id)
@@ -772,7 +772,7 @@ mod tests {
         ScriptedTransport, marker, new_work, plain_state, test_graph,
     };
 
-    async fn titled_ramp(state: &AppState, graph: &GraphState, label: &str, title: &str) -> RampId {
+    async fn titled_ramp(state: &AppState, graph: &GraphState, label: &str, title: &str) -> ListId {
         let seed = new_work(graph, IdentifierScheme::Doi, &format!("10.9999/{label}")).await;
         let title = parse_title(title).expect("title");
         state
@@ -844,7 +844,7 @@ mod tests {
         assert_eq!(blank.code(), "ramp_not_found");
         // A well-formed ID that names no ramp falls through to title matching.
         let unknown = state
-            .ramp_reference(&RampId::new().to_string())
+            .ramp_reference(&ListId::new().to_string())
             .await
             .expect_err("unknown id");
         assert_eq!(unknown.code(), "ramp_not_found");
@@ -894,8 +894,8 @@ mod tests {
         );
         assert_eq!(RampServiceError::Conflict("seed_item").code(), "seed_item");
         assert!(matches!(
-            ramp_failure(&DbError::Conflict("ramp_full".to_owned())),
-            RampServiceError::Conflict("ramp_full")
+            ramp_failure(&DbError::Conflict("list_full".to_owned())),
+            RampServiceError::Conflict("list_full")
         ));
         assert!(matches!(
             ramp_failure(&DbError::not_found()),
@@ -907,7 +907,7 @@ mod tests {
         ));
         assert_eq!(
             parse_title("").expect_err("empty").code(),
-            "invalid_ramp_title"
+            "invalid_list_title"
         );
         assert_eq!(
             parse_status("done").expect_err("status").code(),

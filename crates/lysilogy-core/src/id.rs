@@ -230,9 +230,19 @@ id_type!(
     't'
 );
 id_type!(
-    /// Identifies a reading ramp.
-    RampId,
+    /// Identifies a reading list (formerly a reading ramp, so the prefix stays `p`).
+    ListId,
     'p'
+);
+id_type!(
+    /// Identifies one node (Work, topic or claim) of a reading list.
+    NodeId,
+    'n'
+);
+id_type!(
+    /// Identifies one agent generation run.
+    GenerationId,
+    'g'
 );
 id_type!(
     /// Identifies one field claim (a sourced value for a Work's title, year, etc.).
@@ -315,14 +325,29 @@ mod tests {
     }
 
     #[test]
-    fn should_round_trip_ramp_id_when_formatting_and_parsing() {
-        let id = RampId::new();
+    fn should_round_trip_list_id_when_formatting_and_parsing() {
+        let id = ListId::new();
         let text = id.to_string();
         assert_eq!(text.chars().next(), Some('p'));
-        assert_eq!(text.parse::<RampId>().expect("parse"), id);
+        assert_eq!(text.parse::<ListId>().expect("parse"), id);
         let mut other = text;
         other.replace_range(0..1, "r");
-        assert!(matches!(other.parse::<RampId>(), Err(IdError::Prefix)));
-        assert!(WorkId::new().to_string().parse::<RampId>().is_err());
+        assert!(matches!(other.parse::<ListId>(), Err(IdError::Prefix)));
+        assert!(WorkId::new().to_string().parse::<ListId>().is_err());
+    }
+
+    #[test]
+    fn should_use_distinct_prefixes_when_minting_list_node_and_generation_ids() {
+        let list = ListId::new().to_string();
+        let node = NodeId::new().to_string();
+        let generation = GenerationId::new().to_string();
+        assert_eq!(list.chars().next(), Some('p'));
+        assert_eq!(node.chars().next(), Some('n'));
+        assert_eq!(generation.chars().next(), Some('g'));
+        assert!(node.parse::<ListId>().is_err());
+        assert!(list.parse::<NodeId>().is_err());
+        assert!(generation.parse::<NodeId>().is_err());
+        assert!(node.parse::<GenerationId>().is_err());
+        assert_eq!(node.parse::<NodeId>().expect("parse").to_string(), node);
     }
 }

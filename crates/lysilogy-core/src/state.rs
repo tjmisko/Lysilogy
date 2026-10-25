@@ -368,11 +368,103 @@ string_enum!(
 );
 
 string_enum!(
-    /// How far a reader has got with an item on a reading ramp.
-    RampItemStatus {
+    /// How far a reader has got with a Work (per Work, shared by every list).
+    ReadingStatus {
         Unread => "unread",
         Reading => "reading",
         Read => "read",
+    }
+);
+
+string_enum!(
+    /// How a reading list came to exist.
+    ListOrigin {
+        Manual => "manual",
+        Walk => "walk",
+        Generated => "generated",
+    }
+);
+
+string_enum!(
+    /// What a reading list node is.
+    NodeKind {
+        Work => "work",
+        Topic => "topic",
+        Claim => "claim",
+    }
+);
+
+string_enum!(
+    /// A stored reading list edge type.
+    EdgeKind {
+        Prerequisite => "prerequisite",
+        Covers => "covers",
+        Subtopic => "subtopic",
+    }
+);
+
+string_enum!(
+    /// Where a reading list node came from.
+    NodeSource {
+        User => "user",
+        Walk => "walk",
+        Citation => "citation",
+        Agent => "agent",
+    }
+);
+
+string_enum!(
+    /// Who added a reading list edge.
+    EdgeSource {
+        User => "user",
+        Agent => "agent",
+    }
+);
+
+string_enum!(
+    /// Whether the user has accepted an agent-proposed node or edge.
+    ListReview {
+        Accepted => "accepted",
+        Proposed => "proposed",
+    }
+);
+
+string_enum!(
+    /// Why a claim node is not a Work yet.
+    ClaimState {
+        Unverified => "unverified",
+        Ambiguous => "ambiguous",
+        Contradicted => "contradicted",
+        Pending => "pending",
+    }
+);
+
+string_enum!(
+    /// Which way a Work's citations are followed when expanding.
+    ExpansionDirection {
+        References => "references",
+        CitedBy => "cited_by",
+    }
+);
+
+string_enum!(
+    /// How a generation run ended.
+    GenerationState {
+        Running => "running",
+        Succeeded => "succeeded",
+        Failed => "failed",
+        OverBudget => "over_budget",
+    }
+);
+
+string_enum!(
+    /// How a new list item relates to a Work the reader has already read.
+    ContextRelation {
+        BuildsOn => "builds_on",
+        Extends => "extends",
+        Contrasts => "contrasts",
+        SameMethod => "same_method",
+        SameProblem => "same_problem",
     }
 );
 
@@ -555,11 +647,11 @@ mod tests {
     #[test]
     fn should_round_trip_status_and_expansion_enums_when_parsing_strings() {
         for status in [
-            RampItemStatus::Unread,
-            RampItemStatus::Reading,
-            RampItemStatus::Read,
+            ReadingStatus::Unread,
+            ReadingStatus::Reading,
+            ReadingStatus::Read,
         ] {
-            assert_eq!(status.as_str().parse::<RampItemStatus>().unwrap(), status);
+            assert_eq!(status.as_str().parse::<ReadingStatus>().unwrap(), status);
         }
         for state in [ExpansionState::Expanded, ExpansionState::Unavailable] {
             assert_eq!(state.to_string().parse::<ExpansionState>().unwrap(), state);
@@ -584,7 +676,7 @@ mod tests {
                 reason
             );
         }
-        assert!("Unread".parse::<RampItemStatus>().is_err());
+        assert!("Unread".parse::<ReadingStatus>().is_err());
         assert!("".parse::<ExpansionState>().is_err());
         assert!("cached".parse::<ExpansionMethod>().is_err());
         assert!("none".parse::<ExpansionUnavailableReason>().is_err());
