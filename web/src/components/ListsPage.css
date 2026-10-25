@@ -1,0 +1,43 @@
+/* Reading lists index and the generation strip. Mirrors HomePage.css. */
+
+.lists-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px clamp(18px, 4vw, 64px) 56px;
+}
+
+.lists-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 8px 0 10px; border-bottom: 1px solid var(--line); }
+.lists-head h1 { margin: 0; font: 400 26px/1.2 Georgia, "Times New Roman", serif; letter-spacing: -.01em; }
+.lists-filter { flex: 1 1 220px; margin-left: auto; max-width: 420px; }
+
+.lists-new { display: flex; align-items: center; gap: 10px; margin: 10px 0 0; color: var(--ink-faint); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.lists-input { flex: 1; min-width: 200px; padding: 6px 9px; border: 1px solid var(--signal); border-radius: 5px; background: var(--bg); color: var(--ink); font-size: 12px; }
+.lists-input:focus-visible { outline: 0; }
+
+.lists-rows { display: flex; flex-direction: column; gap: 6px; margin: 12px 0 0; padding: 0; list-style: none; }
+.lists-row { position: relative; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-raised); cursor: default; }
+.lists-row:hover { border-color: var(--line-bright); }
+/* An overlay ring, as on the home grid cards. */
+.lists-row.is-selected::after { position: absolute; inset: 0; border: 3px solid var(--signal); border-radius: inherit; content: ""; pointer-events: none; }
+.lists-row.is-archived { opacity: .6; }
+.lists-row-title { padding: 0; background: transparent; color: var(--ink); font: 400 16px/1.3 Georgia, "Times New Roman", serif; letter-spacing: -.01em; text-align: left; overflow-wrap: anywhere; }
+.lists-row-meta { display: flex; flex-wrap: wrap; gap: 2px 14px; margin: 5px 0 0; color: var(--ink-faint); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.lists-row-origin { color: var(--ink-soft); text-transform: uppercase; letter-spacing: .04em; }
+.lists-row-flag { color: var(--signal); }
+.lists-row-date { margin-left: auto; }
+.lists-row-description { margin: 6px 0 0; color: var(--ink-soft); font-size: 12px; line-height: 1.45; }
+
+.lists-empty { padding: 64px 20px; color: var(--ink-soft); text-align: center; }
+.lists-empty h2 { margin: 0 0 12px; font: 400 26px/1.2 Georgia, "Times New Roman", serif; color: var(--ink); }
+.lists-empty p { font-size: 13px; }
+.lists-empty code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+.lists-keys { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 18px; padding-top: 8px; border-top: 1px solid var(--line); color: var(--ink-faint); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+.generation-strip { position: fixed; z-index: 90; right: 16px; bottom: 16px; display: flex; align-items: baseline; gap: 10px; max-width: min(560px, calc(100vw - 32px)); padding: 8px 12px; border: 1px solid var(--line-bright); border-radius: 5px; background: var(--bg-raised); box-shadow: 0 10px 28px #0006; color: var(--ink-soft); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.generation-strip[data-state="failed"] { border-color: var(--danger); }
+.generation-strip[data-state="succeeded"] .generation-strip-label { color: var(--signal); }
+.generation-strip-goal { min-width: 0; overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; }
+.generation-strip-spend { color: var(--ink-faint); }
+.generation-strip-error { color: var(--danger); }
+.generation-strip button { padding: 2px 8px; border: 1px solid var(--line-bright); border-radius: 5px; background: transparent; color: var(--signal); font-size: 11px; }
