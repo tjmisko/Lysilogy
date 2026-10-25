@@ -18,6 +18,11 @@ import { HomePage } from "./components/HomePage";
 import { LibraryRail } from "./components/LibraryRail";
 import { MarkdownReader } from "./components/MarkdownReader";
 import { PaperSwitcher } from "./components/PaperSwitcher";
+import { HistoryPage } from "./components/HistoryPage";
+import { ListMembership } from "./components/ListMembership";
+import { ListPage } from "./components/ListPage";
+import { ListPicker } from "./components/ListPicker";
+import { GenerationStrip, ListsPage } from "./components/ListsPage";
 import { PdfReader } from "./components/PdfReader";
 import { LiteratureGraph } from "./components/LiteratureGraph";
 import { LITERATURE_QUIT_EVENT } from "./lib/literatureEvents";
@@ -26,9 +31,21 @@ import { QueuePanel } from "./components/QueuePanel";
 import { ReaderToolsPanel } from "./components/ReaderToolsPanel";
 import { SectionAtlas } from "./components/SectionAtlas";
 import { useGlobalKeys } from "./hooks/useGlobalKeys";
+import { useHistoryCapture } from "./hooks/useHistoryCapture";
 import { useTabPhase } from "./hooks/useTabPhase";
 import { api } from "./lib/api";
+import {
+  LISTS_CHANGED_EVENT,
+  OPEN_LIST_MEMBERSHIP_EVENT,
+  OPEN_LIST_PICKER_EVENT,
+  sendListCommand,
+  type PickerTarget,
+} from "./lib/listEvents";
+import { parseAppCommand, parseAppRoute, resolveListTitle, routeHash, sameRoute, type AppCommand, type AppRoute } from "./lib/listRoute";
+import type { ListViewId } from "./lib/listViews";
+import { useGeneration, type GenerationRun } from "./lib/useGeneration";
 import type {
+  ListMembership as PaperListMembership,
   AnalysisProvider,
   Clarification,
   Highlight,
@@ -128,6 +145,18 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [sidebarPaperIds, setSidebarPaperIds] = useState<string[]>([]);
+  const [appRoute, setAppRoute] = useState<AppRoute | null>(() => parseAppRoute(window.location.hash));
+  const appRouteRef = useRef(appRoute);
+  const [pickerTarget, setPickerTarget] = useState<PickerTarget | null>(null);
+  const [membershipTarget, setMembershipTarget] = useState<PickerTarget | null>(null);
+  const [listsVersion, setListsVersion] = useState(0);
+  const [membershipsVersion, setMembershipsVersion] = useState(0);
+  const [memberships, setMemberships] = useState<PaperListMembership[]>([]);
+  // `g l` and `g r` swallow the second key, so the pending `g` must not open the glossary.
+  const suppressGlossUntil = useRef(0);
+  const listOverlay = pickerTarget !== null || membershipTarget !== null;
+  useEffect(() => { appRouteRef.current = appRoute; }, [appRoute]);
+  useHistoryCapture();
   const searchRef = useRef<HTMLInputElement>(null);
   const mainStageRef = useRef<HTMLElement>(null);
   const closeReaderTools = useCallback(() => setToolsTab(null), []);
@@ -236,6 +265,7 @@ export function App() {
   useEffect(() => {
     const onFunctionKey = (event: KeyboardEvent): void => {
       if (event.defaultPrevented) return;
+      if (document.querySelector("[data-list-overlay]") !== null) return;
       if (event.key.length === 1 && document.querySelector('.pdf-reader[data-link-hints="true"]') !== null) return;
       if (event.target instanceof Element && event.target.closest(".notes-panel") !== null) return;
       if (event.key === "F1") {
@@ -348,6 +378,7 @@ export function App() {
       setView("abstract");
       setTextMode("pdf");
       setSelectedId(id);
+      setAppRoute(null);
       setPaperView(null);
       setError(null);
       setLibraryOpen(false);
@@ -366,6 +397,7 @@ export function App() {
     appliedPaperRequest.current = ++paperRequest.current;
     focusRestore.current = null;
     setSelectedId(null);
+    setAppRoute(null);
     setPaperView(null);
     setPaperMap(null);
     setMapLoading(false);
@@ -382,13 +414,148 @@ export function App() {
     setError(null);
   }, [requestNotesClose]);
 
+  const openRoute = useCallback(function navigateToRoute(route: AppRoute, history: "push" | "replace" = "push"): void {
+    if (selectedIdRef.current !== null && requestNotesClose(() => navigateToRoute(route, history))) return;
+    const hash = routeHash(route);
+    if (window.location.hash !== hash) {
+      if (history === "push") window.history.pushState(null, "", hash);
+      else window.history.replaceState(null, "", hash);
+    }
+    if (selectedIdRef.current !== null) openHome(false);
+    setPanel(null);
+    setSwitcherOpen(false);
+    setCommandOpen(false);
+    setQueueOpen(false);
+    setPickerTarget(null);
+    setMembershipTarget(null);
+    setAppRoute((current) => sameRoute(current, route) ? current : route);
+  }, [openHome, requestNotesClose]);
+
+  const openList = useCallback((listId: string, view: ListViewId = 1): void => {
+    openRoute({ kind: "list", listId, view });
+  }, [openRoute]);
+
+  // What the list keys need to know without re-registering their listener on every render.
+  const listKeyContext = useRef({ blocked: false, selectedId: null as string | null, papers: [] as LibraryResponse["papers"], openRoute });
+  useEffect(() => {
+    listKeyContext.current = {
+      blocked: commandOpen || switcherOpen || queueOpen || experimentOpen || toolsTab !== null || panel !== null
+        || sourceQuestion !== null || notesOpen || listOverlay || (libraryOpen && (compactLayout || selectedId === null)),
+      selectedId,
+      papers: library?.papers ?? [],
+      openRoute,
+    };
+  });
+
+  // `g l` and `g r` open the lists and the history; `Y` adds to a list and `M` shows the lists an item is on.
+  // Registered once, before any reader surface mounts, so those surfaces' own `g` handling sees the keys second.
+  useEffect(() => {
+    let pendingG = 0;
+    const resolveTarget = (): PickerTarget | null => {
+      const context = listKeyContext.current;
+      const active = document.activeElement instanceof Element ? document.activeElement : null;
+      const declared = active?.closest<HTMLElement>("[data-list-target-work], [data-list-target-paper]")
+        ?? document.querySelector<HTMLElement>(".list-page[data-list-target-work], .list-page[data-list-target-paper]");
+      if (declared !== null) {
+        const { listTargetWork: workId, listTargetPaper: paperId, listTargetTitle: title } = declared.dataset;
+        return { ...(workId === undefined ? {} : { workId }), ...(paperId === undefined ? {} : { paperId }), ...(title === undefined ? {} : { title }) };
+      }
+      const graphNode = active?.closest<HTMLElement>(".literature-graph [data-node-id]") ?? null;
+      if (graphNode?.dataset.nodeId !== undefined) return { workId: graphNode.dataset.nodeId };
+      if (context.selectedId !== null) {
+        const paper = context.papers.find((entry) => entry.id === context.selectedId);
+        return { paperId: context.selectedId, ...(paper === undefined ? {} : { title: paper.metadata.title }) };
+      }
+      const card = document.querySelector<HTMLElement>(".paper-card.is-active");
+      const cardPaperId = card?.dataset.paperId;
+      if (cardPaperId === undefined) return null;
+      const cardPaper = context.papers.find((entry) => entry.id === cardPaperId);
+      return { paperId: cardPaperId, ...(cardPaper === undefined ? {} : { title: cardPaper.metadata.title }) };
+    };
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (isEditableTarget(event.target) || target?.closest(".notes-panel") != null
+        || document.querySelector("[data-list-overlay]") !== null
+        || document.querySelector('.pdf-reader[data-source-cursor="true"], .pdf-reader[data-source-visual="true"], .pdf-reader[data-source-local-mode="true"], .pdf-reader[data-link-hints="true"]') !== null
+        || listKeyContext.current.blocked) {
+        pendingG = 0;
+        return;
+      }
+      const now = Date.now();
+      const key = event.key;
+      const afterG = pendingG !== 0 && now - pendingG < 600;
+      pendingG = 0;
+      if (afterG && (key === "l" || key === "r")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        suppressGlossUntil.current = now + 900;
+        listKeyContext.current.openRoute({ kind: key === "l" ? "lists" : "history" });
+        return;
+      }
+      if (key === "g") {
+        // Not consumed: gg and the glossary prefix keep working. A bare g followed by l or r is ours.
+        pendingG = afterG ? 0 : now;
+        return;
+      }
+      if (key !== "Y" && key !== "M") return;
+      const picked = resolveTarget();
+      if (picked === null) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (key === "Y") setPickerTarget(picked);
+      else setMembershipTarget(picked);
+    };
+    const onOpenPicker = (event: Event): void => {
+      if (event instanceof CustomEvent) setPickerTarget(event.detail as PickerTarget);
+    };
+    const onOpenMembership = (event: Event): void => {
+      if (event instanceof CustomEvent) setMembershipTarget(event.detail as PickerTarget);
+    };
+    window.addEventListener("keydown", onKey, true);
+    window.addEventListener(OPEN_LIST_PICKER_EVENT, onOpenPicker);
+    window.addEventListener(OPEN_LIST_MEMBERSHIP_EVENT, onOpenMembership);
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener(OPEN_LIST_PICKER_EVENT, onOpenPicker);
+      window.removeEventListener(OPEN_LIST_MEMBERSHIP_EVENT, onOpenMembership);
+    };
+  }, []);
+
+  // The lists a paper is on, for the chips under its title.
+  useEffect(() => {
+    const bump = (): void => setMembershipsVersion((version) => version + 1);
+    window.addEventListener(LISTS_CHANGED_EVENT, bump);
+    return () => window.removeEventListener(LISTS_CHANGED_EVENT, bump);
+  }, []);
+  useEffect(() => {
+    if (selectedId === null) {
+      window.queueMicrotask(() => setMemberships([]));
+      return;
+    }
+    const controller = new AbortController();
+    void api.paperLists(selectedId, controller.signal).then((found) => {
+      if (!controller.signal.aborted) setMemberships(found.memberships);
+    }).catch(() => {
+      if (!controller.signal.aborted) setMemberships([]);
+    });
+    return () => controller.abort();
+  }, [membershipsVersion, selectedId]);
+
   useEffect(() => {
     const readRoute = (): void => {
       const id = initialPaperId();
+      const route = parseAppRoute(window.location.hash);
       // Browsers emit both events for a single back/forward hash traversal.
-      if (id === selectedIdRef.current) return;
+      if (id === selectedIdRef.current) {
+        setAppRoute((current) => sameRoute(current, route) ? current : route);
+        return;
+      }
       const applyRoute = () => {
-        if (id === null) openHome(false);
+        if (id === null) {
+          openHome(false);
+          setAppRoute(route);
+        }
         else if (library !== null && !library.papers.some((paper) => paper.id === id)) {
           openHome(false);
           window.history.replaceState(null, "", "#home");
@@ -590,7 +757,101 @@ export function App() {
     void refreshQueue();
   }, [provider, refreshQueue, refreshingComponent, selectedId]);
 
+  const onGenerationFinished = useCallback((run: GenerationRun): void => {
+    setListsVersion((version) => version + 1);
+    const state = run.status?.state;
+    if (state === "succeeded") setNotice(`Drafted “${run.goal}”. Press g l to see it.`);
+    else if (state === "over_budget") setNotice(`Stopped at the budget. What was verified is on the list: “${run.goal}”.`);
+    else setError(`Drafting “${run.goal}” failed.`);
+  }, []);
+  const generation = useGeneration(onGenerationFinished);
+  const startGeneration = generation.start;
+
+  const runListCommand = useCallback((command: AppCommand): void => {
+    const fail = (reason: unknown, fallback: string): void => setError(reason instanceof Error ? reason.message : fallback);
+    const route = appRouteRef.current;
+    switch (command.kind) {
+      case "error":
+        setError(command.message);
+        return;
+      case "lists":
+        openRoute({ kind: "lists" });
+        return;
+      case "history":
+        openRoute({ kind: "history" });
+        return;
+      case "list":
+        void api.listLists({ archived: true }).then(({ lists }) => {
+          const found = resolveListTitle(lists, command.title);
+          if (found.kind === "found") openList(found.list.id);
+          else if (found.kind === "missing") setError(`No list is titled “${command.title}”.`);
+          else setError(`“${command.title}” matches ${found.matches.length} lists: ${found.matches.slice(0, 4).map((list) => list.title).join("; ")}. Type more of the title.`);
+        }).catch((reason: unknown) => fail(reason, "Could not load the lists."));
+        return;
+      case "list-new":
+        void api.createList({ title: command.title }).then((created) => {
+          setListsVersion((version) => version + 1);
+          setNotice(`Created “${created.list.title}”.`);
+          openList(created.list.id);
+        }).catch((reason: unknown) => fail(reason, "Could not create the list."));
+        return;
+      case "generate": {
+        const into = route?.kind === "list" ? route.listId : undefined;
+        setNotice(into === undefined ? "Drafting a new list. It appears under g l when done." : "Drafting proposals for this list. They wait in Review (7).");
+        startGeneration({ goal: command.goal, ...(into === undefined ? {} : { into_list: into }) })
+          .catch((reason: unknown) => fail(reason, "Could not start the draft."));
+        return;
+      }
+      case "delete-list":
+        void api.listLists({ archived: true }).then(async ({ lists }) => {
+          // Deleting is the one command that asks for the whole title, so a typo cannot delete the wrong list.
+          const exact = lists.filter((list) => list.title === command.title);
+          if (exact.length !== 1 || exact[0] === undefined) {
+            setError(exact.length > 1 ? `More than one list is titled “${command.title}”. Delete it from the CLI by id.` : `No list is titled exactly “${command.title}”. Type the full title after :delete-list.`);
+            return;
+          }
+          await api.deleteList(exact[0].id);
+          setListsVersion((version) => version + 1);
+          setNotice(`Deleted “${exact[0].title}”.`);
+          if (route?.kind === "list" && route.listId === exact[0].id) openRoute({ kind: "lists" });
+        }).catch((reason: unknown) => fail(reason, "Could not delete the list."));
+        return;
+      case "order":
+      case "verify":
+        if (route?.kind !== "list") setError("Open a list first.");
+        else sendListCommand(command);
+        return;
+      case "read-status": {
+        if (route?.kind === "list") {
+          sendListCommand(command);
+          return;
+        }
+        const paperId = selectedIdRef.current;
+        if (paperId === null) {
+          setError("Open a paper, or select an item on a list, first.");
+          return;
+        }
+        void api.paperWork(paperId).then(async (found) => {
+          if (found.work === null) {
+            setError("This paper is not linked to a Work yet, so it has no reading status. Open Sources (L) to link it.");
+            return;
+          }
+          await api.setReadingState(found.work.id, command.status);
+          setNotice(`Marked ${command.status}.`);
+          window.dispatchEvent(new CustomEvent(LISTS_CHANGED_EVENT));
+        }).catch((reason: unknown) => fail(reason, "Could not set the reading status."));
+        return;
+      }
+    }
+  }, [openList, openRoute, startGeneration]);
+
   const executeCommand = useCallback((rawCommand: string): void => {
+    const listCommand = parseAppCommand(rawCommand);
+    if (listCommand !== null) {
+      setCommandOpen(false);
+      runListCommand(listCommand);
+      return;
+    }
     const [name = "", argument, ...extra] = rawCommand.trim().toLocaleLowerCase().split(/\s+/u);
     setCommandOpen(false);
     if (extra.length > 0) {
@@ -681,13 +942,13 @@ export function App() {
       default:
         setError(`Unknown command :${name}`);
     }
-  }, [analyze, openGlossary, openHome, provider, refreshComponent, refreshQueue, selectedId]);
+  }, [analyze, openGlossary, openHome, provider, refreshComponent, refreshQueue, runListCommand, selectedId]);
 
   useTabPhase({
     nativeTab: home,
     // The switcher and the command menu read Tab themselves; everywhere else
     // Tab steps through the reading phases of the current paper.
-    overlayHandlesTab: home || switcherOpen || commandOpen || queueOpen || sourceQuestion !== null || experimentOpen || toolsTab !== null || paperView?.analysis == null || (panel === "digest" && view === "overview"),
+    overlayHandlesTab: home || listOverlay || switcherOpen || commandOpen || queueOpen || sourceQuestion !== null || experimentOpen || toolsTab !== null || paperView?.analysis == null || (panel === "digest" && view === "overview"),
     onCycle: (delta) => {
       setQueueOpen(false);
       if (compactLayout) setLibraryOpen(false);
@@ -697,7 +958,7 @@ export function App() {
 
   useGlobalKeys({
     enabled:
-      !home && panel === null && sourceQuestion === null && view !== "glossary" && view !== "sources" && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null &&
+      !home && !listOverlay && panel === null && sourceQuestion === null && view !== "glossary" && view !== "sources" && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null &&
       !(compactLayout && libraryOpen),
     activeIndex: activeSection,
     itemCount: sections.length,
@@ -708,7 +969,7 @@ export function App() {
       if (selectedSection !== null) openSection(selectedSection, activeSection);
     },
     onDigest: () => selectedSection !== null && openSection(selectedSection, activeSection),
-    onGloss: () => paperView?.analysis != null && openGlossary(),
+    onGloss: () => Date.now() >= suppressGlossUntil.current && paperView?.analysis != null && openGlossary(),
     onHelp: () => setPanel("help"),
     onLiterature: () => { if (selectedId !== null) { setPanel(null); setView("sources"); } },
     onSearch: () => {
@@ -957,6 +1218,7 @@ export function App() {
     setLibraryOpen(false);
     setPdfZoom(1);
   }, [readingPdf, sectionFocused, selectedId]);
+  const listPageKeys = !libraryOpen && !switcherOpen && !commandOpen && !queueOpen && panel === null && !experimentOpen && toolsTab === null && !listOverlay;
   const toolbarVisible = !readingPdf || toolbarPinned || toolbarPeek;
   useLayoutEffect(() => {
     const header = topbarRef.current;
@@ -988,6 +1250,7 @@ export function App() {
   useEffect(() => {
     const onReaderKey = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (document.querySelector("[data-list-overlay]") !== null) return;
       const target = event.target instanceof Element ? event.target : null;
       if (target?.closest(".notes-panel") != null) return;
       if (document.querySelector('.pdf-reader[data-link-hints="true"]') !== null) return;
@@ -1176,10 +1439,21 @@ export function App() {
         </header>
 
         <main className="main-stage" ref={mainStageRef} tabIndex={-1} inert={sectionFocused} aria-hidden={sectionFocused || undefined}>
-          {loading && (
+          {loading && appRoute === null && (
             <div className="center-state"><span className="loader large" /><p>Opening the vault…</p></div>
           )}
-          {!loading && home && <HomePage papers={library?.papers ?? []}
+          {home && appRoute?.kind === "lists" && <ListsPage
+            keyboardEnabled={listPageKeys} onOpenList={(id) => openList(id)} onHome={() => openHome()}
+            reloadToken={listsVersion} onNotice={setNotice} onError={setError} />}
+          {home && appRoute?.kind === "list" && <ListPage
+            key={appRoute.listId} listId={appRoute.listId} view={appRoute.view} keyboardEnabled={listPageKeys}
+            reloadToken={listsVersion}
+            onView={(next) => openRoute({ kind: "list", listId: appRoute.listId, view: next }, "replace")}
+            onBack={() => openRoute({ kind: "lists" })}
+            onOpenPaper={(id) => selectPaper(id)} />}
+          {home && appRoute?.kind === "history" && <HistoryPage
+            keyboardEnabled={listPageKeys} onOpenPaper={(id) => selectPaper(id)} onAddToList={setPickerTarget} />}
+          {!loading && home && appRoute === null && <HomePage papers={library?.papers ?? []}
             darkInk={darkInk} onToggleInk={() => setDarkInk((value) => !value)}
             query={homeQuery} onQuery={setHomeQuery} onSelect={selectPaper} activeId={homeActiveId} onActive={setHomeActiveId}
             keyboardEnabled={!libraryOpen && !switcherOpen && !commandOpen && !queueOpen && panel === null && !experimentOpen && toolsTab === null}
@@ -1188,7 +1462,12 @@ export function App() {
           {!loading && !home && paperView === null && <div className="center-state"><span className="loader large" /><p>Opening paper…</p></div>}
           {!home && currentPaper !== null && paperView !== null && (
             <>
-              {view === "abstract" && <PaperHeading metadata={currentPaper.metadata} />}
+              {view === "abstract" && <PaperHeading
+                metadata={currentPaper.metadata}
+                memberships={memberships}
+                onOpenList={(id) => openList(id)}
+                onMembership={() => setMembershipTarget({ paperId: currentPaper.id, title: currentPaper.metadata.title })}
+              />}
 
               {view === "abstract" && analysis !== null ? (
                 <AbstractView
@@ -1254,12 +1533,12 @@ export function App() {
                       zoom={pdfZoom}
                       darkInk={darkInk}
                       spread={pdfSpread}
-                      keyboardEnabled={panel === null && sourceQuestion === null && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && !(compactLayout && libraryOpen)}
+                      keyboardEnabled={!listOverlay && panel === null && sourceQuestion === null && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && !(compactLayout && libraryOpen)}
                       onZoom={(delta) => setPdfZoom((value) => Math.max(.5, Math.min(2.5, value + delta)))}
                       onPage={setPdfPage}
                       onPageCount={setPdfPages}
                       sourceFocus={sourceFocus !== null && sourceFocus.paperId === selectedId ? sourceFocus : undefined}
-                      onGloss={() => paperView.analysis != null && openGlossary()}
+                      onGloss={() => Date.now() >= suppressGlossUntil.current && paperView.analysis != null && openGlossary()}
                       onToggleInk={() => setDarkInk((value) => !value)}
                       onToggleSpread={() => setPdfSpread((spread) => !spread)}
                       onClarifySelection={clarifySentence}
@@ -1281,7 +1560,7 @@ export function App() {
         <SectionFocus key={`${currentPaper.id}:${selectedSection.id}`} url={api.source(currentPaper.id)} title={currentPaper.metadata.title}
           toolbarVisible={toolbarVisible}
           analysis={analysis} section={selectedSection} index={activeSection} paperMap={paperMap} darkInk={darkInk}
-          keyboardEnabled={!switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && sourceQuestion === null}
+          keyboardEnabled={!listOverlay && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && sourceQuestion === null}
           snapshots={pageSnapshots} onToggleInk={() => setDarkInk((value) => !value)} onSection={openSection} onClose={closeSection}
           onFullPaper={openPage} onClarify={clarifySentence}
           onSaveReference={(text, page) => { setReferenceSeed({ text, page }); setToolsTab("references"); }}
@@ -1309,6 +1588,27 @@ export function App() {
       )}
       {commandOpen && (
         <CommandMenu onClose={() => setCommandOpen(false)} onExecute={executeCommand} />
+      )}
+      {pickerTarget !== null && (
+        <ListPicker
+          target={pickerTarget}
+          onClose={() => setPickerTarget(null)}
+          onDone={(message) => {
+            setPickerTarget(null);
+            setNotice(message);
+          }}
+        />
+      )}
+      {membershipTarget !== null && (
+        <ListMembership
+          target={membershipTarget}
+          onClose={() => setMembershipTarget(null)}
+          onOpenList={(id) => openList(id)}
+          onChanged={() => setMembershipsVersion((version) => version + 1)}
+        />
+      )}
+      {generation.run !== null && (
+        <GenerationStrip run={generation.run} onOpenList={(id) => { generation.dismiss(); openList(id); }} onDismiss={generation.dismiss} />
       )}
       {queueOpen && (
         <QueuePanel

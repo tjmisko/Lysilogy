@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { ARGUMENT_COMMANDS } from "../lib/listRoute";
+
 type CommandMenuProps = {
   onClose: () => void;
   onExecute: (command: string) => void;
@@ -28,6 +30,17 @@ const COMMANDS = [
   ["spread", "Toggle the two-page PDF spread"],
   ["ink", "Toggle dark ink / original colours"],
   ["help", "Open the complete key map"],
+  ["lists", "Open the reading lists"],
+  ["list", "Open a reading list by title: :list <title>"],
+  ["list-new", "Create a reading list: :list-new <title>"],
+  ["generate", "Draft a list for a learning goal: :generate <goal>"],
+  ["history", "Open the reading history"],
+  ["read", "Mark the current paper read"],
+  ["reading", "Mark the current paper reading"],
+  ["unread", "Mark the current paper unread"],
+  ["order", "Write the list order: :order topological | year | foundational-first"],
+  ["verify", "Retry the list's pending claims"],
+  ["delete-list", "Delete a list: :delete-list <its exact title>"],
 ] as const;
 
 export function CommandMenu({ onClose, onExecute }: CommandMenuProps) {
@@ -47,11 +60,21 @@ export function CommandMenu({ onClose, onExecute }: CommandMenuProps) {
     inputRef.current?.focus();
   }, []);
 
+  // A command that needs an argument waits for it instead of running bare.
+  const choose = (value: string): void => {
+    if (ARGUMENT_COMMANDS.includes(value)) setQuery(`${value} `);
+    else onExecute(value);
+  };
+
   const execute = (): void => {
     const typed = query.trim();
+    const first = typed.split(/\s+/u)[0] ?? "";
+    if (ARGUMENT_COMMANDS.includes(first.toLowerCase()) && typed.length > first.length) {
+      onExecute(typed);
+      return;
+    }
     const exact = COMMANDS.find(([command]) => command === typed)?.[0];
-    const value = exact ?? matches[activeIndex]?.[0] ?? typed;
-    onExecute(value);
+    choose(exact ?? matches[activeIndex]?.[0] ?? typed);
   };
 
   return (
@@ -109,7 +132,7 @@ export function CommandMenu({ onClose, onExecute }: CommandMenuProps) {
               aria-selected={index === activeIndex}
               className={index === activeIndex ? "is-active" : ""}
               onMouseEnter={() => setActive(index)}
-              onClick={() => onExecute(command)}
+              onClick={() => choose(command)}
             >
               <strong>:{command}</strong>
               <span>{description}</span>
