@@ -71,7 +71,8 @@ pub enum ClaimResolution {
 const fn is_transport_error(error: &ProviderError) -> bool {
     match error {
         ProviderError::Request(_) => true,
-        ProviderError::Status(status) => *status == 429 || *status >= 500,
+        // 401/403 say nothing about the claim: the provider refused to answer.
+        ProviderError::Status(status) => matches!(*status, 401 | 403 | 429) || *status >= 500,
         _ => false,
     }
 }
@@ -202,11 +203,11 @@ async fn lookup_doi<T: JsonTransport>(
     context: &VerifyContext<'_, T>,
     claim: &Claim,
     doi: &str,
-) -> Result<IdentifierLookup> {
+) -> Result<Option<IdentifierLookup>> {
     let mut transport_failed = false;
     match fetch_work_cached_record(context.records, context.client, &format!("doi:{doi}")).await {
         Ok((_, work)) => {
-            return Ok(resolved_or_not_found(
+            return Ok(resolved_or_ignored(
                 claim,
                 ProviderRecord {
                     provider_id: work.openalex_id,
@@ -221,11 +222,11 @@ async fn lookup_doi<T: JsonTransport>(
         Err(error) => transport_failed |= is_transport_error(&error),
     }
     if !is_crossref_doi(doi) {
-        return Ok(not_found_or_transport(transport_failed));
+        return Ok(Some(not_found_or_transport(transport_failed)));
     }
     match fetch_crossref_cached(context.records, context.client, doi).await {
         Ok(CrossrefOutcome::Fetched(_, work) | CrossrefOutcome::Cached(_, work)) => {
-            Ok(resolved_or_not_found(
+            Ok(resolved_or_ignored(
                 claim,
                 ProviderRecord {
                     provider_id: format!("{DOI_RECORD_PREFIX}{doi}"),
@@ -237,21 +238,22 @@ async fn lookup_doi<T: JsonTransport>(
             ))
         }
         Ok(CrossrefOutcome::NotFound { .. } | CrossrefOutcome::Skipped) => {
-            Ok(not_found_or_transport(transport_failed))
+            Ok(Some(not_found_or_transport(transport_failed)))
         }
         Err(ProviderError::Db(error)) => Err(error.into()),
-        Err(error) => Ok(not_found_or_transport(
+        Err(error) => Ok(Some(not_found_or_transport(
             transport_failed || is_transport_error(&error),
-        )),
+        ))),
     }
 }
 
-/// A record with no title cannot vouch for a claim that has one.
-fn resolved_or_not_found(claim: &Claim, record: ProviderRecord) -> IdentifierLookup {
+/// A record with no title cannot vouch for a claim that has one, nor count against it:
+/// it is ignored, as if the identifier had not been given.
+fn resolved_or_ignored(claim: &Claim, record: ProviderRecord) -> Option<IdentifierLookup> {
     if record.title.trim().is_empty() && !claim.title.trim().is_empty() {
-        return IdentifierLookup::NotFound;
+        return None;
     }
-    IdentifierLookup::Resolved(record)
+    Some(IdentifierLookup::Resolved(record))
 }
 
 const fn not_found_or_transport(transport_failed: bool) -> IdentifierLookup {
@@ -267,10 +269,10 @@ async fn lookup_arxiv<T: JsonTransport>(
     context: &VerifyContext<'_, T>,
     claim: &Claim,
     arxiv: &str,
-) -> Result<IdentifierLookup> {
+) -> Result<Option<IdentifierLookup>> {
     let key = format!("doi:10.48550/arxiv.{arxiv}");
     match fetch_work_cached_record(context.records, context.client, &key).await {
-        Ok((_, work)) => Ok(resolved_or_not_found(
+        Ok((_, work)) => Ok(resolved_or_ignored(
             claim,
             ProviderRecord {
                 provider_id: work.openalex_id,
@@ -281,7 +283,7 @@ async fn lookup_arxiv<T: JsonTransport>(
             },
         )),
         Err(ProviderError::Db(error)) => Err(error.into()),
-        Err(error) => Ok(not_found_or_transport(is_transport_error(&error))),
+        Err(error) => Ok(Some(not_found_or_transport(is_transport_error(&error)))),
     }
 }
 
@@ -335,16 +337,16 @@ async fn identifier_lookups<T: JsonTransport>(
 ) -> Result<Vec<IdentifierLookup>> {
     let mut lookups = Vec::new();
     if let Some(raw) = claim.doi.as_deref().filter(|raw| !raw.trim().is_empty()) {
-        lookups.push(match normalize(IdentifierScheme::Doi, raw) {
+        lookups.extend(match normalize(IdentifierScheme::Doi, raw) {
             Some(doi) => lookup_doi(context, claim, &doi).await?,
             // A DOI that is not shaped like one names nothing.
-            None => IdentifierLookup::NotFound,
+            None => Some(IdentifierLookup::NotFound),
         });
     }
     if let Some(raw) = claim.arxiv.as_deref().filter(|raw| !raw.trim().is_empty()) {
-        lookups.push(match normalize(IdentifierScheme::Arxiv, raw) {
+        lookups.extend(match normalize(IdentifierScheme::Arxiv, raw) {
             Some(arxiv) => lookup_arxiv(context, claim, &arxiv).await?,
-            None => IdentifierLookup::NotFound,
+            None => Some(IdentifierLookup::NotFound),
         });
     }
     Ok(lookups)
@@ -383,35 +385,30 @@ pub async fn verdict_for_claim<T: JsonTransport>(
     Ok(decide_claim(claim, &evidence))
 }
 
-/// A Work already holding one of the identifiers that name this record.
+/// A Work already holding an identifier that names this record.
+///
+/// Only identifiers the record itself carries are keys: the claim's own DOI or arXiv ID may
+/// never have been checked, or may have named a different paper, and must not pick the Work.
+/// The arXiv ID counts only when the record is that ID's `DataCite` DOI.
 async fn existing_work_for_record<T: JsonTransport>(
     context: &VerifyContext<'_, T>,
     claim: &Claim,
-    identifier_dropped: bool,
     record: &ProviderRecord,
 ) -> Result<Option<Work>> {
     let mut keys: Vec<(IdentifierScheme, String)> = Vec::new();
-    if !identifier_dropped {
-        if let Some(doi) = claim
-            .doi
-            .as_deref()
-            .and_then(|raw| normalize(IdentifierScheme::Doi, raw))
-        {
-            keys.push((IdentifierScheme::Doi, doi));
-        }
-        if let Some(arxiv) = claim
-            .arxiv
-            .as_deref()
-            .and_then(|raw| normalize(IdentifierScheme::Arxiv, raw))
-        {
-            keys.push((IdentifierScheme::Arxiv, arxiv));
-        }
-    }
     if let Some(doi) = record
         .doi
         .as_deref()
         .and_then(|raw| normalize(IdentifierScheme::Doi, raw))
     {
+        if let Some(arxiv) = claim
+            .arxiv
+            .as_deref()
+            .and_then(|raw| normalize(IdentifierScheme::Arxiv, raw))
+            && doi == format!("10.48550/arxiv.{arxiv}")
+        {
+            keys.push((IdentifierScheme::Arxiv, arxiv));
+        }
         keys.push((IdentifierScheme::Doi, doi));
     }
     for (scheme, value) in keys {
@@ -423,53 +420,85 @@ async fn existing_work_for_record<T: JsonTransport>(
             continue;
         };
         if !record.provider_id.starts_with(DOI_RECORD_PREFIX) {
-            context
-                .works
-                .add_identifier(
-                    work.id,
-                    IdentifierScheme::Openalex,
-                    &record.provider_id,
-                    None,
-                    IdentifierStatus::Active,
-                )
-                .await?;
+            attach_openalex_id(context, &work, &record.provider_id).await?;
         }
         return Ok(Some(work));
     }
     Ok(None)
 }
 
+/// Give a reused Work the record's `OpenAlex` ID, unless another Work holds it or this Work
+/// already has one; a duplicate is left for the redirect machinery rather than guessed at.
+async fn attach_openalex_id<T: JsonTransport>(
+    context: &VerifyContext<'_, T>,
+    work: &Work,
+    openalex_id: &str,
+) -> Result<()> {
+    if let Some(holder) = context
+        .works
+        .find_by_identifier(IdentifierScheme::Openalex, openalex_id)
+        .await?
+    {
+        if holder.id != work.id {
+            tracing::warn!(
+                work = %work.id, holder = %holder.id, openalex_id,
+                "another Work already holds a verified claim's OpenAlex ID"
+            );
+        }
+        return Ok(());
+    }
+    let has_openalex = context
+        .works
+        .active_identifiers(work.id)
+        .await?
+        .iter()
+        .any(|identifier| identifier.scheme == IdentifierScheme::Openalex);
+    if has_openalex {
+        tracing::warn!(work = %work.id, openalex_id, "reused Work already has a different OpenAlex ID");
+        return Ok(());
+    }
+    context
+        .works
+        .add_identifier(
+            work.id,
+            IdentifierScheme::Openalex,
+            openalex_id,
+            None,
+            IdentifierStatus::Active,
+        )
+        .await?;
+    Ok(())
+}
+
 /// Find or create the Work for a provider record and give it its fields.
 ///
-/// A Work that already holds the record's DOI (or the claim's verified DOI or arXiv ID) is
+/// A Work that already holds the record's DOI (or the arXiv ID it is the DOI of) is
 /// the paper, even when it has no `OpenAlex` ID or a different title yet; it gets the
 /// `OpenAlex` ID instead of a duplicate being created.
 async fn work_for_record<T: JsonTransport>(
     context: &VerifyContext<'_, T>,
     claim: &Claim,
-    identifier_dropped: bool,
     record: &ProviderRecord,
 ) -> Result<(Work, bool)> {
-    let (work, created) = if let Some(existing) =
-        existing_work_for_record(context, claim, identifier_dropped, record).await?
-    {
-        (existing, false)
-    } else if let Some(doi) = record.provider_id.strip_prefix(DOI_RECORD_PREFIX) {
-        context
-            .works
-            .resolve_or_create(IdentifierScheme::Doi, doi, WorkKind::Article, None)
-            .await?
-    } else {
-        context
-            .works
-            .resolve_or_create(
-                IdentifierScheme::Openalex,
-                &record.provider_id,
-                WorkKind::Article,
-                None,
-            )
-            .await?
-    };
+    let (work, created) =
+        if let Some(existing) = existing_work_for_record(context, claim, record).await? {
+            (existing, false)
+        } else if let Some(doi) = record.provider_id.strip_prefix(DOI_RECORD_PREFIX) {
+            context
+                .works
+                .resolve_or_create(IdentifierScheme::Doi, doi, WorkKind::Article, None)
+                .await?
+        } else {
+            context
+                .works
+                .resolve_or_create(
+                    IdentifierScheme::Openalex,
+                    &record.provider_id,
+                    WorkKind::Article,
+                    None,
+                )
+                .await?
+        };
     if let Some(doi) = record.provider_id.strip_prefix(DOI_RECORD_PREFIX) {
         if let Ok(
             CrossrefOutcome::Fetched(source, fields) | CrossrefOutcome::Cached(source, fields),
@@ -518,8 +547,7 @@ pub async fn verify_claim<T: JsonTransport>(
             })
         }
         ClaimOutcome::Verified(record) => {
-            let (work, created) =
-                work_for_record(context, claim, identifier_dropped, &record).await?;
+            let (work, created) = work_for_record(context, claim, &record).await?;
             Ok(ClaimResolution::Work {
                 work,
                 created,
@@ -961,7 +989,8 @@ mod tests {
         assert!(is_transport_error(&ProviderError::Status(429)));
         assert!(!is_transport_error(&ProviderError::Status(404)));
         assert!(!is_transport_error(&ProviderError::Status(400)));
-        assert!(!is_transport_error(&ProviderError::Status(403)));
+        assert!(is_transport_error(&ProviderError::Status(403)));
+        assert!(is_transport_error(&ProviderError::Status(401)));
         assert!(!is_transport_error(&ProviderError::Status(410)));
         assert!(!is_transport_error(&ProviderError::Malformed));
     }
@@ -1249,6 +1278,50 @@ mod tests {
             .await
             .expect("find");
         assert_eq!(found.map(|work| work.id), Some(existing.id));
+    }
+
+    #[tokio::test]
+    async fn should_not_attach_to_the_claims_doi_work_when_its_doi_lookup_fails_and_the_title_verifies()
+     {
+        let Some(rig) = rig().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let marker = unique();
+        let doi = format!("10.5555/other.{marker}");
+        let (other, _) = rig
+            .works
+            .resolve_or_create(IdentifierScheme::Doi, &doi, WorkKind::Article, None)
+            .await
+            .expect("other");
+        let title = format!("Verified by title despite a failed doi lookup {marker}");
+        let id = format!("W7{marker}");
+        let record = summary(&id, &title, 2021, "Ada Lovelace", 4);
+        let mut responses = Responses::new();
+        // The DOI requests are not recorded, so they fail like timeouts.
+        search(&mut responses, &title, Some(2021), vec![record.clone()]);
+        responses.insert(
+            works_batch_url(&[&id.to_ascii_uppercase()]),
+            ok(json!({"results": [record]})),
+        );
+        let client = OpenAlexClient::new(ReplayTransport::new(responses));
+        let asked = Claim {
+            doi: Some(doi),
+            ..claim(&title, 2021, "Ada Lovelace")
+        };
+        let resolution = verify_claim(&context!(rig, client), &asked)
+            .await
+            .expect("verify");
+        let ClaimResolution::Work { work, .. } = resolution else {
+            panic!("expected a Work, got {resolution:?}");
+        };
+        assert_ne!(work.id, other.id);
+        let held = rig
+            .works
+            .find_by_identifier(IdentifierScheme::Openalex, &id)
+            .await
+            .expect("find");
+        assert_eq!(held.map(|held| held.id), Some(work.id));
     }
 
     #[tokio::test]

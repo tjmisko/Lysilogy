@@ -12,8 +12,8 @@
 //! Work; the DOI path is therefore a check of the lookup and the title agreement rule, not
 //! of DOI parsing. arXiv cases are kept only when `OpenAlex` resolves the arXiv DOI to the
 //! accepted Work, so preprint-versus-published splits are not scored (the count left out is
-//! printed). Each case records its source paper in `cases.json`, and the builder prints how
-//! many papers contribute and the largest share. `OpenAlex`'s free-tier search budget caps
+//! printed). A `--rerecord` run records each case's source paper in `cases.json` and prints how
+//! many papers contribute and the largest share; the committed fixtures predate that field. `OpenAlex`'s free-tier search budget caps
 //! the set sizes.
 //!
 //! It refuses to overwrite existing fixtures without `--rerecord`. `OpenAlex`'s free tier
