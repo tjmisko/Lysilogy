@@ -487,9 +487,11 @@ pub async fn fetch_cited_by_counts_cached<T: JsonTransport>(
 /// A Work citing another, as the provider listed it with its raw summary item.
 pub type CitingWork = (OpenAlexSummary, Value);
 
-/// Fetch the Works citing `openalex_id`, most cited first and capped at
-/// [`CITED_BY_MAX`], caching the raw response per Work. A cached list is reused
-/// unless `refresh`. Items without an ID, and repeats, are skipped.
+/// Fetch the Works citing `openalex_id`, most cited first.
+///
+/// The list is capped at [`CITED_BY_MAX`] and the raw response is cached per
+/// Work. A cached list is reused unless `refresh`. Items without an ID, and
+/// repeats, are skipped.
 pub async fn fetch_cited_by_cached<T: JsonTransport>(
     records: &SourceRecordRepository,
     client: &OpenAlexClient<T>,
@@ -525,6 +527,7 @@ pub async fn fetch_cited_by_cached<T: JsonTransport>(
     let citing = results
         .iter()
         .filter_map(|item| Some((parse_summary(item).ok()?, item.clone())))
+        .filter(|(summary, _)| source_key(&summary.openalex_id) != key)
         .filter(|(summary, _)| seen.insert(source_key(&summary.openalex_id)))
         .take(CITED_BY_MAX)
         .collect();

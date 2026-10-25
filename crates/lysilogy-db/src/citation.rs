@@ -76,6 +76,39 @@ impl CitationRepository {
             .ok_or_else(|| DbError::Conflict("citation assertion lost a concurrent insert".into()))
     }
 
+    /// Make the provider assertions into `cited` from `record` exactly the `keep`
+    /// set: withdraw those whose citing Work is not in it, and accept again any
+    /// withdrawn one that is. Returns how many assertions were withdrawn.
+    pub async fn sync_provider_citers(
+        &self,
+        cited: WorkId,
+        record: SourceRecordId,
+        keep: &[WorkId],
+    ) -> Result<u64> {
+        let keep: Vec<Uuid> = keep.iter().map(|work| work.as_uuid()).collect();
+        sqlx::query(
+            "update graph.citation_assertion set status = 'accepted' \
+             where cited_work_id = $1 and source_record_id = $2 \
+               and status = 'withdrawn' and citing_work_id = any($3)",
+        )
+        .bind(cited.as_uuid())
+        .bind(record.as_uuid())
+        .bind(&keep)
+        .execute(&self.pool)
+        .await?;
+        let withdrawn = sqlx::query(
+            "update graph.citation_assertion set status = 'withdrawn' \
+             where cited_work_id = $1 and source_record_id = $2 \
+               and status = 'accepted' and not (citing_work_id = any($3))",
+        )
+        .bind(cited.as_uuid())
+        .bind(record.as_uuid())
+        .bind(&keep)
+        .execute(&self.pool)
+        .await?;
+        Ok(withdrawn.rows_affected())
+    }
+
     /// Record that a local bibliography entry shows `citing → cited`. The
     /// assertion has status `asserted` and is reused when it already exists.
     pub async fn add_entry_assertion(

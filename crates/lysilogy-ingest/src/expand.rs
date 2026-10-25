@@ -212,6 +212,7 @@ pub async fn expand_cited_by_from_provider<T: JsonTransport>(
     let mut edges = 0;
     let mut new_works = 0;
     let mut citing_works = Vec::new();
+    let mut kept = Vec::new();
     for (summary, item) in &citing {
         if source_key(&summary.openalex_id) == own_key {
             continue;
@@ -236,6 +237,7 @@ pub async fn expand_cited_by_from_provider<T: JsonTransport>(
             .add_assertion(citing_work.id, work, Some(record))
             .await?;
         edges += 1;
+        kept.push(citing_work.id);
         // The response already carries a summary; cache it so titling needs no request.
         context
             .records
@@ -248,6 +250,11 @@ pub async fn expand_cited_by_from_provider<T: JsonTransport>(
             .await?;
         citing_works.push(citing_work);
     }
+    // A refresh can drop citers that fell out of the top 50; retract their edges.
+    context
+        .citations
+        .sync_provider_citers(work, record, &kept)
+        .await?;
     let hydrated = hydrate_stub_works(
         context.works,
         context.claims,
@@ -915,6 +922,61 @@ mod tests {
             .expect("refresh");
         assert_eq!(transport.urls().len(), 2, "refresh asks the provider again");
         assert_eq!(repos.citations.incoming(work).await.expect("in").len(), 1);
+    }
+
+    #[tokio::test]
+    async fn should_withdraw_dropped_citers_when_refresh_lists_different_works() {
+        let Some(repos) = Repos::connect().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let marker = marker();
+        let own = format!("W1{marker}");
+        let work = repos.stub(IdentifierScheme::Openalex, &own).await;
+        let (a, b, c) = (
+            format!("W2{marker}"),
+            format!("W3{marker}"),
+            format!("W4{marker}"),
+        );
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let lists = [vec![a.clone(), b.clone()], vec![b.clone(), c.clone()]];
+        let transport = RecordingTransport::new(move |url| {
+            if !url.contains("filter=cites:") {
+                return json!({});
+            }
+            let call = calls.fetch_add(1, Ordering::Relaxed);
+            let items: Vec<Value> = lists[call.min(1)]
+                .iter()
+                .map(|id| citing_item(id))
+                .collect();
+            json!({ "results": items })
+        });
+        expand_cited_by(&repos, &transport, work, false)
+            .await
+            .expect("first");
+        assert_eq!(repos.citations.incoming(work).await.expect("in").len(), 2);
+        expand_cited_by(&repos, &transport, work, true)
+            .await
+            .expect("refresh");
+        let incoming = repos.citations.incoming(work).await.expect("in");
+        assert_eq!(incoming.len(), 2, "the dropped citer is retracted");
+        let ids: Vec<WorkId> = incoming.iter().map(|work| work.id).collect();
+        for (id, expected) in [(&a, false), (&b, true), (&c, true)] {
+            let found = repos
+                .works
+                .find_by_identifier(IdentifierScheme::Openalex, id)
+                .await
+                .expect("find")
+                .expect("citer exists");
+            assert_eq!(ids.contains(&found.id), expected, "{id}");
+        }
+        let third = expand_cited_by(&repos, &transport, work, true)
+            .await
+            .expect("third");
+        assert!(
+            matches!(third, ProviderExpansion::Expanded { references: 2, .. }),
+            "{third:?}"
+        );
     }
 
     #[tokio::test]
