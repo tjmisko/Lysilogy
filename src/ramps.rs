@@ -6,13 +6,13 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
+use self::legacy::{NewRampItem, RampItem, RampItemPatch, RampSummary, RemoveOutcome};
 use chrono::{DateTime, Datelike, Utc};
 use lysilogy_core::{
     ListError, ListId, ListOrderItem, ListTitle, ReadingStatus, Work, WorkId, WorkspaceId,
     parse_mark_note, suggest_order, title_key,
 };
 use lysilogy_db::DbError;
-use lysilogy_db::ramp::{NewRampItem, RampItem, RampItemPatch, RampSummary, RemoveOutcome};
 use serde::Serialize;
 
 use crate::{
@@ -271,7 +271,7 @@ impl AppState {
         graph: &GraphState,
         workspace: WorkspaceId,
         ramp: ListId,
-    ) -> Result<lysilogy_db::ramp::Ramp, RampServiceError> {
+    ) -> Result<legacy::Ramp, RampServiceError> {
         let _ = self;
         graph
             .ramps
@@ -759,6 +759,342 @@ impl AppState {
                     ),
                 ))
             }
+        }
+    }
+}
+
+/// Transitional adapter that serves the Ramp E service from the reading-list tables
+/// (migration 0011 dropped the ramp tables). The list service replaces it, so nothing new
+/// should use it.
+pub mod legacy {
+    use chrono::{DateTime, Utc};
+    use lysilogy_core::{
+        ListError, ListId, ListOrigin, ListTitle, NodeKind, NodeSource, ReadingStatus, WorkId,
+        WorkspaceId,
+    };
+    use lysilogy_db::list::{
+        ArchiveScope, ListNode, ListPatch, ListRepository, NewList, NewNode, NodePatch,
+    };
+    use lysilogy_db::reading_state::ReadingStateRepository;
+    use lysilogy_db::work::WorkRepository;
+    use lysilogy_db::{DbError, PgPool, Result};
+    use serde::Serialize;
+
+    /// A reading ramp: a list of origin `walk` that has a seed.
+    #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+    pub struct Ramp {
+        pub id: ListId,
+        pub workspace_id: WorkspaceId,
+        pub seed_work_id: WorkId,
+        pub title: String,
+        pub created_at: DateTime<Utc>,
+        pub updated_at: DateTime<Utc>,
+    }
+
+    /// A ramp with its seed title and item counts.
+    #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+    pub struct RampSummary {
+        #[serde(flatten)]
+        pub ramp: Ramp,
+        pub seed_title: Option<String>,
+        pub item_count: i64,
+        pub unread: i64,
+        pub reading: i64,
+        pub read: i64,
+    }
+
+    /// One Work on a ramp.
+    #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+    pub struct RampItem {
+        pub ramp_id: ListId,
+        pub work_id: WorkId,
+        pub position: i32,
+        pub via_work_id: Option<WorkId>,
+        pub path: Vec<WorkId>,
+        pub status: ReadingStatus,
+        pub note: Option<String>,
+        pub added_at: DateTime<Utc>,
+        pub updated_at: DateTime<Utc>,
+        pub status_changed_at: Option<DateTime<Utc>>,
+    }
+
+    /// A Work to add to a ramp.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub struct NewRampItem {
+        pub work_id: WorkId,
+        pub via: Option<WorkId>,
+        pub note: Option<String>,
+    }
+
+    /// A partial change to an item. `note: Some(None)` clears the note.
+    #[derive(Clone, Debug, Default, PartialEq, Eq)]
+    pub struct RampItemPatch {
+        pub status: Option<ReadingStatus>,
+        pub note: Option<Option<String>>,
+    }
+
+    /// What removing an item did.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub enum RemoveOutcome {
+        Removed,
+        NotFound,
+        /// The seed item stays until the ramp is deleted.
+        Seed,
+    }
+
+    /// Ramp operations over [`ListRepository`] and [`ReadingStateRepository`].
+    #[derive(Clone)]
+    pub struct RampRepository {
+        works: WorkRepository,
+        lists: ListRepository,
+        states: ReadingStateRepository,
+    }
+
+    impl RampRepository {
+        #[must_use]
+        pub fn new(pool: PgPool) -> Self {
+            Self {
+                lists: ListRepository::new(pool.clone()),
+                states: ReadingStateRepository::new(pool.clone()),
+                works: WorkRepository::new(pool),
+            }
+        }
+
+        async fn workspace_of(&self, ramp: ListId) -> Result<WorkspaceId> {
+            self.lists
+                .workspace_of(ramp)
+                .await?
+                .ok_or_else(DbError::not_found)
+        }
+
+        async fn item_of(&self, node: ListNode, workspace: WorkspaceId) -> Result<RampItem> {
+            let work = node.work_id.ok_or_else(DbError::not_found)?;
+            let state = self
+                .states
+                .for_works(workspace, &[work])
+                .await?
+                .remove(&work);
+            Ok(RampItem {
+                ramp_id: node.list_id,
+                work_id: work,
+                position: node.position,
+                via_work_id: node.via_work_id,
+                path: node.path.unwrap_or_else(|| vec![work]),
+                status: state.map_or(ReadingStatus::Unread, |state| state.status),
+                note: node.note,
+                added_at: node.added_at,
+                updated_at: node.updated_at,
+                status_changed_at: state.map(|state| state.changed_at),
+            })
+        }
+
+        /// Create a ramp and its seed item (position 0).
+        pub async fn create(
+            &self,
+            workspace: WorkspaceId,
+            seed: WorkId,
+            title: &ListTitle,
+        ) -> Result<Ramp> {
+            let list = self
+                .lists
+                .create(
+                    workspace,
+                    NewList {
+                        title: title.clone(),
+                        description: None,
+                        origin: ListOrigin::Walk,
+                        seed_work_id: Some(seed),
+                        goal: None,
+                    },
+                )
+                .await?;
+            let mut node = NewNode::work(seed);
+            node.source = NodeSource::Walk;
+            self.lists.add_node(list.id, node).await?;
+            Ok(Ramp {
+                id: list.id,
+                workspace_id: list.workspace_id,
+                seed_work_id: seed,
+                title: list.title,
+                created_at: list.created_at,
+                updated_at: list.updated_at,
+            })
+        }
+
+        /// The workspace's ramps, most recently updated first, optionally only those seeded
+        /// at one Work.
+        pub async fn list(
+            &self,
+            workspace: WorkspaceId,
+            seed: Option<WorkId>,
+        ) -> Result<Vec<RampSummary>> {
+            let mut summaries = Vec::new();
+            for summary in self.lists.list(workspace, None, ArchiveScope::All).await? {
+                let list = summary.list;
+                let Some(seed_id) = list.seed_work_id else {
+                    continue;
+                };
+                if list.origin != ListOrigin::Walk || seed.is_some_and(|seed| seed != seed_id) {
+                    continue;
+                }
+                let seed_title = self
+                    .works
+                    .get(seed_id)
+                    .await?
+                    .and_then(|work| work.display_title);
+                summaries.push(RampSummary {
+                    ramp: Ramp {
+                        id: list.id,
+                        workspace_id: list.workspace_id,
+                        seed_work_id: seed_id,
+                        title: list.title,
+                        created_at: list.created_at,
+                        updated_at: list.updated_at,
+                    },
+                    seed_title,
+                    item_count: summary.item_count,
+                    unread: summary.unread,
+                    reading: summary.reading,
+                    read: summary.read,
+                });
+            }
+            Ok(summaries)
+        }
+
+        /// One ramp of the workspace.
+        pub async fn get(&self, workspace: WorkspaceId, ramp: ListId) -> Result<Option<Ramp>> {
+            Ok(self.lists.get(workspace, ramp).await?.and_then(|list| {
+                Some(Ramp {
+                    id: list.id,
+                    workspace_id: list.workspace_id,
+                    seed_work_id: list.seed_work_id?,
+                    title: list.title,
+                    created_at: list.created_at,
+                    updated_at: list.updated_at,
+                })
+            }))
+        }
+
+        /// A ramp's items by position.
+        pub async fn items(&self, ramp: ListId) -> Result<Vec<RampItem>> {
+            let workspace = self.workspace_of(ramp).await?;
+            let mut items = Vec::new();
+            for node in self.lists.nodes(ramp).await? {
+                if node.kind == NodeKind::Work {
+                    items.push(self.item_of(node, workspace).await?);
+                }
+            }
+            Ok(items)
+        }
+
+        /// One item of a ramp.
+        pub async fn item(&self, ramp: ListId, work: WorkId) -> Result<Option<RampItem>> {
+            let workspace = self.workspace_of(ramp).await?;
+            match self.lists.node_for_work(ramp, work).await? {
+                Some(node) => self.item_of(node, workspace).await.map(Some),
+                None => Ok(None),
+            }
+        }
+
+        /// Retitle a ramp; `None` when it is not in the workspace.
+        pub async fn rename(
+            &self,
+            workspace: WorkspaceId,
+            ramp: ListId,
+            title: &ListTitle,
+        ) -> Result<Option<Ramp>> {
+            let patch = ListPatch {
+                title: Some(title.clone()),
+                ..ListPatch::default()
+            };
+            self.lists.update(workspace, ramp, patch).await?;
+            self.get(workspace, ramp).await
+        }
+
+        /// Delete a ramp and its items. Whether a ramp was removed.
+        pub async fn delete(&self, workspace: WorkspaceId, ramp: ListId) -> Result<bool> {
+            self.lists.delete(workspace, ramp).await
+        }
+
+        /// Append a Work to the ramp; see [`ListRepository::add_node`].
+        pub async fn add_item(&self, ramp: ListId, new: NewRampItem) -> Result<RampItem> {
+            let workspace = self.workspace_of(ramp).await?;
+            let mut node = NewNode::work(new.work_id);
+            node.content = lysilogy_db::list::NewNodeContent::Work {
+                work_id: new.work_id,
+                via: new.via,
+                topics: Vec::new(),
+            };
+            node.note = new.note;
+            node.source = NodeSource::Walk;
+            let node = self.lists.add_node(ramp, node).await?;
+            self.item_of(node, workspace).await
+        }
+
+        /// Change an item's status and/or note; `None` when the item does not exist.
+        pub async fn update_item(
+            &self,
+            ramp: ListId,
+            work: WorkId,
+            patch: RampItemPatch,
+        ) -> Result<Option<RampItem>> {
+            let workspace = self.workspace_of(ramp).await?;
+            let Some(node) = self.lists.node_for_work(ramp, work).await? else {
+                return Ok(None);
+            };
+            if let Some(status) = patch.status {
+                self.states.set(workspace, work, status).await?;
+            }
+            if patch.note.is_some() {
+                self.lists
+                    .update_node(
+                        ramp,
+                        node.id,
+                        NodePatch {
+                            note: patch.note,
+                            ..NodePatch::default()
+                        },
+                    )
+                    .await?;
+            }
+            match self.lists.node_for_work(ramp, work).await? {
+                Some(node) => self.item_of(node, workspace).await.map(Some),
+                None => Ok(None),
+            }
+        }
+
+        /// Remove an item. The seed item is refused.
+        pub async fn remove_item(&self, ramp: ListId, work: WorkId) -> Result<RemoveOutcome> {
+            let workspace = self.workspace_of(ramp).await;
+            let Ok(workspace) = workspace else {
+                return Ok(RemoveOutcome::NotFound);
+            };
+            let Some(list) = self.lists.get(workspace, ramp).await? else {
+                return Ok(RemoveOutcome::NotFound);
+            };
+            if list.seed_work_id == Some(work) {
+                return Ok(RemoveOutcome::Seed);
+            }
+            let Some(node) = self.lists.node_for_work(ramp, work).await? else {
+                return Ok(RemoveOutcome::NotFound);
+            };
+            Ok(self
+                .lists
+                .remove_node(ramp, node.id)
+                .await?
+                .map_or(RemoveOutcome::NotFound, |_| RemoveOutcome::Removed))
+        }
+
+        /// Rewrite positions following `order`, which must list every item once.
+        pub async fn reorder(&self, ramp: ListId, order: &[WorkId]) -> Result<()> {
+            let mut ids = Vec::with_capacity(order.len());
+            for work in order {
+                let Some(node) = self.lists.node_for_work(ramp, *work).await? else {
+                    return Err(DbError::Conflict(ListError::InvalidOrder.code().to_owned()));
+                };
+                ids.push(node.id);
+            }
+            self.lists.reorder(ramp, &ids).await
         }
     }
 }
