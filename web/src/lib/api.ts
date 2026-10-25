@@ -37,17 +37,59 @@ import type {
   RampOrderRequest,
   RampSummaryView,
   WorkCitations,
+  BarelyReadPaper,
+  ExpansionDirection,
+  GenerateRequest,
+  GenerationStatus,
+  HistoryEventInput,
+  HistoryIngestResult,
+  HistoryQuery,
+  HistoryTimeline,
+  InspectedWork,
+  ListCreate,
+  ListDetail,
+  ListEdgeRef,
+  ListEdgeView,
+  ListNodeAdd,
+  ListNodePatch,
+  ListNodeView,
+  ListOrderRequest,
+  ListPatch,
+  ListRecord,
+  ListSummaryView,
+  ListsQuery,
+  PaperHistorySummary,
+  PaperMemberships,
+  ReadingPosition,
+  ReadingPositionInput,
+  ReadingStatus,
+  RemovedListNode,
+  VerifyReport,
+  WorkHit,
+  WorkMemberships,
+  WorkReadingState,
 } from "../types";
 
 export class ApiError extends Error {
   readonly status: number;
   readonly kind: "http" | "invalid_response";
+  /** The server's machine-readable error code, such as `edge_cycle` or `item_exists`. */
+  readonly code: string | null;
+  /** The node ids of a 409 `edge_cycle`, in cycle order. */
+  readonly cycle: string[] | null;
 
-  constructor(status: number, message: string, kind: "http" | "invalid_response" = "http") {
+  constructor(
+    status: number,
+    message: string,
+    kind: "http" | "invalid_response" = "http",
+    detail: { code?: string | null; cycle?: string[] | null } = {},
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.kind = kind;
+    this.code = detail.code ?? null;
+    this.cycle = detail.cycle ?? null;
   }
 }
 
@@ -69,7 +111,11 @@ async function responsePayload(response: Response): Promise<unknown> {
 function httpError(response: Response, payload: unknown): ApiError {
   const message = typeof payload === "object" && payload !== null && "message" in payload && typeof payload.message === "string"
     ? payload.message : `API request failed (HTTP ${response.status}).`;
-  return new ApiError(response.status, message);
+  const code = typeof payload === "object" && payload !== null && "error" in payload && typeof payload.error === "string"
+    ? payload.error : null;
+  const cycle = typeof payload === "object" && payload !== null && "cycle" in payload && Array.isArray(payload.cycle)
+    ? payload.cycle.filter((id): id is string => typeof id === "string") : null;
+  return new ApiError(response.status, message, "http", { code, cycle });
 }
 
 async function apiError(response: Response): Promise<ApiError> {
@@ -90,6 +136,28 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw httpError(response, payload);
   }
   return payload as T;
+}
+
+/** A request whose success is an empty 204, optionally with a JSON body. */
+async function sendJsonWithoutResponse(path: string, method: "POST" | "PUT" | "PATCH" | "DELETE", body: unknown): Promise<void> {
+  const response = await fetch(path, {
+    method,
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw await apiError(response);
+}
+
+const segment = encodeURIComponent;
+
+/** `?a=1&b=2` from the defined entries, or an empty string. */
+function queryString(entries: Record<string, string | undefined>): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(entries)) {
+    if (value !== undefined) params.set(key, value);
+  }
+  const text = params.toString();
+  return text === "" ? "" : `?${text}`;
 }
 
 async function sendWithoutBody(path: string, method: "PUT" | "DELETE"): Promise<void> {
@@ -186,8 +254,8 @@ export const api = {
       method: "POST",
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     }),
-  expansionStatus: (workId: string, signal?: AbortSignal): Promise<ExpansionStatus> =>
-    request(`/api/works/${encodeURIComponent(workId)}/expansion`, { signal }),
+  expansionStatus: (workId: string, signal?: AbortSignal, direction?: ExpansionDirection): Promise<ExpansionStatus> =>
+    request(`/api/works/${encodeURIComponent(workId)}/expansion${queryString({ direction })}`, { signal }),
   listRamps: (seed?: string, signal?: AbortSignal): Promise<{ ramps: RampSummaryView[] }> =>
     request(seed === undefined ? "/api/ramps" : `/api/ramps?seed=${encodeURIComponent(seed)}`, { signal }),
   createRamp: (seedWorkId: string, title?: string): Promise<RampDetail> =>
@@ -211,6 +279,70 @@ export const api = {
     sendWithoutBody(`/api/ramps/${encodeURIComponent(rampId)}/items/${encodeURIComponent(workId)}`, "DELETE"),
   orderRamp: (rampId: string, order: RampOrderRequest): Promise<RampDetail> =>
     request(`/api/ramps/${encodeURIComponent(rampId)}/order`, { method: "PUT", body: JSON.stringify(order) }),
+  listLists: (query: ListsQuery = {}, signal?: AbortSignal): Promise<{ lists: ListSummaryView[] }> =>
+    request(`/api/lists${queryString({
+      work: query.work,
+      archived: query.archived === undefined ? undefined : String(query.archived),
+    })}`, { signal }),
+  searchLists: (q: string, signal?: AbortSignal): Promise<{ lists: ListRecord[] }> =>
+    request(`/api/lists/search${queryString({ q })}`, { signal }),
+  createList: (list: ListCreate): Promise<ListDetail> =>
+    request("/api/lists", { method: "POST", body: JSON.stringify(list) }),
+  readList: (listId: string, signal?: AbortSignal): Promise<ListDetail> =>
+    request(`/api/lists/${segment(listId)}`, { signal }),
+  patchList: (listId: string, patch: ListPatch): Promise<ListSummaryView> =>
+    request(`/api/lists/${segment(listId)}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteList: (listId: string): Promise<void> => sendWithoutBody(`/api/lists/${segment(listId)}`, "DELETE"),
+  addListNode: (listId: string, node: ListNodeAdd): Promise<ListNodeView> =>
+    request(`/api/lists/${segment(listId)}/nodes`, { method: "POST", body: JSON.stringify(node) }),
+  /** All or nothing; at most 100 nodes. */
+  addListNodes: (listId: string, nodes: ListNodeAdd[]): Promise<{ nodes: ListNodeView[] }> =>
+    request(`/api/lists/${segment(listId)}/nodes:batch`, { method: "POST", body: JSON.stringify({ nodes }) }),
+  patchListNode: (listId: string, nodeId: string, patch: ListNodePatch): Promise<ListNodeView> =>
+    request(`/api/lists/${segment(listId)}/nodes/${segment(nodeId)}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  /** Returns the removed node and its edges so the caller can undo. */
+  removeListNode: (listId: string, nodeId: string): Promise<RemovedListNode> =>
+    request(`/api/lists/${segment(listId)}/nodes/${segment(nodeId)}`, { method: "DELETE" }),
+  /** A 409 `edge_cycle` rejects with an ApiError whose `cycle` names the nodes. */
+  addListEdge: (listId: string, edge: ListEdgeRef): Promise<ListEdgeView> =>
+    request(`/api/lists/${segment(listId)}/edges`, { method: "POST", body: JSON.stringify(edge) }),
+  removeListEdge: (listId: string, edge: ListEdgeRef): Promise<void> =>
+    sendJsonWithoutResponse(`/api/lists/${segment(listId)}/edges`, "DELETE", edge),
+  acceptListEdge: (listId: string, edge: ListEdgeRef): Promise<void> =>
+    sendJsonWithoutResponse(`/api/lists/${segment(listId)}/edges`, "PATCH", { ...edge, review: "accepted" }),
+  orderList: (listId: string, order: ListOrderRequest): Promise<ListDetail> =>
+    request(`/api/lists/${segment(listId)}/order`, { method: "PUT", body: JSON.stringify(order) }),
+  verifyList: (listId: string): Promise<VerifyReport> =>
+    request(`/api/lists/${segment(listId)}/verify`, { method: "POST" }),
+  setReadingState: (workId: string, status: ReadingStatus): Promise<WorkReadingState> =>
+    request(`/api/works/${segment(workId)}/reading-state`, { method: "PUT", body: JSON.stringify({ status }) }),
+  workLists: (workId: string, signal?: AbortSignal): Promise<WorkMemberships> =>
+    request(`/api/works/${segment(workId)}/lists`, { signal }),
+  paperLists: (paperId: string, signal?: AbortSignal): Promise<PaperMemberships> =>
+    request(`/api/papers/${segment(paperId)}/lists`, { signal }),
+  searchWorks: (q: string, provider = false, signal?: AbortSignal): Promise<{ results: WorkHit[] }> =>
+    request(`/api/works/search${queryString({ q, provider: provider ? "true" : undefined })}`, { signal }),
+  generateList: (generation: GenerateRequest): Promise<{ generation_id: string }> =>
+    request("/api/lists/generate", { method: "POST", body: JSON.stringify(generation) }),
+  generation: (generationId: string, signal?: AbortSignal): Promise<GenerationStatus> =>
+    request(`/api/generations/${segment(generationId)}`, { signal }),
+  postHistoryEvents: (events: HistoryEventInput[]): Promise<HistoryIngestResult> =>
+    request("/api/history/events", { method: "POST", body: JSON.stringify({ events }) }),
+  history: (query: HistoryQuery = {}, signal?: AbortSignal): Promise<HistoryTimeline> =>
+    request(`/api/history${queryString({
+      before: query.before,
+      kinds: query.kinds === undefined || query.kinds.length === 0 ? undefined : query.kinds.join(","),
+      q: query.q,
+      limit: query.limit === undefined ? undefined : String(query.limit),
+    })}`, { signal }),
+  historyInspected: (signal?: AbortSignal): Promise<{ works: InspectedWork[] }> =>
+    request("/api/history/inspected", { signal }),
+  historyBarelyRead: (signal?: AbortSignal): Promise<{ papers: BarelyReadPaper[] }> =>
+    request("/api/history/barely-read", { signal }),
+  paperHistory: (paperId: string, signal?: AbortSignal): Promise<PaperHistorySummary> =>
+    request(`/api/history/papers/${segment(paperId)}`, { signal }),
+  putPosition: (paperId: string, position: ReadingPositionInput): Promise<ReadingPosition> =>
+    request(`/api/papers/${segment(paperId)}/position`, { method: "PUT", body: JSON.stringify(position) }),
   graphNeighbors: (
     workId: string,
     direction: GraphNeighbors["direction"] = "references",

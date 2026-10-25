@@ -641,7 +641,11 @@ export type ExpansionStatus = {
   expansion: ExpansionView | null;
 };
 
+export type ExpansionDirection = "references" | "cited_by";
+
 export type ExpandWorkOptions = {
+  /** Defaults to references on the server. */
+  direction?: ExpansionDirection;
   depth?: number;
   fanout?: number;
   refresh?: boolean;
@@ -802,4 +806,322 @@ export type ClaimView = {
     citing_title: string | null;
   } | null;
   created_at: string;
+};
+
+// ---- Reading lists (spec: docs/reading-lists/spec.md) -------------------------------------
+
+export type ReadingStatus = "unread" | "reading" | "read";
+export type ReadingStatusCounts = Record<ReadingStatus, number>;
+export type ListOrigin = "manual" | "walk" | "generated";
+export type ListNodeKind = "work" | "topic" | "claim";
+export type ListEdgeKind = "prerequisite" | "covers" | "subtopic";
+export type ListNodeSource = "user" | "walk" | "citation" | "agent";
+export type ListEdgeSource = "user" | "agent";
+export type ListReview = "accepted" | "proposed";
+export type ClaimState = "unverified" | "ambiguous" | "contradicted" | "pending";
+export type ContextRelation = "builds_on" | "extends" | "contrasts" | "same_method" | "same_problem";
+
+/** A list as the server lists it (the stored list plus counts). */
+export type ListSummaryView = {
+  id: string;
+  workspace_id: string;
+  title: string;
+  description: string | null;
+  origin: ListOrigin;
+  seed_work_id: string | null;
+  goal: string | null;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+  seed_title: string | null;
+  /** Work and claim nodes. */
+  item_count: number;
+  topic_count: number;
+  claim_count: number;
+  proposed_count: number;
+  status_counts: ReadingStatusCounts;
+};
+
+/** A stored list without counts, as list search returns it. */
+export type ListRecord = Omit<
+  ListSummaryView,
+  "seed_title" | "item_count" | "topic_count" | "claim_count" | "proposed_count" | "status_counts"
+>;
+
+/** The fields a claim node carries: what was asserted, as entered. */
+export type ClaimFields = {
+  title: string;
+  authors: string[];
+  year: number | null;
+  venue: string | null;
+  doi: string | null;
+  arxiv: string | null;
+  raw: string | null;
+};
+
+/** A provider record offered for an ambiguous claim. */
+export type ClaimCandidate = {
+  provider_id: string;
+  title: string;
+  year: number | null;
+  authors: string[];
+  doi?: string | null;
+};
+
+/** A link from a node to a Work the reader has read (D16). */
+export type ContextLink = { work_id: string; relation: ContextRelation; note: string };
+
+export type ListPathStep = { work_id: string; title: string | null };
+
+/** One node of a list, flattened with the display fields the server adds. */
+export type ListNodeView = {
+  id: string;
+  list_id: string;
+  kind: ListNodeKind;
+  work_id: string | null;
+  label: string | null;
+  summary: string | null;
+  claim: ClaimFields | null;
+  claim_state: ClaimState | null;
+  candidates: ClaimCandidate[];
+  position: number;
+  note: string | null;
+  rationale: string | null;
+  context_links: ContextLink[];
+  source: ListNodeSource;
+  review: ListReview;
+  via_work_id: string | null;
+  /** The citation walk through this Work, both ends included; null when not walked. */
+  path: string[] | null;
+  generation_id: string | null;
+  added_at: string;
+  updated_at: string;
+  work: Work | null;
+  /** Counting from 1 in position order. */
+  ordinal: number;
+  depth: number;
+  path_steps: ListPathStep[];
+};
+
+export type ListEdgeView = {
+  list_id: string;
+  from: string;
+  to: string;
+  kind: ListEdgeKind;
+  source: ListEdgeSource;
+  review: ListReview;
+  created_at: string;
+};
+
+export type ReadingStateView = { status: ReadingStatus; changed_at: string | null };
+
+export type ListDetail = {
+  list: ListSummaryView;
+  nodes: ListNodeView[];
+  edges: ListEdgeView[];
+  /** Derived (citing, cited) pairs of member Work ids. */
+  citations: [string, string][];
+  /** Keyed by Work id, for every Work node. */
+  reading_states: Record<string, ReadingStateView>;
+  local_papers: LocalPapersByWork;
+  acquisitions: AcquisitionsByWork;
+  expansions: Record<string, ExpansionView>;
+};
+
+export type ListCreate = { title: string; description?: string; seed_work_id?: string };
+export type ListPatch = { title?: string; description?: string | null; archived?: boolean };
+export type ListsQuery = { work?: string; archived?: boolean | "only" };
+
+export type ClaimInput = {
+  title: string;
+  authors?: string[];
+  year?: number | null;
+  venue?: string | null;
+  doi?: string | null;
+  arxiv?: string | null;
+  raw?: string | null;
+};
+
+/** Exactly one of work_id, paper_id, topic, claim. */
+export type ListNodeAdd =
+  | { work_id: string; via_work_id?: string; topic_ids?: string[]; note?: string }
+  | { paper_id: string; topic_ids?: string[]; note?: string }
+  | { topic: { label: string; summary?: string } }
+  | { claim: ClaimInput; note?: string };
+
+export type ListNodePatch = {
+  note?: string | null;
+  label?: string;
+  summary?: string | null;
+  review?: "accepted";
+  resolve_to?: string;
+};
+
+/** What deleting a node removed; enough for the client to undo it. */
+export type RemovedListNode = {
+  node: Omit<ListNodeView, "work" | "ordinal" | "depth" | "path_steps">;
+  edges: ListEdgeView[];
+  was_seed: boolean;
+};
+
+export type ListEdgeRef = { from: string; to: string; kind: ListEdgeKind };
+
+export type ListOrderStrategy = "topological" | "year" | "foundational_first";
+export type ListOrderRequest = { node_ids: string[] } | { strategy: ListOrderStrategy };
+
+export type VerifyReport = {
+  checked: number;
+  resolved: number;
+  still_pending: number;
+  reclassified: number;
+  duplicates: number;
+  replaced: { from: string; to: string }[];
+};
+
+export type WorkReadingState = { work_id: string; status: ReadingStatus; changed_at: string };
+
+export type ListMembership = {
+  list_id: string;
+  title: string;
+  archived: boolean;
+  node_id: string;
+  topics: string[];
+  note: string | null;
+};
+
+export type WorkMemberships = { work_id: string; memberships: ListMembership[] };
+export type PaperMemberships = { paper_id: string; work_id: string | null; memberships: ListMembership[] };
+
+export type WorkHit = {
+  work_id: string | null;
+  paper_id: string | null;
+  title: string;
+  year: number | null;
+  authors: string[];
+  source: "library" | "graph" | "provider";
+  in_graph: boolean;
+  openalex_id: string | null;
+  doi: string | null;
+};
+
+export type GenerationLevel = "intro" | "survey" | "deep";
+export type GenerationState = "running" | "succeeded" | "failed" | "over_budget";
+
+export type GenerateRequest = {
+  goal: string;
+  /** 8 to 60; the server defaults to 20. */
+  size?: number;
+  level?: GenerationLevel;
+  anchors?: string[];
+  into_list?: string;
+  budget_usd?: number;
+};
+
+export type GenerationStatus = {
+  state: GenerationState;
+  /** Counts per pass and verification state; shape is owned by the pipeline. */
+  report: Record<string, unknown> | null;
+  spend_usd: number;
+  list_id: string | null;
+};
+
+// ---- Reading history ----------------------------------------------------------------------
+
+export type HistoryEventKind =
+  | "paper_opened" | "paper_left" | "view_changed" | "section_focused" | "figure_viewed"
+  | "page_reached" | "search_run" | "question_asked" | "link_followed" | "digest_opened"
+  | "graph_opened" | "work_inspected" | "list_opened" | "list_changed" | "list_generated"
+  | "fetch_requested";
+
+/** What a caller records; the queue adds the time, session and sequence number. */
+export type HistoryEventDraft = {
+  kind: HistoryEventKind;
+  paper_id?: string;
+  work_id?: string;
+  list_id?: string;
+  dwell_ms?: number;
+  detail?: Record<string, unknown>;
+};
+
+/** One event as sent to POST /api/history/events. */
+export type HistoryEventInput = HistoryEventDraft & {
+  occurred_at: string;
+  session_id: string;
+  client_seq: number;
+};
+
+export type HistoryIngestResult = { accepted: number; duplicates: number; nudged: string[] };
+
+/** One stored event as the timeline returns it. */
+export type HistoryEventView = {
+  id: number;
+  occurred_at: string;
+  session_id: string;
+  kind: HistoryEventKind;
+  paper_id: string | null;
+  work_id: string | null;
+  list_id: string | null;
+  dwell_ms: number | null;
+  detail: Record<string, unknown>;
+  client_seq: number;
+  work_title: string | null;
+};
+
+export type HistorySession = {
+  session_id: string;
+  started_at: string;
+  ended_at: string;
+  /** Newest first. */
+  events: HistoryEventView[];
+};
+
+export type HistoryTimeline = { sessions: HistorySession[]; next_before: string | null };
+
+export type HistoryQuery = { before?: string; kinds?: HistoryEventKind[]; q?: string; limit?: number };
+
+export type ReadingPosition = {
+  paper_id: string;
+  view: string;
+  page: number | null;
+  offset_utf16: number | null;
+  section_id: string | null;
+  scroll_ratio: number | null;
+  updated_at: string;
+};
+
+export type ReadingPositionInput = {
+  view: string;
+  page?: number | null;
+  offset_utf16?: number | null;
+  section_id?: string | null;
+  scroll_ratio?: number | null;
+};
+
+export type SectionDwell = { section_id: string; visits: number; dwell_ms: number };
+
+export type PaperHistorySummary = {
+  paper_id: string;
+  first_seen: string | null;
+  last_seen: string | null;
+  visits: number;
+  dwell_ms: number;
+  sections: SectionDwell[];
+  barely_read: boolean;
+  position: ReadingPosition | null;
+};
+
+export type InspectedWork = {
+  work_id: string;
+  title: string | null;
+  inspects: number;
+  last_inspected: string;
+};
+
+export type BarelyReadPaper = {
+  paper_id: string;
+  work_id: string | null;
+  first_seen: string;
+  last_seen: string;
+  visits: number;
+  dwell_ms: number;
 };
