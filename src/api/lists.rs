@@ -2059,7 +2059,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_reject_blank_claim_title_with_400() {
+    async fn should_return_400_when_claim_title_is_blank() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -2077,7 +2077,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_add_batch_all_or_nothing() {
+    async fn should_add_nothing_when_any_batch_item_is_refused() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -2531,7 +2531,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_order_by_permutation_and_by_strategy() {
+    async fn should_order_list_when_given_a_permutation_or_a_strategy() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -2707,7 +2707,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_set_reading_state_per_work_for_every_list() {
+    async fn should_show_one_reading_state_in_every_list_when_a_work_is_set() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -2803,7 +2803,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_search_lists_by_title_words() {
+    async fn should_find_lists_when_searching_by_title_words() {
         let Some(fixture) = Fixture::new().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
@@ -3071,5 +3071,278 @@ mod tests {
         {
             assert_eq!(node["ordinal"], index + 1);
         }
+    }
+
+    async fn test_pool() -> sqlx::PgPool {
+        let url = std::env::var("LYSILOGY_TEST_DATABASE_URL").expect("test database url");
+        sqlx::PgPool::connect(&url).await.expect("pool")
+    }
+
+    #[tokio::test]
+    async fn should_report_topics_full_when_list_holds_two_hundred_topics() {
+        let Some(fixture) = Fixture::new().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let list = fixture.create("Many topics").await;
+        sqlx::query(
+            "insert into reader.list_node (list_id, kind, label, position, source) \
+             select $1, 'topic', 'topic ' || g, g, 'user' from generate_series(0, 199) g",
+        )
+        .bind(Fixture::list_id(&list).as_uuid())
+        .execute(&test_pool().await)
+        .await
+        .expect("topics");
+        let (status, json) = call(
+            &fixture.state,
+            "POST",
+            &format!("/api/lists/{list}/nodes"),
+            &json!({"topic": {"label": "One too many"}}),
+        )
+        .await;
+        assert_eq!(status, StatusCode::CONFLICT, "{json}");
+        assert_eq!(json["error"], "topics_full");
+    }
+
+    #[tokio::test]
+    async fn should_report_edges_full_when_list_holds_four_thousand_edges() {
+        let Some(fixture) = Fixture::new().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let list = fixture.create("Many edges").await;
+        let list_id = Fixture::list_id(&list);
+        for index in 0..100 {
+            fixture
+                .graph
+                .lists
+                .add_node(
+                    list_id,
+                    NewNode::claim(
+                        json!({"title": format!("Claim {index}")}),
+                        ClaimState::Unverified,
+                    ),
+                )
+                .await
+                .expect("claim");
+        }
+        sqlx::query(
+            "insert into reader.list_edge (list_id, from_node, to_node, kind, source) \
+             select $1, a.id, b.id, 'prerequisite', 'user' \
+             from reader.list_node a, reader.list_node b \
+             where a.list_id = $1 and b.list_id = $1 and a.id <> b.id limit 4000",
+        )
+        .bind(list_id.as_uuid())
+        .execute(&test_pool().await)
+        .await
+        .expect("edges");
+        let topic = fixture.topic(&list, "Topic").await;
+        let work = fixture.work("edge-limit").await;
+        let node = fixture.node_of(&list, work).await;
+        let (status, json) = call(
+            &fixture.state,
+            "POST",
+            &format!("/api/lists/{list}/edges"),
+            &json!({"from": topic, "to": node, "kind": "covers"}),
+        )
+        .await;
+        assert_eq!(status, StatusCode::CONFLICT, "{json}");
+        assert_eq!(json["error"], "edges_full");
+    }
+
+    #[tokio::test]
+    async fn should_keep_claim_proposed_when_a_proposed_pending_claim_verifies() {
+        let down = Arc::new(AtomicBool::new(false));
+        let needle = marker();
+        let title = format!("Proposed claims stay proposed {needle}");
+        let transport = provider(
+            vec![(needle.clone(), record(&format!("W8{needle}"), &title))],
+            &down,
+        );
+        let Some(fixture) = Fixture::with_transport(transport).await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let list = fixture.create("Proposed verify").await;
+        let list_id = Fixture::list_id(&list);
+        let mut proposed = NewNode::claim(
+            json!({"title": title, "year": 2021, "authors": ["Ada Lovelace"]}),
+            ClaimState::Pending,
+        );
+        proposed.review = ListReview::Proposed;
+        let pending = fixture
+            .graph
+            .lists
+            .add_node(list_id, proposed)
+            .await
+            .expect("claim");
+        let after = fixture.work("after-proposed").await;
+        fixture.node_of(&list, after).await;
+        let (status, json) = request(
+            &fixture.state,
+            "POST",
+            &format!("/api/lists/{list}/verify"),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{json}");
+        assert_eq!(json["resolved"], 1, "{json}");
+        assert_eq!(json["replaced"][0]["from"], pending.id.to_string());
+        let detail = fixture.detail(&list).await;
+        let nodes = detail["nodes"].as_array().expect("nodes");
+        assert_eq!(nodes.len(), 2);
+        assert_eq!(nodes[0]["kind"], "work", "{detail}");
+        assert_eq!(nodes[0]["review"], "proposed", "{detail}");
+        assert_eq!(nodes[0]["id"], json["replaced"][0]["to"]);
+        assert_eq!(nodes[1]["work_id"], after.to_string(), "order is kept");
+    }
+
+    #[tokio::test]
+    async fn should_remove_claim_and_count_duplicate_when_pending_claim_verifies_to_a_member() {
+        let down = Arc::new(AtomicBool::new(false));
+        let needle = marker();
+        let title = format!("Duplicate claims collapse {needle}");
+        let transport = provider(
+            vec![(needle.clone(), record(&format!("W9{needle}"), &title))],
+            &down,
+        );
+        let Some(fixture) = Fixture::with_transport(transport).await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let list = fixture.create("Duplicate verify").await;
+        let list_id = Fixture::list_id(&list);
+        let claim = json!({"title": title, "year": 2021, "authors": ["Ada Lovelace"]});
+        for _ in 0..2 {
+            fixture
+                .graph
+                .lists
+                .add_node(list_id, NewNode::claim(claim.clone(), ClaimState::Pending))
+                .await
+                .expect("claim");
+        }
+        let uri = format!("/api/lists/{list}/verify");
+        let (status, json) = request(&fixture.state, "POST", &uri, None).await;
+        assert_eq!(status, StatusCode::OK, "{json}");
+        assert_eq!(json["checked"], 2);
+        assert_eq!(json["resolved"], 1, "{json}");
+        assert_eq!(json["duplicates"], 1, "{json}");
+        assert_eq!(json["still_pending"], 0, "{json}");
+        assert_eq!(fixture.order(&list).await.len(), 1);
+        let (_, json) = request(&fixture.state, "POST", &uri, None).await;
+        assert_eq!(json["checked"], 0, "nothing is left to retry");
+    }
+
+    #[tokio::test]
+    async fn should_leave_claim_untouched_when_resolve_to_comes_with_a_label() {
+        let Some(fixture) = Fixture::new().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let list = fixture.create("Resolve and label").await;
+        let claim = fixture
+            .graph
+            .lists
+            .add_node(
+                Fixture::list_id(&list),
+                NewNode::claim(json!({"title": "Some claim"}), ClaimState::Unverified),
+            )
+            .await
+            .expect("claim");
+        let work = fixture.work("resolve-label").await;
+        let (status, json) = call(
+            &fixture.state,
+            "PATCH",
+            &format!("/api/lists/{list}/nodes/{}", claim.id),
+            &json!({"resolve_to": work.to_string(), "label": "Nope"}),
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{json}");
+        assert_eq!(json["error"], "invalid_node_kind");
+        let detail = fixture.detail(&list).await;
+        assert_eq!(detail["nodes"][0]["kind"], "claim", "{detail}");
+    }
+
+    #[tokio::test]
+    async fn should_keep_provider_hits_when_local_hits_fill_the_search_limit() {
+        let needle = marker();
+        let down = Arc::new(AtomicBool::new(false));
+        let transport = provider(
+            vec![(
+                needle.clone(),
+                record(&format!("W6{needle}"), &format!("Provider only {needle}")),
+            )],
+            &down,
+        );
+        let Some(fixture) = Fixture::with_transport(transport).await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let (status, json) = request(
+            &fixture.state,
+            "GET",
+            &format!("/api/works/search?q=Provider%20only%20{needle}&provider=true"),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{json}");
+        assert!(
+            json.to_string().contains("\"provider\""),
+            "provider hit present: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn should_link_held_paper_through_the_literature_flow_when_adding_it() {
+        let needle = marker();
+        let title = format!("The Study of Things {needle}");
+        let mut found = record(&format!("W5{needle}"), &title);
+        found["publication_year"] = json!(2013);
+        found["authorships"] = json!([{"author": {"display_name": "Anna Autor"}}]);
+        let work_url = format!("works/W5{needle}");
+        let transport = ScriptedTransport::new(move |url| {
+            if url.contains(work_url.as_str()) {
+                return Ok(found.clone());
+            }
+            if url.contains("title.search:") {
+                return Ok(json!({"results": [found.clone()]}));
+            }
+            if url.contains("filter=openalex:") {
+                return Ok(batch_reply(url));
+            }
+            if url.contains("api.crossref.org/works/") {
+                return Ok(json!({"message": {}}));
+            }
+            Err(ProviderError::Status(404))
+        });
+        let Some(fixture) = Fixture::new().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let library = tempfile::tempdir().expect("library");
+        let data = tempfile::tempdir().expect("data");
+        let file_name = format!("Autor - 2013 - {title}.pdf");
+        std::fs::write(library.path().join(&file_name), b"placeholder").expect("write");
+        let state = AppState::new(library.path(), data.path())
+            .await
+            .expect("state")
+            .with_graph(fixture.graph.clone())
+            .with_literature_client(LiteratureClient::new(transport));
+        std::mem::forget((library, data));
+        let paper = PaperId::from_relative_path(Path::new(&file_name)).to_string();
+        let list = fixture.create("Link first").await;
+        let (status, json) = call(
+            &state,
+            "POST",
+            &format!("/api/lists/{list}/nodes"),
+            &json!({"paper_id": paper}),
+        )
+        .await;
+        assert_eq!(status, StatusCode::CREATED, "{json}");
+        assert_eq!(json["kind"], "work", "{json}");
+        let (status, json) =
+            request(&state, "GET", &format!("/api/papers/{paper}/work"), None).await;
+        assert_eq!(status, StatusCode::OK, "{json}");
+        assert!(json["work"]["id"].is_string(), "the paper is now linked");
     }
 }

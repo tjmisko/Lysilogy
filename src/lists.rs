@@ -415,6 +415,17 @@ pub struct VerifyReport {
     pub still_pending: usize,
     /// Claims whose state changed but which remain claims.
     pub reclassified: usize,
+    /// Claims that verified to a Work already in the list; they are removed.
+    pub duplicates: usize,
+    /// Nodes that were replaced by a new node (new ID), so clients can follow them.
+    pub replaced: Vec<NodeReplacement>,
+}
+
+/// A node that verification replaced by another at the same position.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+pub struct NodeReplacement {
+    pub from: NodeId,
+    pub to: NodeId,
 }
 
 fn graph_of(state: &AppState) -> Result<&GraphState, ListServiceError> {
@@ -957,6 +968,12 @@ impl AppState {
         let graph = graph_of(self)?;
         let workspace = workspace_of(graph).await?;
         Self::require_list(graph, workspace, list).await?;
+        if change.resolve_to.is_some() && (change.label.is_some() || change.summary.is_some()) {
+            return Err(invalid(
+                "invalid_node_kind",
+                "A claim resolves to a Work; label and summary belong to topic nodes.",
+            ));
+        }
         if let Some(work) = change.resolve_to {
             let work = existing_work(graph, work).await?;
             graph
@@ -1320,11 +1337,12 @@ impl AppState {
                 doi: None,
             });
         }
+        // Local hits never crowd out the slots reserved for provider hits.
+        hits.truncate(SEARCH_LIMIT);
         if provider {
             self.provider_hits(graph, query, &mut seen, &mut hits)
                 .await?;
         }
-        hits.truncate(SEARCH_LIMIT + PROVIDER_RESULTS_MAX);
         Ok(hits)
     }
 
@@ -1455,14 +1473,8 @@ impl AppState {
             report.checked += 1;
             match self.resolve_claim_text(graph, &claim).await? {
                 ClaimResolution::Work { work, .. } => {
-                    match graph.lists.resolve_claim(list, node.id, work.id).await {
-                        Ok(_) => report.resolved += 1,
-                        // The Work is already a member: the claim is a duplicate of it.
-                        Err(DbError::Conflict(code)) if code == ListError::ItemExists.code() => {
-                            report.still_pending += 1;
-                        }
-                        Err(error) => return Err(list_failure(&error)),
-                    }
+                    self.settle_verified_claim(graph, list, &node, work.id, &mut report)
+                        .await?;
                 }
                 ClaimResolution::Unresolved {
                     state: ClaimState::Pending,
@@ -1473,8 +1485,10 @@ impl AppState {
                 ClaimResolution::Unresolved {
                     state, candidates, ..
                 } => {
-                    self.reclassify_claim(graph, list, &node, state, &candidates)
-                        .await?;
+                    let mut replacement = claim_node(claim_json_of(&node)?, state, &candidates);
+                    replacement.note.clone_from(&node.note);
+                    let moved = Self::replace_node(graph, list, &node, replacement).await?;
+                    report.replaced.push(moved);
                     report.reclassified += 1;
                 }
             }
@@ -1482,35 +1496,55 @@ impl AppState {
         Ok(report)
     }
 
-    /// Replace a claim node by one in `state`, keeping its place in the order.
-    async fn reclassify_claim(
+    /// A pending claim verified to `work`: resolve it, keeping it proposed when it was
+    /// proposed (D11), or drop it when the Work is already a member.
+    async fn settle_verified_claim(
         &self,
         graph: &GraphState,
         list: ListId,
         node: &ListNode,
-        state: ClaimState,
-        candidates: &[ProviderRecord],
+        work: WorkId,
+        report: &mut VerifyReport,
     ) -> Result<(), ListServiceError> {
-        // The order is read before the node is replaced and used after, across awaits.
-        #[allow(clippy::needless_collect)]
-        let before: Vec<NodeId> = graph
+        let members = graph
             .lists
             .nodes(list)
             .await
-            .map_err(|error| list_failure(&error))?
-            .into_iter()
-            .map(|existing| existing.id)
-            .collect();
-        let Some(claim) = node.claim.clone() else {
+            .map_err(|error| list_failure(&error))?;
+        if members.iter().any(|member| member.work_id == Some(work)) {
+            graph
+                .lists
+                .remove_node(list, node.id)
+                .await
+                .map_err(|error| list_failure(&error))?;
+            report.duplicates += 1;
             return Ok(());
-        };
+        }
+        if node.review == ListReview::Proposed {
+            let replacement = work_node(work, None, Vec::new(), node.note.clone());
+            let moved = Self::replace_node(graph, list, node, replacement).await?;
+            report.replaced.push(moved);
+            report.resolved += 1;
+            return Ok(());
+        }
         graph
             .lists
-            .remove_node(list, node.id)
+            .resolve_claim(list, node.id, work)
             .await
             .map_err(|error| list_failure(&error))?;
-        let mut replacement = claim_node(claim, state, candidates);
-        replacement.note.clone_from(&node.note);
+        report.resolved += 1;
+        Ok(())
+    }
+
+    /// Replace `node` by `replacement` at the same position, carrying over its provenance
+    /// and review state. The replacement is added before the old node goes, so a refusal
+    /// leaves the list unchanged.
+    async fn replace_node(
+        graph: &GraphState,
+        list: ListId,
+        node: &ListNode,
+        mut replacement: NewNode,
+    ) -> Result<NodeReplacement, ListServiceError> {
         replacement.rationale.clone_from(&node.rationale);
         replacement.context_links.clone_from(&node.context_links);
         replacement.source = node.source;
@@ -1521,15 +1555,30 @@ impl AppState {
             .add_node(list, replacement)
             .await
             .map_err(|error| list_failure(&error))?;
-        let order: Vec<NodeId> = before
+        let order: Vec<NodeId> = graph
+            .lists
+            .nodes(list)
+            .await
+            .map_err(|error| list_failure(&error))?
             .into_iter()
+            .map(|existing| existing.id)
+            .filter(|id| *id != added.id)
             .map(|id| if id == node.id { added.id } else { id })
             .collect();
         graph
             .lists
+            .remove_node(list, node.id)
+            .await
+            .map_err(|error| list_failure(&error))?;
+        graph
+            .lists
             .reorder(list, &order)
             .await
-            .map_err(|error| list_failure(&error))
+            .map_err(|error| list_failure(&error))?;
+        Ok(NodeReplacement {
+            from: node.id,
+            to: added.id,
+        })
     }
 
     /// A list from a `p...` ID or a unique case-insensitive title prefix.
@@ -1658,6 +1707,13 @@ fn claim_node(claim: Value, state: ClaimState, candidates: &[ProviderRecord]) ->
         candidates: serde_json::to_value(candidates).unwrap_or(Value::Array(Vec::new())),
     };
     node
+}
+
+/// The stored claim JSON of a claim node.
+fn claim_json_of(node: &ListNode) -> Result<Value, ListServiceError> {
+    node.claim
+        .clone()
+        .ok_or(ListServiceError::NotFound("node_not_found"))
 }
 
 fn claim_json(claim: &Claim) -> Value {

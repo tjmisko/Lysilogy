@@ -233,10 +233,10 @@ enum ListCommand {
         #[arg(long)]
         claim: Option<String>,
         /// The member this Work was reached from, which must cite it.
-        #[arg(long)]
+        #[arg(long, conflicts_with_all = ["paper", "claim", "topic"])]
         via: Option<String>,
         /// File the Work under the topic with this label.
-        #[arg(long)]
+        #[arg(long, conflicts_with_all = ["claim", "topic"])]
         topic_of: Option<String>,
         #[arg(long)]
         note: Option<String>,
@@ -467,10 +467,10 @@ enum Command {
         #[arg(long)]
         paper: bool,
         /// How many levels to walk (1 is just this Work).
-        #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u8).range(1..=3))]
+        #[arg(long, default_value_t = 1, conflicts_with = "cited_by", value_parser = clap::value_parser!(u8).range(1..=3))]
         depth: u8,
         /// How many children per Work to expand at each further level.
-        #[arg(long, default_value_t = 5, value_parser = clap::value_parser!(u8).range(1..=10))]
+        #[arg(long, default_value_t = 5, conflicts_with = "cited_by", value_parser = clap::value_parser!(u8).range(1..=10))]
         fanout: u8,
         /// Rerun the flow even when the references are already known.
         #[arg(long)]
@@ -1898,8 +1898,12 @@ async fn list_command(
             let list = state.list_reference(&list).await?;
             let report = state.verify_list(list).await?;
             println!(
-                "Checked {} pending claims: {} resolved, {} reclassified, {} still pending",
-                report.checked, report.resolved, report.reclassified, report.still_pending
+                "Checked {} pending claims: {} resolved, {} reclassified, {} duplicates removed, {} still pending",
+                report.checked,
+                report.resolved,
+                report.reclassified,
+                report.duplicates,
+                report.still_pending
             );
         }
         ListCommand::Delete { list } => {
@@ -3357,6 +3361,45 @@ mod tests {
     #[test]
     fn should_drop_the_ramp_command_when_lists_replace_it() {
         assert!(Cli::try_parse_from(["lysilogy", "ramp", "list"]).is_err());
+    }
+
+    #[test]
+    fn should_reject_conflicting_flags_when_parsing_list_add_and_expand() {
+        for args in [
+            vec![
+                "lysilogy", "list", "add", "p1", "--claim", "T", "--via", "w2",
+            ],
+            vec![
+                "lysilogy", "list", "add", "p1", "--topic", "T", "--via", "w2",
+            ],
+            vec![
+                "lysilogy", "list", "add", "p1", "--paper", "T", "--via", "w2",
+            ],
+            vec![
+                "lysilogy",
+                "list",
+                "add",
+                "p1",
+                "--claim",
+                "T",
+                "--topic-of",
+                "X",
+            ],
+            vec![
+                "lysilogy",
+                "list",
+                "add",
+                "p1",
+                "--topic",
+                "T",
+                "--topic-of",
+                "X",
+            ],
+            vec!["lysilogy", "expand", "w1", "--cited-by", "--depth", "2"],
+            vec!["lysilogy", "expand", "w1", "--cited-by", "--fanout", "2"],
+        ] {
+            assert!(Cli::try_parse_from(&args).is_err(), "{args:?}");
+        }
     }
 
     #[test]
