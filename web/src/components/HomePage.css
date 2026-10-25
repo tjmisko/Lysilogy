@@ -82,14 +82,15 @@
   padding: 0;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--paper-accent) 19%, var(--line));
-  border-radius: 2px;
+  border-radius: 8px;
   background: var(--bg-raised);
   text-align: left;
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .paper-card:hover { border-color: var(--paper-accent); box-shadow: 0 6px 20px #0004; }
-.paper-card.is-active { border-color: var(--signal); box-shadow: inset 0 0 0 1px var(--signal); }
+/* An overlay ring, because an inset shadow would paint beneath the preview image. */
+.paper-card.is-active::after { position: absolute; inset: 0; border: 3px solid var(--signal); border-radius: inherit; content: ""; pointer-events: none; }
 /* Beats the global [tabindex]:focus-visible ring, which ties on specificity; the active border is the only selection mark. */
 .paper-grid .paper-card:focus-visible { outline: 0; }
 .paper-preview { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 8.5 / 11; overflow: hidden; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--paper-accent) 8%, var(--panel)); }
