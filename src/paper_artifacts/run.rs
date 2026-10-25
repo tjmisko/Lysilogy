@@ -18,14 +18,14 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::{
-    checkpoint::{self, CallInputs, Checkpoint},
-    ABSTRACT_SCHEMA, ANALYSIS_SCHEMA, CARD_SCHEMA, CHECK_SCHEMA, CITATIONS_SCHEMA,
-    GLOSSARY_SCHEMA, IDENTITY_SCHEMA, OBJECTS_SCHEMA, QUESTION_SCHEMA, REFERENCES_SCHEMA,
-    RELATIONS_SCHEMA, REPAIR_SCHEMA, SECTIONS_SCHEMA, SUPERCUT_SCHEMA, TYPE_SCHEMA,
+    ABSTRACT_SCHEMA, ANALYSIS_SCHEMA, CARD_SCHEMA, CHECK_SCHEMA, CITATIONS_SCHEMA, GLOSSARY_SCHEMA,
+    IDENTITY_SCHEMA, OBJECTS_SCHEMA, QUESTION_SCHEMA, REFERENCES_SCHEMA, RELATIONS_SCHEMA,
+    REPAIR_SCHEMA, SECTIONS_SCHEMA, SUPERCUT_SCHEMA, TYPE_SCHEMA,
     admission::{
         CheckCounts, LOCAL_REPAIR_SIMILARITY, QuoteSite, SiteKind, SourceText, Verdict,
         apply_removals, check, quote_sites,
     },
+    checkpoint::{self, CallInputs, Checkpoint},
     config::{
         Call, Effort, Input, InputFormat, Models, Repair as RepairMode, RunConfig,
         SelfCheck as SelfCheckMode, Verify, scope_pages,
@@ -414,9 +414,7 @@ impl<'a> Session<'a> {
                 analyzer,
                 provider,
                 directory,
-            } => {
-                Box::pin(analyzer.plan_completion(*provider, directory, request)).await
-            }
+            } => Box::pin(analyzer.plan_completion(*provider, directory, request)).await,
         }
     }
 
@@ -677,10 +675,7 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
     let mut draft = core.clone();
     let self_check_enabled = plan.verify.self_check == SelfCheckMode::Full;
     let repair_model = plan.verify.repair == RepairMode::Model;
-    let hide_objects = plan
-        .calls
-        .iter()
-        .any(|call| !object_kinds(call).is_empty());
+    let hide_objects = plan.calls.iter().any(|call| !object_kinds(call).is_empty());
     let schema = plan_schema(&plan);
     let check_pass = match draft.as_mut() {
         Some(current) if self_check_enabled => {
@@ -2228,10 +2223,7 @@ printf '%s' '{answer}' > "$output"
     }
 
     #[cfg(unix)]
-    fn checkpointed_session<'a>(
-        cli: &'a LocalCliAnalyzer,
-        directory: &Path,
-    ) -> Session<'a> {
+    fn checkpointed_session<'a>(cli: &'a LocalCliAnalyzer, directory: &Path) -> Session<'a> {
         Session::new(
             Backend::Plan {
                 analyzer: cli,
@@ -2290,8 +2282,8 @@ printf '%s' '{answer}' > "$output"
         let directory = tempfile::tempdir().expect("temporary directory");
         let (script, log) = counting_stub(directory.path(), r#"{"supercut":[]}"#);
         let cli = LocalCliAnalyzer::with_commands(&script, &script);
-        let plan = RunConfig::parse(r#"{"calls":[{"name":"cut","fields":["supercut"]}]}"#)
-            .expect("plan");
+        let plan =
+            RunConfig::parse(r#"{"calls":[{"name":"cut","fields":["supercut"]}]}"#).expect("plan");
 
         let session = checkpointed_session(&cli, directory.path());
         run_plan(&session, &resources(), &plan, 6).await;
@@ -2310,8 +2302,8 @@ printf '%s' '{answer}' > "$output"
         let directory = tempfile::tempdir().expect("temporary directory");
         let (script, log) = counting_stub(directory.path(), "not json");
         let cli = LocalCliAnalyzer::with_commands(&script, &script);
-        let plan = RunConfig::parse(r#"{"calls":[{"name":"cut","fields":["supercut"]}]}"#)
-            .expect("plan");
+        let plan =
+            RunConfig::parse(r#"{"calls":[{"name":"cut","fields":["supercut"]}]}"#).expect("plan");
 
         let session = checkpointed_session(&cli, directory.path());
         let (draft, _, _) = run_plan(&session, &resources(), &plan, 6).await;
@@ -2329,8 +2321,8 @@ printf '%s' '{answer}' > "$output"
         let directory = tempfile::tempdir().expect("temporary directory");
         let (script, log) = counting_stub(directory.path(), r#"{"supercut":[]}"#);
         let cli = LocalCliAnalyzer::with_commands(&script, &script);
-        let plan = RunConfig::parse(r#"{"calls":[{"name":"cut","fields":["supercut"]}]}"#)
-            .expect("plan");
+        let plan =
+            RunConfig::parse(r#"{"calls":[{"name":"cut","fields":["supercut"]}]}"#).expect("plan");
         for _ in 0..2 {
             let session = checkpointed_session(&cli, directory.path()).with_checkpoints(None);
             run_plan(&session, &resources(), &plan, 6).await;

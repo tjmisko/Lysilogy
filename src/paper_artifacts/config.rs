@@ -375,10 +375,8 @@ mod tests {
             .is_err()
         );
         assert!(
-            RunConfig::parse(
-                r#"{"calls":[{"name":"a","fields":["sections"],"requires":["a"]}]}"#
-            )
-            .is_err()
+            RunConfig::parse(r#"{"calls":[{"name":"a","fields":["sections"],"requires":["a"]}]}"#)
+                .is_err()
         );
         assert!(
             RunConfig::parse(
