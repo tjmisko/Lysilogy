@@ -5,7 +5,7 @@
 //! Work that has an identifier the provider understands.
 
 use lysilogy_core::{
-    DetectedIdentifier, ExpansionUnavailableReason, IdentifierScheme, IdentifierStatus,
+    Coverage, DetectedIdentifier, ExpansionUnavailableReason, IdentifierScheme, IdentifierStatus,
     SourceRecordId, WorkId, WorkIdentifier,
 };
 use lysilogy_db::citation::CitationRepository;
@@ -16,7 +16,10 @@ use lysilogy_db::work::WorkRepository;
 use crate::Result;
 use crate::ingest::{hydrate_stub_works, ingest_openalex_references};
 use crate::literature::{is_soft, provider_key};
-use crate::openalex::{JsonTransport, OpenAlexClient, fetch_work_cached_record};
+use crate::openalex::{
+    JsonTransport, OPENALEX_SUMMARY_KIND, OpenAlexClient, fetch_cited_by_cached,
+    fetch_work_cached_record, source_key,
+};
 
 /// The repositories and provider client expansion works through.
 pub struct ExpandContext<'a, T: JsonTransport> {
@@ -127,6 +130,137 @@ pub async fn expand_from_provider<T: JsonTransport>(
         source_record: record,
         references: report.edges,
         new_works: report.new_works,
+        hydrated,
+        warnings: Vec::new(),
+    })
+}
+
+/// The Work's own `OpenAlex` ID, from an active identifier or else the provider record
+/// found by DOI or arXiv. `Err(outcome)` when the Work cannot be expanded.
+async fn own_openalex_id<T: JsonTransport>(
+    context: &ExpandContext<'_, T>,
+    work: WorkId,
+) -> Result<std::result::Result<(String, String), ProviderExpansion>> {
+    let identifiers = context.works.active_identifiers(work).await?;
+    let Some(key) = provider_lookup_key(&identifiers) else {
+        return Ok(Err(ProviderExpansion::Unavailable {
+            reason: ExpansionUnavailableReason::NoProviderIdentifier,
+            provider_key: None,
+            warnings: Vec::new(),
+        }));
+    };
+    let known = identifiers.iter().find(|identifier| {
+        identifier.status == IdentifierStatus::Active
+            && identifier.scheme == IdentifierScheme::Openalex
+    });
+    if let Some(known) = known {
+        return Ok(Ok((known.value_normalized.clone(), key)));
+    }
+    let provider = match fetch_work_cached_record(context.records, context.client, &key).await {
+        Ok((_, provider)) => provider,
+        Err(error) if is_soft(&error) => {
+            return Ok(Err(ProviderExpansion::Unavailable {
+                reason: ExpansionUnavailableReason::ProviderNotFound,
+                provider_key: Some(key),
+                warnings: Vec::new(),
+            }));
+        }
+        Err(error) => return Err(error.into()),
+    };
+    let owner = context
+        .works
+        .find_by_identifier(IdentifierScheme::Openalex, &provider.openalex_id)
+        .await?;
+    if let Some(owner) = owner.filter(|owner| owner.id != work) {
+        return Ok(Err(ProviderExpansion::Unavailable {
+            reason: ExpansionUnavailableReason::IdentifierConflict,
+            provider_key: Some(key),
+            warnings: vec![format!("openalex_id_on_other_work:{}", owner.id)],
+        }));
+    }
+    Ok(Ok((provider.openalex_id, key)))
+}
+
+/// Fetch the Works citing this one (most cited first, at most 50) and assert each as
+/// `citing -> work`. `refresh` bypasses the cached list. `references` in the outcome
+/// counts the citation edges asserted.
+///
+/// Unavailable cases match [`expand_from_provider`]. Citing Works the reader does not
+/// have become stubs, titled from the same response.
+pub async fn expand_cited_by_from_provider<T: JsonTransport>(
+    context: &ExpandContext<'_, T>,
+    work: WorkId,
+    refresh: bool,
+) -> Result<ProviderExpansion> {
+    let (own_id, key) = match own_openalex_id(context, work).await? {
+        Ok(found) => found,
+        Err(outcome) => return Ok(outcome),
+    };
+    let (record, citing) =
+        match fetch_cited_by_cached(context.records, context.client, &own_id, refresh).await {
+            Ok(found) => found,
+            Err(error) if is_soft(&error) => {
+                return Ok(ProviderExpansion::Unavailable {
+                    reason: ExpansionUnavailableReason::ProviderNotFound,
+                    provider_key: Some(key),
+                    warnings: Vec::new(),
+                });
+            }
+            Err(error) => return Err(error.into()),
+        };
+    let own_key = source_key(&own_id);
+    let mut edges = 0;
+    let mut new_works = 0;
+    let mut citing_works = Vec::new();
+    for (summary, item) in &citing {
+        if source_key(&summary.openalex_id) == own_key {
+            continue;
+        }
+        let (citing_work, created) = context
+            .works
+            .resolve_or_create(
+                IdentifierScheme::Openalex,
+                &summary.openalex_id,
+                lysilogy_core::WorkKind::Article,
+                Some(record),
+            )
+            .await?;
+        if created {
+            new_works += 1;
+        }
+        if citing_work.id == work {
+            continue;
+        }
+        context
+            .citations
+            .add_assertion(citing_work.id, work, Some(record))
+            .await?;
+        edges += 1;
+        // The response already carries a summary; cache it so titling needs no request.
+        context
+            .records
+            .upsert(
+                OPENALEX_SUMMARY_KIND,
+                &source_key(&summary.openalex_id),
+                Coverage::Complete,
+                item,
+            )
+            .await?;
+        citing_works.push(citing_work);
+    }
+    let hydrated = hydrate_stub_works(
+        context.works,
+        context.claims,
+        context.records,
+        context.client,
+        &citing_works,
+    )
+    .await?;
+    Ok(ProviderExpansion::Expanded {
+        provider_key: key,
+        source_record: record,
+        references: edges,
+        new_works,
         hydrated,
         warnings: Vec::new(),
     })
@@ -576,5 +710,291 @@ mod tests {
                 "{outcome:?}"
             );
         }
+    }
+
+    use crate::openalex::fake::RecordingTransport;
+
+    fn citing_item(id: &str) -> Value {
+        json!({"id": format!("https://openalex.org/{id}"),
+               "display_name": format!("Citing {id}"), "publication_year": 2021,
+               "authorships": [{"author": {"display_name": "Ada Lovelace"}}]})
+    }
+
+    fn cited_by_transport(items: Vec<Value>) -> RecordingTransport {
+        RecordingTransport::new(move |url| {
+            if url.contains("filter=cites:") {
+                return json!({ "results": items.clone() });
+            }
+            json!({})
+        })
+    }
+
+    async fn expand_cited_by(
+        repos: &Repos,
+        transport: &RecordingTransport,
+        work: WorkId,
+        refresh: bool,
+    ) -> Result<ProviderExpansion> {
+        let client = OpenAlexClient::new(transport.clone());
+        let context = ExpandContext {
+            works: &repos.works,
+            citations: &repos.citations,
+            claims: &repos.claims,
+            records: &repos.records,
+            client: &client,
+        };
+        expand_cited_by_from_provider(&context, work, refresh).await
+    }
+
+    #[tokio::test]
+    async fn should_assert_citing_to_this_edges_when_expanding_cited_by() {
+        let Some(repos) = Repos::connect().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let marker = marker();
+        let own = format!("W1{marker}");
+        let work = repos.stub(IdentifierScheme::Openalex, &own).await;
+        let ids = [format!("W2{marker}"), format!("W3{marker}")];
+        let transport = cited_by_transport(ids.iter().map(|id| citing_item(id)).collect());
+
+        let outcome = expand_cited_by(&repos, &transport, work, false)
+            .await
+            .expect("expand");
+        let ProviderExpansion::Expanded {
+            provider_key,
+            references,
+            new_works,
+            hydrated,
+            ..
+        } = outcome
+        else {
+            panic!("expected an expansion, got {outcome:?}");
+        };
+        assert_eq!(provider_key, own);
+        assert_eq!((references, new_works, hydrated), (2, 2, 2));
+        let incoming = repos.citations.incoming(work).await.expect("incoming");
+        assert_eq!(incoming.len(), 2);
+        assert!(
+            incoming.iter().all(|citing| citing
+                .display_title
+                .as_deref()
+                .is_some_and(|t| t.starts_with("Citing "))),
+            "{incoming:?}"
+        );
+        assert!(
+            repos
+                .citations
+                .outgoing(work)
+                .await
+                .expect("outgoing")
+                .is_empty(),
+            "cited-by must not assert the references direction"
+        );
+        let urls = transport.urls();
+        assert_eq!(urls.len(), 1, "titles come from the response, not a batch");
+        assert!(urls[0].contains(&format!("filter=cites:{own}")), "{urls:?}");
+        assert!(urls[0].contains("sort=cited_by_count:desc"), "{urls:?}");
+        assert!(urls[0].contains("per_page=50"), "{urls:?}");
+    }
+
+    #[tokio::test]
+    async fn should_store_at_most_fifty_edges_when_provider_returns_more() {
+        let Some(repos) = Repos::connect().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let marker = marker();
+        let own = format!("W1{marker}");
+        let work = repos.stub(IdentifierScheme::Openalex, &own).await;
+        let items = (0..60)
+            .map(|index| citing_item(&format!("W9{index}x{marker}")))
+            .collect();
+        let transport = cited_by_transport(items);
+        let outcome = expand_cited_by(&repos, &transport, work, false)
+            .await
+            .expect("expand");
+        assert!(
+            matches!(outcome, ProviderExpansion::Expanded { references: 50, .. }),
+            "{outcome:?}"
+        );
+        assert_eq!(repos.citations.incoming(work).await.expect("in").len(), 50);
+    }
+
+    #[tokio::test]
+    async fn should_skip_self_duplicates_and_idless_items_when_expanding_cited_by() {
+        let Some(repos) = Repos::connect().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let marker = marker();
+        let own = format!("W1{marker}");
+        let work = repos.stub(IdentifierScheme::Openalex, &own).await;
+        let other = format!("W2{marker}");
+        let transport = cited_by_transport(vec![
+            citing_item(&own),
+            citing_item(&other),
+            citing_item(&other),
+            json!({"display_name": "No id"}),
+            json!("garbage"),
+        ]);
+        let outcome = expand_cited_by(&repos, &transport, work, false)
+            .await
+            .expect("expand");
+        assert!(
+            matches!(
+                outcome,
+                ProviderExpansion::Expanded {
+                    references: 1,
+                    new_works: 1,
+                    ..
+                }
+            ),
+            "{outcome:?}"
+        );
+        assert_eq!(repos.citations.incoming(work).await.expect("in").len(), 1);
+    }
+
+    #[tokio::test]
+    async fn should_expand_with_zero_edges_when_nothing_cites_the_work() {
+        let Some(repos) = Repos::connect().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let own = format!("W1{}", marker());
+        let work = repos.stub(IdentifierScheme::Openalex, &own).await;
+        let transport = cited_by_transport(Vec::new());
+        let outcome = expand_cited_by(&repos, &transport, work, false)
+            .await
+            .expect("expand");
+        assert!(
+            matches!(
+                outcome,
+                ProviderExpansion::Expanded {
+                    references: 0,
+                    new_works: 0,
+                    hydrated: 0,
+                    ..
+                }
+            ),
+            "{outcome:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn should_reuse_cache_unless_refresh_when_expanding_cited_by_twice() {
+        let Some(repos) = Repos::connect().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let marker = marker();
+        let own = format!("W1{marker}");
+        let work = repos.stub(IdentifierScheme::Openalex, &own).await;
+        let transport = cited_by_transport(vec![citing_item(&format!("W2{marker}"))]);
+        expand_cited_by(&repos, &transport, work, false)
+            .await
+            .expect("first");
+        assert_eq!(transport.urls().len(), 1);
+        let second = expand_cited_by(&repos, &transport, work, false)
+            .await
+            .expect("second");
+        assert_eq!(transport.urls().len(), 1, "the cached list is reused");
+        assert!(
+            matches!(
+                second,
+                ProviderExpansion::Expanded {
+                    references: 1,
+                    new_works: 0,
+                    ..
+                }
+            ),
+            "{second:?}"
+        );
+        expand_cited_by(&repos, &transport, work, true)
+            .await
+            .expect("refresh");
+        assert_eq!(transport.urls().len(), 2, "refresh asks the provider again");
+        assert_eq!(repos.citations.incoming(work).await.expect("in").len(), 1);
+    }
+
+    #[tokio::test]
+    async fn should_resolve_openalex_id_through_the_record_when_work_has_only_a_doi() {
+        let Some(repos) = Repos::connect().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let marker = marker();
+        let doi = format!("10.5555/{marker}");
+        let openalex = format!("W7{marker}");
+        let work = repos.stub(IdentifierScheme::Doi, &doi).await;
+        let record = record_json(&openalex, &[]);
+        let citer = citing_item(&format!("W8{marker}"));
+        let transport = RecordingTransport::new(move |url| {
+            if url.contains("filter=cites:") {
+                return json!({ "results": [citer.clone()] });
+            }
+            record.clone()
+        });
+        let outcome = expand_cited_by(&repos, &transport, work, false)
+            .await
+            .expect("expand");
+        assert!(
+            matches!(outcome, ProviderExpansion::Expanded { references: 1, .. }),
+            "{outcome:?}"
+        );
+        assert!(
+            transport
+                .urls()
+                .iter()
+                .any(|url| url.contains(&format!("filter=cites:{openalex}"))),
+            "{:?}",
+            transport.urls()
+        );
+    }
+
+    #[tokio::test]
+    async fn should_report_no_provider_identifier_when_expanding_cited_by_without_identifiers() {
+        let Some(repos) = Repos::connect().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let work = repos
+            .works
+            .create(WorkKind::Article, Visibility::Private)
+            .await
+            .expect("work")
+            .id;
+        let transport = cited_by_transport(Vec::new());
+        let outcome = expand_cited_by(&repos, &transport, work, false)
+            .await
+            .expect("expand");
+        assert!(
+            matches!(
+                outcome,
+                ProviderExpansion::Unavailable {
+                    reason: ExpansionUnavailableReason::NoProviderIdentifier,
+                    ..
+                }
+            ),
+            "{outcome:?}"
+        );
+        assert!(transport.urls().is_empty());
+    }
+
+    #[test]
+    fn should_refuse_to_build_cited_by_url_when_id_is_not_alphanumeric() {
+        use crate::openalex::cited_by_url;
+        for bad in [
+            "",
+            "  ",
+            "W1|W2",
+            "W1,W2",
+            "W1&per_page=200",
+            "doi:10.1/x",
+            "W 1",
+        ] {
+            assert_eq!(cited_by_url(bad), None, "{bad:?}");
+        }
+        assert!(cited_by_url(" W123 ").is_some_and(|url| url.contains("cites:W123&")));
     }
 }

@@ -29,6 +29,12 @@ pub const OPENALEX_TITLE_SEARCH_KIND: &str = "openalex_title_search";
 /// The `source_record.kind` used for cached `OpenAlex` cited-by counts.
 pub const OPENALEX_METRICS_KIND: &str = "openalex_metrics";
 
+/// The `source_record.kind` used for cached `OpenAlex` cited-by lists.
+pub const OPENALEX_CITED_BY_KIND: &str = "openalex_cited_by";
+
+/// The most citing Works kept per Work in a cited-by expansion.
+pub const CITED_BY_MAX: usize = 50;
+
 /// The most IDs sent in one `filter=openalex:` request.
 pub const SUMMARY_BATCH: usize = 50;
 
@@ -232,6 +238,24 @@ pub fn works_metrics_url(ids: &[&str]) -> String {
         ids.join("|"),
         ids.len()
     )
+}
+
+/// The request URL for the Works citing `id`, most cited first, at most [`CITED_BY_MAX`].
+/// `None` unless `id` is a bare alphanumeric `OpenAlex` ID, so it cannot alter the filter.
+#[must_use]
+pub fn cited_by_url(id: &str) -> Option<String> {
+    let id = id.trim();
+    if id.is_empty()
+        || !id
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric())
+    {
+        return None;
+    }
+    Some(format!(
+        "https://api.openalex.org/works?filter=cites:{id}&sort=cited_by_count:desc\
+         &per_page={CITED_BY_MAX}&select=id,doi,display_name,publication_year,authorships"
+    ))
 }
 
 /// Read `(lower-case short id, cited_by_count)` from a metrics batch item.
@@ -458,6 +482,53 @@ pub async fn fetch_cited_by_counts_cached<T: JsonTransport>(
         }
     }
     Ok(fetch)
+}
+
+/// A Work citing another, as the provider listed it with its raw summary item.
+pub type CitingWork = (OpenAlexSummary, Value);
+
+/// Fetch the Works citing `openalex_id`, most cited first and capped at
+/// [`CITED_BY_MAX`], caching the raw response per Work. A cached list is reused
+/// unless `refresh`. Items without an ID, and repeats, are skipped.
+pub async fn fetch_cited_by_cached<T: JsonTransport>(
+    records: &SourceRecordRepository,
+    client: &OpenAlexClient<T>,
+    openalex_id: &str,
+    refresh: bool,
+) -> Result<(SourceRecordId, Vec<CitingWork>), ProviderError> {
+    let url = cited_by_url(openalex_id).ok_or(ProviderError::Malformed)?;
+    let key = source_key(openalex_id);
+    let cached = if refresh {
+        None
+    } else {
+        records
+            .find(OPENALEX_CITED_BY_KIND, &key)
+            .await?
+            .filter(|(_, payload)| payload.get("results").is_some_and(Value::is_array))
+    };
+    let (record_id, payload) = if let Some(hit) = cached {
+        hit
+    } else {
+        let value = client.fetch_json(&url).await?;
+        if !value.get("results").is_some_and(Value::is_array) {
+            return Err(ProviderError::Malformed);
+        }
+        let record_id = records
+            .upsert(OPENALEX_CITED_BY_KIND, &key, Coverage::Complete, &value)
+            .await?;
+        (record_id, value)
+    };
+    let Some(results) = payload.get("results").and_then(Value::as_array) else {
+        return Err(ProviderError::Malformed);
+    };
+    let mut seen = HashSet::new();
+    let citing = results
+        .iter()
+        .filter_map(|item| Some((parse_summary(item).ok()?, item.clone())))
+        .filter(|(summary, _)| seen.insert(source_key(&summary.openalex_id)))
+        .take(CITED_BY_MAX)
+        .collect();
+    Ok((record_id, citing))
 }
 
 /// Search works by title, caching the raw response. `None` when the title has
