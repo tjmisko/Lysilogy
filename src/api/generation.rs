@@ -169,6 +169,9 @@ async fn start_generation_inner(state: &AppState, body: &Bytes) -> Result<Respon
     let body: GenerateBody =
         serde_json::from_value(value).map_err(|error| invalid_body(&error.to_string()))?;
     let request = body.request()?;
+    request
+        .validate()
+        .map_err(|error| service_failure(&error))?;
     graph_or_unavailable(state)?;
     let id = state
         .start_generation(request)

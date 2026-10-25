@@ -22,6 +22,7 @@ struct Recorded {
 pub struct FakePlanner {
     plan: Result<PlanDraft, PlannerError>,
     fill: Arc<FillScript>,
+    fill_error: Option<PlannerError>,
     plan_cost: f64,
     fill_cost: f64,
     delay: Duration,
@@ -42,6 +43,7 @@ impl FakePlanner {
         Self {
             plan: Ok(plan),
             fill: Arc::new(|_| FillDraft::default()),
+            fill_error: None,
             plan_cost: 0.0,
             fill_cost: 0.0,
             delay: Duration::ZERO,
@@ -72,6 +74,13 @@ impl FakePlanner {
         script: impl Fn(&FillRequest) -> FillDraft + Send + Sync + 'static,
     ) -> Self {
         self.fill = Arc::new(script);
+        self
+    }
+
+    /// The fill pass fails with `error`.
+    #[must_use]
+    pub fn with_failing_fill(mut self, error: PlannerError) -> Self {
+        self.fill_error = Some(error);
         self
     }
 
@@ -140,6 +149,9 @@ impl ReadingListPlanner for FakePlanner {
     fn fill<'a>(&'a self, request: &'a FillRequest) -> PlannerFuture<'a, FillDraft> {
         Box::pin(async move {
             self.recorded().fills.push(request.clone());
+            if let Some(error) = &self.fill_error {
+                return Err(error.clone());
+            }
             Ok(PlannerReply {
                 draft: (self.fill)(request),
                 cost_usd: self.fill_cost,

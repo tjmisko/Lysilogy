@@ -647,6 +647,130 @@ async fn should_stop_over_budget_without_a_list_when_the_ledger_refuses_the_plan
 }
 
 #[tokio::test]
+async fn should_admit_the_plan_and_record_the_error_when_the_fill_pass_fails() {
+    let graph = graph_or_skip!();
+    let tag = marker();
+    let member = titled_work(&graph, &format!("{tag}-m"), &format!("Member {tag}")).await;
+    let cited = titled_work(&graph, &format!("{tag}-c"), "Cited by the member").await;
+    graph
+        .citations
+        .add_assertion(member, cited, None)
+        .await
+        .expect("citation");
+    let planner = FakePlanner::new(PlanDraft {
+        topics: vec![topic("Core", Vec::new(), vec![graph_pick(member, "core")])],
+        ..PlanDraft::default()
+    })
+    .with_failing_fill(PlannerError::Unavailable("down".to_owned()));
+    let state = state_with(&graph, Vec::new(), &planner).await;
+    let view = run(&state, request(&goal_of(&tag))).await;
+
+    assert_eq!(view.state, GenerationState::Succeeded, "{view:?}");
+    assert_eq!(planner.fill_requests().len(), 1);
+    let recorded = view
+        .report
+        .as_ref()
+        .and_then(|json| json.pointer("/fill/error"));
+    assert!(
+        recorded.is_some_and(Value::is_string),
+        "the failure is in the report: {:?}",
+        view.report
+    );
+    let detail = state
+        .list_detail(view.list_id.expect("list"))
+        .await
+        .expect("detail");
+    assert!(
+        detail
+            .nodes
+            .iter()
+            .any(|node| node.node.work_id == Some(member)),
+        "the verified Work was admitted"
+    );
+}
+
+#[tokio::test]
+async fn should_not_fail_when_the_fill_would_overflow_a_list_near_its_work_limit() {
+    let graph = graph_or_skip!();
+    let tag = marker();
+    let state = state_with(&graph, Vec::new(), &FakePlanner::new(PlanDraft::default())).await;
+    let list = state
+        .create_list(
+            &crate::lists::parse_title(&format!("Nearly full {tag}")).expect("title"),
+            None,
+            None,
+        )
+        .await
+        .expect("list")
+        .list
+        .list
+        .id;
+    for index in 0..(lysilogy_core::LIST_WORKS_MAX - 2) {
+        let work = new_work(
+            &graph,
+            IdentifierScheme::Doi,
+            &format!("10.9999/{tag}-fill{index}"),
+        )
+        .await;
+        state
+            .add_list_node(
+                list,
+                crate::lists::AddNode::Work {
+                    work,
+                    via: None,
+                    topics: Vec::new(),
+                    note: None,
+                },
+            )
+            .await
+            .expect("work");
+    }
+    let member = titled_work(&graph, &format!("{tag}-m"), &format!("Member {tag}")).await;
+    let near: Vec<WorkId> = {
+        let mut found = Vec::new();
+        for index in 0..4 {
+            let work = titled_work(&graph, &format!("{tag}-n{index}"), "Neighbor").await;
+            graph
+                .citations
+                .add_assertion(member, work, None)
+                .await
+                .expect("citation");
+            found.push(work);
+        }
+        found
+    };
+    let planner = FakePlanner::new(PlanDraft {
+        topics: vec![topic("Core", Vec::new(), vec![graph_pick(member, "core")])],
+        ..PlanDraft::default()
+    })
+    .with_fill_fn(move |_| FillDraft {
+        picks: near
+            .iter()
+            .map(|work| FillPickDraft {
+                work_id: work.to_string(),
+                topic: "Core".to_owned(),
+                rationale: "Nearby.".to_owned(),
+                context_links: Vec::new(),
+            })
+            .collect(),
+        prerequisites: Vec::new(),
+    });
+    let state = state_with(&graph, Vec::new(), &planner).await;
+    let mut asked = request(&goal_of(&tag));
+    asked.into_list = Some(list);
+    let view = run(&state, asked).await;
+
+    assert_eq!(view.state, GenerationState::Succeeded, "{view:?}");
+    let detail = state.list_detail(list).await.expect("detail");
+    let works = detail
+        .nodes
+        .iter()
+        .filter(|node| node.node.work_id.is_some())
+        .count();
+    assert_eq!(works, lysilogy_core::LIST_WORKS_MAX, "filled to the limit");
+}
+
+#[tokio::test]
 async fn should_propose_nodes_and_leave_the_list_alone_when_extending_an_existing_list() {
     let graph = graph_or_skip!();
     let tag = marker();

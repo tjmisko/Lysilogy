@@ -156,12 +156,12 @@ fn lower(label: &TopicLabel) -> String {
 pub fn check_plan(draft: PlanDraft, supplied: &Supplied, report: &mut Report) -> CheckedPlan {
     let mut plan = CheckedPlan::default();
     let mut topic_index: HashMap<String, usize> = HashMap::new();
-    for (position, topic) in draft.topics.into_iter().enumerate() {
+    for topic in draft.topics {
         report.topics.planned += 1;
         let named = topic.claims.len() + topic.graph_works.len();
         report.candidates.seen += named;
         let label = TopicLabel::parse(&topic.label).ok();
-        let kept = if position >= TOPICS_MAX {
+        let kept = if plan.topics.len() >= TOPICS_MAX {
             report.topics.dropped_over_limit += 1;
             None
         } else if let Some(label) = label {
@@ -261,6 +261,14 @@ pub fn check_plan(draft: PlanDraft, supplied: &Supplied, report: &mut Report) ->
             report.edges.dropped_invalid += 1;
             continue;
         };
+        if plan
+            .edges
+            .iter()
+            .any(|seen| seen.from == from && seen.to == to && seen.kind == kind)
+        {
+            report.edges.dropped_invalid += 1;
+            continue;
+        }
         plan.edges.push(CheckedTopicEdge { from, to, kind });
     }
     for known in draft.assumed_known {
@@ -443,6 +451,38 @@ mod tests {
             to: to.to_owned(),
             kind: kind.to_owned(),
         }
+    }
+
+    #[test]
+    fn should_count_a_repeated_topic_edge_as_invalid_when_checking_the_plan() {
+        let mut report = Report::default();
+        let draft = PlanDraft {
+            topics: vec![topic("A", Vec::new()), topic("B", Vec::new())],
+            topic_edges: vec![
+                edge("a", "b", "prerequisite"),
+                edge("A", "B", "prerequisite"),
+            ],
+            ..PlanDraft::default()
+        };
+        let plan = check_plan(draft, &Supplied::default(), &mut report);
+        assert_eq!(plan.edges.len(), 1);
+        assert_eq!(report.edges.planned, 2);
+        assert_eq!(report.edges.dropped_invalid, 1);
+    }
+
+    #[test]
+    fn should_keep_the_thirteenth_valid_topic_when_blank_and_duplicate_topics_come_first() {
+        let mut report = Report::default();
+        let mut topics = vec![topic("", Vec::new()), topic("T0", Vec::new())];
+        topics.push(topic("t0", Vec::new()));
+        topics.extend((1..=TOPICS_MAX).map(|index| topic(&format!("T{index}"), Vec::new())));
+        let draft = PlanDraft {
+            topics,
+            ..PlanDraft::default()
+        };
+        let plan = check_plan(draft, &Supplied::default(), &mut report);
+        assert_eq!(plan.topics.len(), TOPICS_MAX);
+        assert_eq!(report.topics.dropped_over_limit, 1);
     }
 
     #[test]

@@ -9,9 +9,9 @@ use std::sync::Arc;
 
 use chrono::{DateTime, Datelike, Utc};
 use lysilogy_core::{
-    Claim, ClaimState, EdgeKind, ExpansionDirection, GenerationId, GenerationState, LIST_WORKS_MAX,
-    ListId, ListOrigin, ListReview, ListTitle, NodeKind, NodeSource, ProviderRecord, Work, WorkId,
-    WorkspaceId, default_list_title, title_key,
+    Claim, ClaimState, EdgeKind, ExpansionDirection, GenerationId, GenerationState, LIST_EDGES_MAX,
+    LIST_TOPICS_MAX, LIST_WORKS_MAX, ListId, ListOrigin, ListReview, ListTitle, NodeKind,
+    NodeSource, ProviderRecord, Work, WorkId, WorkspaceId, default_list_title, title_key,
 };
 use lysilogy_db::DbError;
 use lysilogy_db::generation::{
@@ -223,6 +223,7 @@ impl Spend {
             cost_usd: cost,
         });
         report.budget.spent_usd = self.spent;
+        report.budget.exceeded = self.spent > self.budget;
     }
 }
 
@@ -414,6 +415,9 @@ struct Target {
     works: HashSet<WorkId>,
     topics: HashMap<String, lysilogy_core::NodeId>,
     items: usize,
+    /// Every topic node, labelled or not.
+    topic_total: usize,
+    edge_total: usize,
 }
 
 struct Run<'a> {
@@ -491,7 +495,14 @@ impl Run<'_> {
 
         let mut over_budget = false;
         let fill = self
-            .fill(&plan, &items, &context, target.as_ref(), &mut over_budget)
+            .fill(
+                &plan,
+                &items,
+                &context,
+                target.as_ref(),
+                room.capacity.saturating_sub(items.len()),
+                &mut over_budget,
+            )
             .await?;
         items.extend(fill.0);
 
@@ -521,10 +532,19 @@ impl Run<'_> {
             works: HashSet::new(),
             topics: HashMap::new(),
             items: 0,
+            topic_total: 0,
+            edge_total: self
+                .graph
+                .lists
+                .edges(list)
+                .await
+                .map_err(|error| database(&error))?
+                .len(),
         };
         for node in nodes {
             match node.kind {
                 NodeKind::Topic => {
+                    target.topic_total += 1;
                     if let Some(label) = &node.label {
                         target.topics.insert(label.to_lowercase(), node.id);
                     }
@@ -793,6 +813,7 @@ impl Run<'_> {
         items: &[Item],
         context: &Context,
         target: Option<&Target>,
+        capacity_left: usize,
         over_budget: &mut bool,
     ) -> Result<(Vec<Item>, Vec<(WorkId, WorkId)>), Error> {
         let mut per_topic = vec![0_usize; plan.topics.len()];
@@ -810,7 +831,8 @@ impl Run<'_> {
             .map(|count| TOPIC_WORKS_MIN.saturating_sub(*count))
             .sum();
         let remaining = self.request.size.saturating_sub(members.len());
-        let slots = remaining.max(deficit);
+        // Picks may not outgrow what the list can still hold.
+        let slots = remaining.max(deficit).min(capacity_left);
         if slots == 0 || plan.topics.is_empty() {
             return Ok((Vec::new(), Vec::new()));
         }
@@ -856,7 +878,12 @@ impl Run<'_> {
                 *over_budget = true;
                 return Ok((Vec::new(), Vec::new()));
             }
-            Err(error) => return Err(pass_failure(&error)),
+            Err(error) => {
+                // The plan pass is already paid for; admit its items without a fill.
+                tracing::warn!(%error, "fill pass failed; admitting the plan alone");
+                self.report.fill.error = Some(error.to_string());
+                return Ok((Vec::new(), Vec::new()));
+            }
         };
         self.spend.record("fill", reply.cost_usd, &mut self.report);
         let member_set: HashSet<WorkId> = members.iter().copied().collect();
@@ -973,31 +1000,44 @@ impl Run<'_> {
             ListReview::Accepted
         };
         let mut nodes: Vec<NewNode> = Vec::new();
-        let mut topic_refs: Vec<NodeRef> = Vec::new();
+        let mut topic_refs: Vec<Option<NodeRef>> = Vec::new();
+        let topic_room =
+            LIST_TOPICS_MAX.saturating_sub(target.map_or(0, |target| target.topic_total));
+        let mut new_topic_count = 0;
         for topic in &plan.topics {
             let existing =
                 target.and_then(|target| target.topics.get(&topic.label.as_str().to_lowercase()));
             if let Some(existing) = existing {
-                topic_refs.push(NodeRef::Existing(*existing));
+                topic_refs.push(Some(NodeRef::Existing(*existing)));
                 self.report.topics.reused += 1;
                 continue;
             }
+            if new_topic_count >= topic_room {
+                topic_refs.push(None);
+                self.report.topics.dropped_full += 1;
+                continue;
+            }
+            new_topic_count += 1;
             let mut node = NewNode::topic(topic.label.clone());
             node.content = NewNodeContent::Topic {
                 label: topic.label.clone(),
                 summary: topic.summary.clone(),
             };
             self.stamp(&mut node, review);
-            topic_refs.push(NodeRef::New(nodes.len()));
+            topic_refs.push(Some(NodeRef::New(nodes.len())));
             nodes.push(node);
         }
         let new_topics = nodes.len();
         let mut drafted: Vec<bool> = Vec::new();
         let mut edges: Vec<AdmissionEdge> = Vec::new();
         for edge in &plan.edges {
+            let (Some(from), Some(to)) = (topic_refs[edge.from], topic_refs[edge.to]) else {
+                self.report.edges.dropped_unknown += 1;
+                continue;
+            };
             edges.push(AdmissionEdge {
-                from: topic_refs[edge.from],
-                to: topic_refs[edge.to],
+                from,
+                to,
                 kind: edge.kind,
             });
             drafted.push(true);
@@ -1036,10 +1076,12 @@ impl Run<'_> {
             nodes.push(node);
             if let Body::Work(work) = &item.body {
                 work_refs.insert(*work, reference);
-                if let Some(topic) = item.topic {
+                if let Some(topic) = item.topic
+                    && let Some(topic_ref) = topic_refs[topic]
+                {
                     covered[topic] = true;
                     edges.push(AdmissionEdge {
-                        from: topic_refs[topic],
+                        from: topic_ref,
                         to: reference,
                         kind: EdgeKind::Covers,
                     });
@@ -1064,10 +1106,23 @@ impl Run<'_> {
         self.report.topics.empty = covered
             .iter()
             .zip(&topic_refs)
-            .filter(|(covered, reference)| !**covered && matches!(reference, NodeRef::New(_)))
+            .filter(|(covered, reference)| !**covered && matches!(reference, Some(NodeRef::New(_))))
             .count();
         if nodes.is_empty() {
             return Ok(target.map(|target| target.id));
+        }
+        // The list's edge limit: keep the earliest edges, which are the plan's own.
+        let edge_room = LIST_EDGES_MAX.saturating_sub(target.map_or(0, |target| target.edge_total));
+        if edges.len() > edge_room {
+            for was_drafted in drafted.iter().skip(edge_room) {
+                if *was_drafted {
+                    self.report.edges.dropped_invalid += 1;
+                } else {
+                    self.report.edges.covers_dropped += 1;
+                }
+            }
+            edges.truncate(edge_room);
+            drafted.truncate(edge_room);
         }
 
         let created = if target.is_none() {

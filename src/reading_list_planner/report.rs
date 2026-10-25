@@ -18,6 +18,9 @@ pub struct BudgetReport {
     pub spent_usd: f64,
     /// The pass that did not run because the budget was spent.
     pub stopped_before: Option<&'static str>,
+    /// A pass cost more than what was left. The run still admits its verified items, so
+    /// its state stays `succeeded`; this flag marks the overspend.
+    pub exceeded: bool,
 }
 
 /// What the model was shown.
@@ -42,6 +45,8 @@ pub struct TopicCounts {
     pub reused: usize,
     /// Topics written with no Work under them.
     pub empty: usize,
+    /// Dropped because the extended list holds the most topics it may.
+    pub dropped_full: usize,
 }
 
 /// Every claim and graph Work the plan named, and what became of each. The buckets sum to
@@ -146,6 +151,8 @@ pub struct FillReport {
     pub over_size: usize,
     /// Admitted with no topic because the label matched none.
     pub unassigned_topic: usize,
+    /// Why the pass failed; the plan's items were admitted without it.
+    pub error: Option<String>,
 }
 
 /// Edges the plan and fill pass proposed: `planned` is `added` plus every `dropped_*`.

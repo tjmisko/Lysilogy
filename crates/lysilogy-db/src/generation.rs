@@ -178,6 +178,7 @@ impl GenerationRepository {
 
     /// Works whose title mentions any of `keywords` (lower-case, letters and digits only),
     /// the ones matching most keywords first, then newest. Redirected Works are skipped.
+    #[allow(clippy::cast_possible_wrap)]
     pub async fn works_matching_title(
         &self,
         keywords: &[String],
@@ -196,7 +197,7 @@ impl GenerationRepository {
              limit $2",
         )
         .bind(&patterns)
-        .bind(i64::try_from(limit).unwrap_or(i64::MAX))
+        .bind(limit as i64)
         .fetch_all(&self.pool)
         .await?;
         rows.iter()
