@@ -234,11 +234,26 @@ pub fn validate_events(events: &[NewEvent]) -> std::result::Result<(), HistoryIn
                 return Err(HistoryInvalid::BadPaperId { index });
             }
         }
-        if !event.detail.is_object() || event.detail.to_string().len() > DETAIL_MAX_BYTES {
+        if !event.detail.is_object()
+            || event.detail.to_string().len() > DETAIL_MAX_BYTES
+            || json_contains_nul(&event.detail)
+        {
             return Err(HistoryInvalid::BadDetail { index });
         }
     }
     Ok(())
+}
+
+/// Postgres `jsonb` rejects `\u0000` in keys and strings.
+fn json_contains_nul(value: &serde_json::Value) -> bool {
+    match value {
+        serde_json::Value::String(text) => text.contains('\0'),
+        serde_json::Value::Array(items) => items.iter().any(json_contains_nul),
+        serde_json::Value::Object(map) => map
+            .iter()
+            .any(|(key, item)| key.contains('\0') || json_contains_nul(item)),
+        _ => false,
+    }
 }
 
 /// Check the kinds a timeline filter names.
@@ -259,7 +274,13 @@ pub fn validate_position(position: &ReadingPosition) -> std::result::Result<(), 
     let negative = position.page.is_some_and(|page| page < 0)
         || position.offset_utf16.is_some_and(|offset| offset < 0)
         || position.section_id.as_deref().is_some_and(str::is_empty)
-        || position.paper_id.is_empty();
+        || position.paper_id.is_empty()
+        || position.paper_id.chars().count() > PAPER_ID_MAX
+        || position.paper_id.contains('\0')
+        || position
+            .section_id
+            .as_deref()
+            .is_some_and(|id| id.contains('\0'));
     if negative {
         return Err(HistoryInvalid::BadPosition);
     }
@@ -303,7 +324,9 @@ impl HistoryRepository {
 
     /// Store a batch in one transaction. Events already stored under the same
     /// `(session_id, client_seq)` count as duplicates and are left untouched. A `work_id`
-    /// or `list_id` that no longer exists is stored as null rather than failing the batch.
+    /// or `list_id` that no longer exists (or a list of another workspace) is stored as
+    /// null rather than failing the batch. A `work_id` merged into another Work is stored
+    /// as the surviving Work.
     pub async fn insert_batch(
         &self,
         workspace: WorkspaceId,
@@ -313,19 +336,18 @@ impl HistoryRepository {
             return Ok(BatchOutcome::default());
         }
         let mut tx = self.pool.begin().await?;
-        let lists = known_lists(&mut tx, events).await?;
         let mut outcome = BatchOutcome::default();
         for event in events {
-            let list_id = event
-                .list_id
-                .map(ListId::as_uuid)
-                .filter(|id| lists.contains(id));
             let inserted = sqlx::query(
                 "insert into reader.history_event \
                  (workspace_id, occurred_at, session_id, kind, paper_id, work_id, list_id, \
                   dwell_ms, detail, client_seq) \
                  select $1, $2, $3, $4, $5, \
-                        (select id from graph.work where id = $6), $7, $8, $9, $10 \
+                        coalesce( \
+                            (select new_work_id from graph.work_redirect where old_work_id = $6), \
+                            (select id from graph.work where id = $6)), \
+                        (select id from reader.reading_list where id = $7 and workspace_id = $1), \
+                        $8, $9, $10 \
                  on conflict (session_id, client_seq) do nothing",
             )
             .bind(workspace.as_uuid())
@@ -334,7 +356,7 @@ impl HistoryRepository {
             .bind(&event.kind)
             .bind(event.paper_id.as_deref())
             .bind(event.work_id.map(WorkId::as_uuid))
-            .bind(list_id)
+            .bind(event.list_id.map(ListId::as_uuid))
             .bind(event.dwell_ms)
             .bind(&event.detail)
             .bind(event.client_seq)
@@ -411,6 +433,26 @@ impl HistoryRepository {
         .fetch_all(&self.pool)
         .await?;
         rows.iter().map(event_from_row).collect()
+    }
+
+    /// Whether a stored `paper_left` event for `work` has at least `dwell_ms` of dwell.
+    pub async fn has_paper_left_dwelling(
+        &self,
+        workspace: WorkspaceId,
+        work: WorkId,
+        dwell_ms: i32,
+    ) -> Result<bool> {
+        let found = sqlx::query_scalar(
+            "select exists (select 1 from reader.history_event \
+             where workspace_id = $1 and work_id = $2 and kind = 'paper_left' \
+               and dwell_ms >= $3)",
+        )
+        .bind(workspace.as_uuid())
+        .bind(work.as_uuid())
+        .bind(dwell_ms)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(found)
     }
 
     /// Delete events older than `before`; returns how many.
@@ -541,7 +583,9 @@ impl HistoryRepository {
         Ok(total)
     }
 
-    /// Works that were inspected but never opened, most recently inspected first.
+    /// Works that were inspected but never opened, most recently inspected first. A Work
+    /// counts as opened only when a `paper_opened` event carries its `work_id`, so clients
+    /// (T8, T10) must send `work_id` on `paper_opened` whenever the paper is linked.
     pub async fn inspected_never_opened(
         &self,
         workspace: WorkspaceId,
@@ -625,31 +669,6 @@ pub async fn repoint_work(conn: &mut PgConnection, from: WorkId, into: WorkId) -
         .execute(conn)
         .await?;
     Ok(result.rows_affected())
-}
-
-/// The batch's list IDs that exist. Lists arrive in a separate migration, so a database
-/// without the table has none.
-async fn known_lists(conn: &mut PgConnection, events: &[NewEvent]) -> Result<Vec<Uuid>> {
-    let wanted: Vec<Uuid> = events
-        .iter()
-        .filter_map(|event| event.list_id.map(ListId::as_uuid))
-        .collect();
-    if wanted.is_empty() {
-        return Ok(Vec::new());
-    }
-    let present =
-        sqlx::query_scalar::<_, bool>("select to_regclass('reader.reading_list') is not null")
-            .fetch_one(&mut *conn)
-            .await?;
-    if !present {
-        return Ok(Vec::new());
-    }
-    let found =
-        sqlx::query_scalar::<_, Uuid>("select id from reader.reading_list where id = any($1)")
-            .bind(&wanted)
-            .fetch_all(conn)
-            .await?;
-    Ok(found)
 }
 
 fn event_from_row(row: &PgRow) -> Result<HistoryEvent> {
@@ -873,6 +892,34 @@ mod tests {
         assert_eq!(validate_position(&bad), Err(HistoryInvalid::BadScrollRatio));
         bad.scroll_ratio = Some(f32::NAN);
         assert_eq!(validate_position(&bad), Err(HistoryInvalid::BadScrollRatio));
+    }
+
+    #[test]
+    fn should_reject_event_when_detail_contains_a_nul() {
+        let mut bad = event(Uuid::new_v4(), 0, "search_run");
+        bad.detail = json!({"query": "a\u{0}b"});
+        assert_eq!(
+            validate_events(&[bad.clone()]),
+            Err(HistoryInvalid::BadDetail { index: 0 })
+        );
+        bad.detail = json!({"nested": [{"k\u{0}": 1}]});
+        assert_eq!(
+            validate_events(&[bad]),
+            Err(HistoryInvalid::BadDetail { index: 0 })
+        );
+    }
+
+    #[test]
+    fn should_reject_position_when_paper_or_section_contains_a_nul() {
+        let mut bad = position("pdf");
+        bad.paper_id = "a\u{0}b".to_owned();
+        assert_eq!(validate_position(&bad), Err(HistoryInvalid::BadPosition));
+        bad = position("pdf");
+        bad.section_id = Some("s\u{0}".to_owned());
+        assert_eq!(validate_position(&bad), Err(HistoryInvalid::BadPosition));
+        bad = position("pdf");
+        bad.paper_id = "p".repeat(PAPER_ID_MAX + 1);
+        assert_eq!(validate_position(&bad), Err(HistoryInvalid::BadPosition));
     }
 
     #[test]
@@ -1258,7 +1305,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_aggregate_work_dwell_and_find_inspected_only_works() {
+    async fn should_aggregate_work_dwell_and_find_inspected_only_works_when_some_works_were_never_opened()
+     {
         let _guard = test_support::lock().await;
         let Some(fixture) = fixture().await else {
             return;

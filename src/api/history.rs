@@ -103,7 +103,7 @@ async fn service_of(state: &AppState) -> Result<HistoryService, Failure> {
 }
 
 fn parse_paper_id(text: &str) -> Result<&str, Failure> {
-    if text.is_empty() || text.chars().count() > PAPER_ID_MAX {
+    if text.is_empty() || text.chars().count() > PAPER_ID_MAX || text.contains('\0') {
         return Err(failure(
             StatusCode::BAD_REQUEST,
             "invalid_history_paper",

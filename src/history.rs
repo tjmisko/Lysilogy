@@ -103,6 +103,8 @@ fn invalid(code: &'static str, message: &str) -> HistoryServiceError {
 
 /// The Works whose `paper_left` events in a batch reach the nudge threshold (D17),
 /// resolved by the caller through redirects. Sorted and distinct.
+///
+/// A `paper_left` event must carry `work_id` to nudge; the client knows the paper's Work.
 #[must_use]
 pub fn nudge_candidates(events: &[NewEvent]) -> Vec<WorkId> {
     let mut works: Vec<WorkId> = events
@@ -208,7 +210,16 @@ pub fn parse_when(text: &str, now: DateTime<Utc>) -> Result<DateTime<Utc>, Histo
         )
     };
     let text = text.trim();
-    if let Some(unit) = text.chars().last().filter(char::is_ascii_alphabetic) {
+    let age_unit = text
+        .chars()
+        .last()
+        .filter(|unit| matches!(unit, 'w' | 'd' | 'h' | 'm'))
+        .filter(|_| {
+            text[..text.len() - 1]
+                .bytes()
+                .all(|byte| byte.is_ascii_digit())
+        });
+    if let Some(unit) = age_unit {
         let digits = &text[..text.len() - 1];
         let amount: i64 = digits.parse().map_err(|_| bad())?;
         if amount < 0 {
@@ -520,6 +531,20 @@ impl HistoryService {
     /// `Invalid` for a rejected batch; `Graph` for a database failure.
     pub async fn ingest(&self, events: &[NewEvent]) -> Result<IngestOutcome, HistoryServiceError> {
         validate_events(events)?;
+        // Only a Work with no earlier qualifying visit is nudged (D17: the first one), so
+        // check before this batch is stored; duplicates in a partly replayed batch then
+        // find their stored twin and never nudge.
+        let mut fresh: Vec<WorkId> = Vec::new();
+        for work in nudge_candidates(events) {
+            let work = self
+                .works
+                .resolve_redirect(work)
+                .await
+                .map_err(|error| database(&error))?;
+            if !self.has_qualifying_visit(work).await? {
+                fresh.push(work);
+            }
+        }
         let outcome = self
             .history
             .insert_batch(self.workspace, events)
@@ -533,15 +558,7 @@ impl HistoryService {
                 nudged,
             });
         }
-        let mut resolved: Vec<WorkId> = Vec::new();
-        for work in nudge_candidates(events) {
-            let work = self
-                .works
-                .resolve_redirect(work)
-                .await
-                .map_err(|error| database(&error))?;
-            resolved.push(work);
-        }
+        let mut resolved = fresh;
         resolved.sort();
         resolved.dedup();
         for work in resolved {
@@ -717,6 +734,12 @@ impl HistoryService {
         }
         let mut wanted: Vec<WorkId> = engagement.iter().map(|input| input.work_id).collect();
         wanted.extend(lists.iter().flat_map(|list| list.works.iter().copied()));
+        wanted.extend(
+            self.reading
+                .known(self.workspace)
+                .await
+                .map_err(|error| database(&error))?,
+        );
         wanted.sort();
         wanted.dedup();
         let states: Vec<StatusInput> = self
@@ -775,6 +798,13 @@ impl HistoryService {
             .map_err(|error| database(&error))
     }
 
+    async fn has_qualifying_visit(&self, work: WorkId) -> Result<bool, HistoryServiceError> {
+        self.history
+            .has_paper_left_dwelling(self.workspace, work, NUDGE_DWELL_MS)
+            .await
+            .map_err(|error| database(&error))
+    }
+
     async fn titles(
         &self,
         ids: &[WorkId],
@@ -817,14 +847,31 @@ pub async fn cli_history(
         return Ok(render_paper_summary(&summary));
     }
     let since = parse_when(args.since.as_deref().unwrap_or("7d"), now)?;
-    let query = HistoryQuery {
+    let mut query = HistoryQuery {
         before: None,
         kinds: args.kinds.clone(),
         text: None,
         limit: Some(HISTORY_PAGE_MAX),
     };
-    let timeline = service.timeline(&query).await?;
-    Ok(render_timeline(&timeline.sessions, since))
+    // Follow the cursor until a page reaches back past `since`, so a busy window is whole.
+    let mut events: Vec<HistoryEvent> = Vec::new();
+    loop {
+        let timeline = service.timeline(&query).await?;
+        let next = timeline.next_before;
+        let mut page: Vec<HistoryEvent> = timeline
+            .sessions
+            .into_iter()
+            .flat_map(|session| session.events)
+            .collect();
+        page.sort_by_key(|event| std::cmp::Reverse((event.occurred_at, event.id)));
+        let reached = page.last().is_none_or(|event| event.occurred_at < since);
+        events.extend(page);
+        let Some(next) = next.filter(|_| !reached) else {
+            break;
+        };
+        query.before = Some(parse_cursor(&next)?);
+    }
+    Ok(render_timeline(&group_sessions(events), since))
 }
 
 /// `lysilogy history export --since`: the JSON lines and how many events they hold.
@@ -1098,6 +1145,13 @@ mod tests {
             parse_when("2026-10-01T00:00:00+02:00", now).unwrap(),
             Utc.with_ymd_and_hms(2026, 9, 30, 22, 0, 0).unwrap()
         );
+        for text in ["2026-10-01T00:00:00Z", "2026-10-01T00:00:00z"] {
+            assert_eq!(
+                parse_when(text, now).unwrap(),
+                Utc.with_ymd_and_hms(2026, 10, 1, 0, 0, 0).unwrap(),
+                "{text}"
+            );
+        }
     }
 
     #[test]
@@ -1682,13 +1736,16 @@ mod tests {
         let session = Uuid::new_v4();
         let now = Utc::now();
         let mut old = f.event(session, 0, "search_run");
-        old.occurred_at = now - Duration::days(400);
+        // A unique far-past instant, so pruning just after it touches no other test's rows.
+        let offset = i64::try_from(session.as_u128() % 100_000_000).unwrap_or(0);
+        let old_at = Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap() + Duration::seconds(offset);
+        old.occurred_at = old_at;
         old.detail = json!({ "query": format!("old-{}", f.marker) });
         let mut recent = f.event(session, 1, "search_run");
         recent.detail = json!({ "query": format!("new-{}", f.marker) });
         f.service.ingest(&[old, recent]).await.expect("ingest");
 
-        let (everything, _) = cli_history_export(&f.service, "500d", now)
+        let (everything, _) = cli_history_export(&f.service, "1999-12-31", now)
             .await
             .expect("export");
         assert!(everything.contains(&format!("old-{}", f.marker)));
@@ -1700,16 +1757,64 @@ mod tests {
         assert!(recent_only.contains(&format!("new-{}", f.marker)));
         assert_eq!(count, recent_only.lines().count());
 
-        // Prune the old row only; other tests' rows are all recent.
-        let deleted = cli_history_prune(&f.service, "300d", now)
+        let cutoff = (old_at + Duration::seconds(1)).to_rfc3339();
+        let deleted = cli_history_prune(&f.service, &cutoff, now)
             .await
             .expect("prune");
         assert!(deleted >= 1);
-        let (after, _) = cli_history_export(&f.service, "500d", now)
+        let (after, _) = cli_history_export(&f.service, "1999-12-31", now)
             .await
             .expect("export");
         assert!(!after.contains(&format!("old-{}", f.marker)));
         assert!(after.contains(&format!("new-{}", f.marker)));
+    }
+
+    #[tokio::test]
+    async fn should_include_a_read_work_in_the_profile_when_it_has_no_events_or_list() {
+        let Some(f) = Fixture::new().await else {
+            return;
+        };
+        let read = f.work("profile-bare-read").await;
+        f.service
+            .reading
+            .set(f.service.workspace, read, ReadingStatus::Read)
+            .await
+            .unwrap();
+        let profile = f
+            .service
+            .knowledge_profile(Utc::now())
+            .await
+            .expect("profile");
+        let entry = profile
+            .entries
+            .iter()
+            .find(|entry| entry.work_id == read)
+            .expect("a Work marked read belongs in the profile");
+        assert_eq!(entry.status, ReadingStatus::Read);
+    }
+
+    #[tokio::test]
+    async fn should_nudge_only_the_first_qualifying_visit_when_a_work_is_set_unread_again() {
+        let Some(f) = Fixture::new().await else {
+            return;
+        };
+        let work = f.work("nudge-first").await;
+        let session = Uuid::new_v4();
+        let mut first = f.event(session, 0, "paper_left");
+        first.work_id = Some(work);
+        first.dwell_ms = Some(NUDGE_DWELL_MS);
+        let outcome = f.service.ingest(&[first]).await.expect("ingest");
+        assert_eq!(outcome.nudged, vec![work]);
+        f.service
+            .reading
+            .set(f.service.workspace, work, ReadingStatus::Unread)
+            .await
+            .unwrap();
+        let mut second = f.event(session, 1, "paper_left");
+        second.work_id = Some(work);
+        second.dwell_ms = Some(NUDGE_DWELL_MS);
+        let outcome = f.service.ingest(&[second]).await.expect("ingest");
+        assert!(outcome.nudged.is_empty());
     }
 
     #[tokio::test]

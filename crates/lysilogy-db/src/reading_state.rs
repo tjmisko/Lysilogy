@@ -107,6 +107,18 @@ impl ReadingStateRepository {
             .collect()
     }
 
+    /// Every Work marked `read` or `reading` in the workspace.
+    pub async fn known(&self, workspace: WorkspaceId) -> Result<Vec<WorkId>> {
+        let ids: Vec<Uuid> = sqlx::query_scalar(
+            "select work_id from reader.work_reading_state \
+             where workspace_id = $1 and status in ('read', 'reading')",
+        )
+        .bind(workspace.as_uuid())
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(ids.into_iter().map(WorkId::from_uuid).collect())
+    }
+
     /// Stored statuses for every Work node of a list, ordered by Work ID.
     pub async fn for_list(
         &self,
