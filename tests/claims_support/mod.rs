@@ -34,6 +34,9 @@ pub struct ClaimCase {
     pub claim: Claim,
     /// The `OpenAlex` ID the claim should resolve to; `None` for fakes.
     pub truth: Option<String>,
+    /// The vault paper whose bibliography the entry came from; `None` for fakes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_paper: Option<String>,
 }
 
 /// The three sets, as written to `cases.json`.

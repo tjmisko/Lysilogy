@@ -55,6 +55,10 @@ pub struct ProviderRecord {
     pub title: String,
     pub year: Option<i32>,
     pub authors: Vec<String>,
+    /// The record's DOI when the provider has one, so a verified claim can find the Work
+    /// that already holds it.
+    #[serde(default)]
+    pub doi: Option<String>,
 }
 
 /// The result of resolving one claimed DOI or arXiv ID.
@@ -393,6 +397,7 @@ mod tests {
             title: title.into(),
             year,
             authors: authors.iter().map(|a| (*a).to_owned()).collect(),
+            doi: None,
         }
     }
 

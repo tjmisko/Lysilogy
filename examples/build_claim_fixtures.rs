@@ -6,6 +6,16 @@
 //! recording every response, and writes `cases.json` and `responses.json`. Tests then
 //! replay the recording and never touch the network.
 //!
+//! Deviations from the spec's set sizes, all forced by the data: the dev vault has 6 papers
+//! with accepted entries (the spec wants 10 or more, with at most 5 entries each) and only
+//! one entry prints a DOI, so real DOI cases take the DOI `OpenAlex` holds for the resolved
+//! Work; the DOI path is therefore a check of the lookup and the title agreement rule, not
+//! of DOI parsing. arXiv cases are kept only when `OpenAlex` resolves the arXiv DOI to the
+//! accepted Work, so preprint-versus-published splits are not scored (the count left out is
+//! printed). Each case records its source paper in `cases.json`, and the builder prints how
+//! many papers contribute and the largest share. `OpenAlex`'s free-tier search budget caps
+//! the set sizes.
+//!
 //! It refuses to overwrite existing fixtures without `--rerecord`. `OpenAlex`'s free tier
 //! charges for title searches, so the run stops at `--max-searches` live searches and keeps
 //! what it recorded in a scratch file, which the next run resumes from.
@@ -112,7 +122,7 @@ impl Rng {
     }
 
     fn below(&mut self, bound: usize) -> usize {
-        usize::try_from(self.next() % bound as u64).unwrap_or(0)
+        (self.next() % bound as u64) as usize
     }
 
     fn shuffle<T>(&mut self, items: &mut [T]) {
@@ -237,6 +247,7 @@ fn case(id: &str, kind: &str, claim: Claim, truth: Option<&str>) -> ClaimCase {
         kind: kind.to_owned(),
         claim,
         truth: truth.map(str::to_ascii_lowercase),
+        source_paper: None,
     }
 }
 
@@ -347,6 +358,10 @@ async fn build_cases<T: JsonTransport>(
     rng: &mut Rng,
 ) -> Result<CaseSets, Failure> {
     let mut sets = CaseSets::default();
+    let papers_of: BTreeMap<String, String> = pool
+        .iter()
+        .map(|entry| (entry.truth.to_ascii_lowercase(), entry.paper.clone()))
+        .collect();
     let mut remaining = pool;
 
     // DOI entries: the dev vault's parsed entries rarely print a DOI, so the claim carries
@@ -379,6 +394,7 @@ async fn build_cases<T: JsonTransport>(
     // vault accepted. Preprints that were retitled or duplicated resolve elsewhere, and
     // either record would then be a fair answer, so those entries are left out.
     let mut arxiv_entries = Vec::new();
+    let mut arxiv_skipped = 0;
     let mut index = 0;
     while arxiv_entries.len() < REAL_ARXIV && index < remaining.len() {
         let entry = &remaining[index];
@@ -391,6 +407,7 @@ async fn build_cases<T: JsonTransport>(
             arxiv_entries.push(remaining.remove(index));
         } else {
             eprintln!("skipping arXiv entry {arxiv}: it resolves to another record");
+            arxiv_skipped += 1;
             index += 1;
         }
     }
@@ -588,7 +605,7 @@ async fn build_cases<T: JsonTransport>(
         let claim = Claim {
             title,
             authors,
-            year: Some(2015 + i32::try_from(rng.below(8))?),
+            year: Some(2015 + rng.below(8) as i32),
             ..Claim::default()
         };
         fakes.push(case(
@@ -599,6 +616,30 @@ async fn build_cases<T: JsonTransport>(
         ));
     }
     sets.fake = fakes;
+    for case in sets.real.iter_mut().chain(sets.near_miss.iter_mut()) {
+        case.source_paper = case
+            .truth
+            .as_ref()
+            .and_then(|truth| papers_of.get(truth))
+            .cloned();
+    }
+    let mut per_paper: BTreeMap<&str, usize> = BTreeMap::new();
+    for paper in sets
+        .real
+        .iter()
+        .chain(&sets.near_miss)
+        .filter_map(|case| case.source_paper.as_deref())
+    {
+        *per_paper.entry(paper).or_default() += 1;
+    }
+    eprintln!(
+        "cases come from {} papers; the largest contributes {} (the spec asks for at least 10 papers and at most 5 each, which the dev vault cannot supply)",
+        per_paper.len(),
+        per_paper.values().max().copied().unwrap_or(0)
+    );
+    eprintln!(
+        "{arxiv_skipped} arXiv entries were left out of the real set because OpenAlex resolves their arXiv DOI to a different record than the vault accepted"
+    );
     Ok(sets)
 }
 
@@ -684,9 +725,6 @@ async fn main() -> Result<(), Failure> {
     }
     eprintln!("{}", report.render());
 
-    write_json(&cases_path, &sets)?;
-    write_json(&responses_path, &capture.captured())?;
-
     // Prove the recording is complete: replay it in a fresh scratch database.
     let replay = ReplayTransport::new(capture.captured());
     let scratch = ScratchDatabase::create(&args.test_url).await?;
@@ -697,5 +735,10 @@ async fn main() -> Result<(), Failure> {
     if !replay.misses().is_empty() {
         return Err(format!("replay missed {:?}", replay.misses()).into());
     }
+
+    // Only a recording that replays completely is written, so a failed run leaves nothing
+    // that a later run would refuse to overwrite.
+    write_json(&cases_path, &sets)?;
+    write_json(&responses_path, &capture.captured())?;
     Ok(())
 }
