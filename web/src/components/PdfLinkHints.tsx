@@ -5,6 +5,8 @@ import { discoverPaperLinks, hintCodes, type PaperDestination, type PaperLink } 
 import { nativePageLinks } from "../lib/pdfNativeLinks";
 import { overlaps, placeHintBadges, positionLinks, projectRect, type PositionedLink } from "../lib/linkHintGeometry";
 import { visiblePdfPage } from "../lib/pdfViewport";
+import { clipText } from "../lib/historyCapture";
+import { recordHistory } from "../hooks/useHistoryCapture";
 import type { ReadingIndex } from "../lib/readingIndex";
 import type { SectionCrop } from "../lib/sectionCrop";
 import "./PdfLinkHints.css";
@@ -57,6 +59,8 @@ export function usePdfLinkHints({ url, page, document: pdf, root, enabled, conte
   }, [crops, onOpenFullPaper, onPage, pageSubset, quit, url]);
 
   const follow = (link: PaperLink) => {
+    const target = "url" in link.destination ? link.destination.url : link.destination.page;
+    recordHistory({ kind: "link_followed", detail: { link: link.kind, label: clipText(link.label, 200), target } });
     if ("url" in link.destination) {
       window.open(link.destination.url, "_blank", "noopener,noreferrer"); quit(); return;
     }

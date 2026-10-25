@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { recordHistory } from "../hooks/useHistoryCapture";
 import type {
   AnalysisProvider,
   Claim,
@@ -116,6 +117,10 @@ export function DigestPanel({
       window.setTimeout(() => questionRef.current?.focus(), 0);
     }
   }, [initialSelection]);
+
+  useEffect(() => {
+    recordHistory({ kind: "digest_opened", detail: { section_id: section.id } });
+  }, [section.id]);
 
   const visualBounds = useMemo(
     () =>

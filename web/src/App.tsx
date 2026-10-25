@@ -55,6 +55,7 @@ import type {
   PaperSection,
   PaperView,
   ProcessingQueue,
+  ReadingPosition,
 } from "./types";
 
 type Panel = "digest" | "help" | null;
@@ -156,7 +157,11 @@ export function App() {
   const suppressGlossUntil = useRef(0);
   const listOverlay = pickerTarget !== null || membershipTarget !== null;
   useEffect(() => { appRouteRef.current = appRoute; }, [appRoute]);
-  useHistoryCapture();
+  useHistoryCapture({
+    paperId: selectedId,
+    view: view === "text" ? textMode : view,
+    listId: appRoute?.kind === "list" ? appRoute.listId : null,
+  });
   const searchRef = useRef<HTMLInputElement>(null);
   const mainStageRef = useRef<HTMLElement>(null);
   const closeReaderTools = useCallback(() => setToolsTab(null), []);
@@ -664,6 +669,25 @@ export function App() {
     setPdfPage(Math.max(1, target.page));
     sourceFocusNonce.current += 1;
     setSourceFocus({ paperId: target.paperId, page: target.page, start: target.start, end: target.end, passage: target.passage, nonce: sourceFocusNonce.current });
+  }, [selectPaper]);
+
+  // Reopen from the history at the saved place. A section position keeps its page, so it opens the full PDF there.
+  const openAtPosition = useCallback((paperId: string, position: ReadingPosition | null): void => {
+    selectPaper(paperId);
+    if (position === null) return;
+    focusRestore.current = null;
+    if (position.view === "markdown") {
+      setTextMode("markdown");
+      setView("text");
+      return;
+    }
+    if (position.view === "overview" && position.page === null) {
+      setView("overview");
+      return;
+    }
+    setTextMode("pdf");
+    setView("text");
+    if (position.page !== null) setPdfPage(Math.max(1, position.page));
   }, [selectPaper]);
 
   const openPage = useCallback((page: number): void => {
@@ -1458,7 +1482,8 @@ export function App() {
             onBack={() => openRoute({ kind: "lists" })}
             onOpenPaper={(id) => selectPaper(id)} />}
           {home && appRoute?.kind === "history" && <HistoryPage
-            keyboardEnabled={listPageKeys} onOpenPaper={(id) => selectPaper(id)} onAddToList={setPickerTarget} />}
+            keyboardEnabled={listPageKeys} papers={library?.papers ?? []} onOpenPaper={openAtPosition}
+            onOpenList={(id) => openList(id)} onAddToList={setPickerTarget} onNotice={setNotice} onError={setError} />}
           {!loading && home && appRoute === null && <HomePage papers={library?.papers ?? []}
             darkInk={darkInk} onToggleInk={() => setDarkInk((value) => !value)}
             query={homeQuery} onQuery={setHomeQuery} onSelect={selectPaper} activeId={homeActiveId} onActive={setHomeActiveId}

@@ -8,6 +8,8 @@ import { inclusiveSourceSpan, moveSourceCursor, moveSourceLine, sourceCursor, so
 import { resolveSourceMarks, type SourceMark } from "../lib/sourceGeometry";
 import { cursorDocument, cursorTextDocument, cursorBlock, cursorCopyText, cursorGrapheme, cursorLine, cursorSelection, moveCursorScreen, originalCursor, virtualCursor } from "../lib/cursorDocument";
 import { visiblePdfPage } from "../lib/pdfViewport";
+import { clipText } from "../lib/historyCapture";
+import { recordHistory } from "../hooks/useHistoryCapture";
 import "./PdfSourceTools.css";
 
 export type { SourceMark } from "../lib/sourceGeometry";
@@ -175,6 +177,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     setError(""); setMessage(""); setVisual(null); setPendingObject(null); setYankPending(false);
     if (pattern.length === 0) { setMatches([]); setBusy(false); return; }
     if (pattern.length > 2000) { setError("Keep the pattern below 2,000 characters."); return; }
+    recordHistory({ kind: "search_run", detail: { query: clipText(pattern) } });
     setBusy(true);
     void loadIndex().then((data) => {
       if (!mounted.current || generation.current !== nextGeneration) return;

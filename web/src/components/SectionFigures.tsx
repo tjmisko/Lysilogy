@@ -4,6 +4,7 @@ import type { LayoutPage, PaperSection } from "../types";
 import { readingIndexUrl, type ReadingIndex } from "../lib/readingIndex";
 import { externalSectionFigures } from "../lib/sectionFigures";
 import { usePdfDocument } from "../hooks/usePdfDocument";
+import { historyViewFigure } from "../hooks/useHistoryCapture";
 
 type Figure = ReadingIndex["figures"][number];
 function FigurePage({ url, figure, onClose, onFullPaper, darkInk }: { url: string; figure: Figure; onClose: () => void; onFullPaper: (page: number) => void; darkInk: boolean }) {
@@ -14,6 +15,7 @@ function FigurePage({ url, figure, onClose, onFullPaper, darkInk }: { url: strin
   const [width, setWidth] = useState(600);
   const [full, setFull] = useState(figure.rect === null);
   const [renderError, setRenderError] = useState("");
+  useEffect(() => historyViewFigure(figure.label, figure.page), [figure.label, figure.page]);
   useEffect(() => {
     close.current?.focus();
     const node = host.current;

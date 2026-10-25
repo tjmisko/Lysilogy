@@ -5,6 +5,7 @@ import { visiblePdfPage } from "../lib/pdfViewport";
 import { animatePages, type PageSnapshot } from "../lib/pageTransition";
 import { SectionFigures } from "./SectionFigures";
 import { PdfReader } from "./PdfReader";
+import { historyFocusSection } from "../hooks/useHistoryCapture";
 
 type Props = {
   url: string;
@@ -41,6 +42,9 @@ export function SectionFocus({ url, toolbarVisible = true, title, analysis, sect
   useEffect(() => {
     scrollRef.current?.focus({ preventScroll: true });
   }, [jump.request]);
+
+  // Closing the effect records `section_focused` with the time the section stayed open.
+  useEffect(() => historyFocusSection(section.id, section.title), [section.id, section.title]);
 
   useLayoutEffect(() => {
     let stop = () => {};

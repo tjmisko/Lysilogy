@@ -7,6 +7,7 @@ import { cropTextLayer } from "../lib/cropTextLayer";
 import { visiblePdfPage } from "../lib/pdfViewport";
 import { pdfVisualBounds } from "../lib/pdfVisualBounds";
 import { handleNotesPaneKey } from "../lib/notesPaneKeys";
+import { historyPageReached } from "../hooks/useHistoryCapture";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   type PDFDocumentProxy,
@@ -408,6 +409,10 @@ export function PdfReader({
   const linkActive = linkHints.active;
   const linkQuit = linkHints.quit;
   const linkOwnsPageJump = linkHints.ownsPageJump;
+
+  // The page in view counts as reached once per visit and is the position saved for a reopen.
+  const shownPage = flow === "continuous" ? readingPage : page;
+  useEffect(() => historyPageReached(shownPage), [shownPage]);
 
   useEffect(() => {
     if (flow !== "continuous") return;

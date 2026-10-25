@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { AnalysisProvider, Clarification } from "../types";
 import { api } from "../lib/api";
+import { clipText } from "../lib/historyCapture";
+import { recordHistory } from "../hooks/useHistoryCapture";
 
 type Props = { paperId: string; text: string; page: number; provider: AnalysisProvider; onClose: () => void };
 
@@ -37,6 +39,7 @@ export function PassageQuestion({ paperId, text, page, provider: initialProvider
       <form onSubmit={(event) => {
         event.preventDefault(); if (busy) return;
         setBusy(true); setError(null);
+        recordHistory({ kind: "question_asked", paper_id: paperId, detail: { page, question: clipText(question) } });
         void api.clarify(paperId, null, text, question, provider).then(setAnswer)
           .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Could not explain this passage"))
           .finally(() => setBusy(false));

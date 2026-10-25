@@ -1,0 +1,32 @@
+/* Reading history. Shares the page frame and header of ListsPage.css. */
+
+.history-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px clamp(18px, 4vw, 64px) 56px;
+}
+
+.history-kinds { display: flex; flex-wrap: wrap; gap: 6px; }
+.history-kinds button { padding: 3px 9px; border: 1px solid var(--line); border-radius: 5px; background: transparent; color: var(--ink-soft); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.history-kinds button[aria-pressed="true"] { border-color: var(--signal); color: var(--signal); }
+
+.history-rows { display: flex; flex-direction: column; gap: 3px; margin: 8px 0 0; padding: 0; list-style: none; }
+.history-day h2 { margin: 18px 0 4px; color: var(--ink-faint); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .06em; text-transform: uppercase; }
+.history-day:first-child h2 { margin-top: 6px; }
+
+.history-row { position: relative; display: flex; align-items: baseline; gap: 10px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-raised); cursor: default; }
+.history-row:hover { border-color: var(--line-bright); }
+/* An overlay ring, as on the lists index. */
+.history-row.is-selected::after { position: absolute; inset: 0; border: 3px solid var(--signal); border-radius: inherit; content: ""; pointer-events: none; }
+.history-time { flex: none; min-width: 5.5em; color: var(--ink-faint); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.history-fold { flex: none; color: var(--ink-faint); font-size: 11px; }
+.history-title { min-width: 0; flex: 1; color: var(--ink); font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
+.history-session .history-title { font: 400 15px/1.35 Georgia, "Times New Roman", serif; }
+.history-meta { flex: none; margin-left: auto; color: var(--ink-faint); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* Events sit under their session, indented and quieter. */
+.history-event { margin-left: 28px; padding: 4px 12px; border-color: transparent; background: transparent; }
+.history-event .history-title { color: var(--ink-soft); font-size: 12px; }
+
+.history-more { margin: 12px 0 0; text-align: center; }
+.history-more button { padding: 4px 12px; border: 1px solid var(--line-bright); border-radius: 5px; background: transparent; color: var(--signal); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }

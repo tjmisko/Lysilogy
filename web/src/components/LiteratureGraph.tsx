@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { acquisitionStatusText, canFetch, isRetry, type AcquisitionLike } from "../lib/acquisition";
 import { ApiError, api } from "../lib/api";
+import { historyInspectWork, recordHistory } from "../hooks/useHistoryCapture";
 import {
   HISTOGRAM_LIMIT, citedEdgesByCited, HISTOGRAM_NAV_KEYS, LITERATURE_VIEW_STORAGE_KEY, parseLiteratureView, type LiteratureView,
 } from "../lib/histogramLayout";
@@ -404,6 +405,17 @@ export function LiteratureGraph({ paperId, paperTitle, embedded = false, onClose
     : radialActiveWork;
   const activeWorkId = workPanelOpen ? activeWork?.id : undefined;
 
+  useEffect(() => {
+    recordHistory({ kind: "graph_opened", paper_id: paperId });
+  }, [paperId]);
+
+  // A Work panel that stays open for two seconds counts as inspected.
+  useEffect(() => {
+    if (activeWorkId === undefined) return;
+    const done = historyInspectWork(activeWorkId);
+    return () => { done(); };
+  }, [activeWorkId]);
+
   // Fetch the selected Work's citation neighborhood while its panel is open.
   useEffect(() => {
     if (activeWorkId === undefined) return;
@@ -595,6 +607,7 @@ export function LiteratureGraph({ paperId, paperTitle, embedded = false, onClose
     if (activeWork === undefined) return;
     const workId = activeWork.id;
     const retry = isRetry(activeView);
+    recordHistory({ kind: "fetch_requested", work_id: workId, detail: { retry } });
     setFetches((current) => new Map(current).set(workId, {
       job: "running", view: current.get(workId)?.view ?? null, paperId: null, message: null, fresh: false,
     }));
