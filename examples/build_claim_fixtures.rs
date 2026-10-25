@@ -121,7 +121,8 @@ impl Rng {
         self.0 >> 33
     }
 
-    fn below(&mut self, bound: usize) -> usize {
+    #[allow(clippy::cast_possible_truncation)] // the remainder is below bound
+    const fn below(&mut self, bound: usize) -> usize {
         (self.next() % bound as u64) as usize
     }
 
@@ -326,7 +327,7 @@ const INVENTED_FAMILY: [&str; 6] = [
     "Haverford",
 ];
 
-fn pick<'a>(rng: &mut Rng, list: &[&'a str]) -> &'a str {
+const fn pick<'a>(rng: &mut Rng, list: &[&'a str]) -> &'a str {
     list[rng.below(list.len())]
 }
 
@@ -605,7 +606,7 @@ async fn build_cases<T: JsonTransport>(
         let claim = Claim {
             title,
             authors,
-            year: Some(2015 + rng.below(8) as i32),
+            year: Some(2015 + year_offset(rng)),
             ..Claim::default()
         };
         fakes.push(case(
@@ -741,4 +742,9 @@ async fn main() -> Result<(), Failure> {
     write_json(&cases_path, &sets)?;
     write_json(&responses_path, &capture.captured())?;
     Ok(())
+}
+
+#[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)] // below 8
+const fn year_offset(rng: &mut Rng) -> i32 {
+    rng.below(8) as i32
 }
