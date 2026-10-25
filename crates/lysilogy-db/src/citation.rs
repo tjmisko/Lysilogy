@@ -272,6 +272,36 @@ impl CitationRepository {
             })
             .collect()
     }
+
+    /// Like [`Self::outgoing_counts`], but ignores assertions written by a cited-by
+    /// expansion (source record kind `openalex_cited_by`). Those say "this Work cites the
+    /// expanded Work", not that the citer's own references were fetched, so they must not
+    /// count as known reference fanout.
+    pub async fn known_fanout_counts(&self, works: &[WorkId]) -> Result<HashMap<WorkId, i64>> {
+        if works.is_empty() {
+            return Ok(HashMap::new());
+        }
+        let ids: Vec<Uuid> = works.iter().map(|work| work.as_uuid()).collect();
+        let rows = sqlx::query(
+            "select a.citing_work_id, count(distinct a.cited_work_id) as cited_count \
+             from graph.citation_assertion a \
+             left join source.source_record s on s.id = a.source_record_id \
+             where a.citing_work_id = any($1) and a.status in ('asserted', 'accepted') \
+               and (s.kind is null or s.kind <> 'openalex_cited_by') \
+             group by a.citing_work_id",
+        )
+        .bind(ids)
+        .fetch_all(&self.pool)
+        .await?;
+        rows.iter()
+            .map(|row| {
+                Ok((
+                    WorkId::from_uuid(row.try_get("citing_work_id")?),
+                    row.try_get("cited_count")?,
+                ))
+            })
+            .collect()
+    }
 }
 
 #[cfg(test)]
@@ -537,5 +567,62 @@ mod tests {
         assert_eq!(counts.get(&c), None, "a rejected edge does not count");
         assert_eq!(counts.get(&outside), Some(&1));
         assert!(repo.outgoing_counts(&[]).await.expect("none").is_empty());
+    }
+
+    #[tokio::test]
+    async fn should_exclude_cited_by_assertions_when_counting_known_fanout() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let repo = CitationRepository::new(pool.clone());
+        let records = SourceRecordRepository::new(pool.clone());
+        let citer = test_support::new_work(&pool).await;
+        let both = test_support::new_work(&pool).await;
+        let target = test_support::new_work(&pool).await;
+        let other = test_support::new_work(&pool).await;
+        let cited_by = records
+            .upsert(
+                "openalex_cited_by",
+                &format!("k-{}", Uuid::new_v4()),
+                Coverage::Complete,
+                &serde_json::json!({}),
+            )
+            .await
+            .expect("cited-by record");
+        let ordinary = records
+            .upsert(
+                "openalex_work",
+                &format!("k-{}", Uuid::new_v4()),
+                Coverage::Complete,
+                &serde_json::json!({}),
+            )
+            .await
+            .expect("ordinary record");
+        repo.add_assertion(citer, target, Some(cited_by))
+            .await
+            .expect("cited-by edge");
+        repo.add_assertion(both, target, Some(cited_by))
+            .await
+            .expect("cited-by edge");
+        repo.add_assertion(both, other, Some(ordinary))
+            .await
+            .expect("reference edge");
+
+        let counts = repo
+            .known_fanout_counts(&[citer, both])
+            .await
+            .expect("counts");
+        assert_eq!(counts.get(&citer), None);
+        assert_eq!(counts.get(&both), Some(&1));
+        assert!(
+            repo.known_fanout_counts(&[])
+                .await
+                .expect("none")
+                .is_empty()
+        );
+        let raw = repo.outgoing_counts(&[citer]).await.expect("raw");
+        assert_eq!(raw.get(&citer), Some(&1));
     }
 }

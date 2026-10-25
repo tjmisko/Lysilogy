@@ -250,7 +250,7 @@ impl AppState {
         }
         let counts = graph
             .citations
-            .outgoing_counts(&[work])
+            .known_fanout_counts(&[work])
             .await
             .map_err(|error| database(&error))?;
         Ok(counts.get(&work).is_some_and(|count| *count > 0))
@@ -452,7 +452,7 @@ impl AppState {
         }
         let counts = graph
             .citations
-            .outgoing_counts(&[work])
+            .known_fanout_counts(&[work])
             .await
             .map_err(|error| database(&error))?;
         let Some(count) = counts.get(&work).filter(|count| **count > 0) else {
@@ -584,7 +584,7 @@ impl AppState {
             .copied()
             .filter(|work| !views.contains_key(&work.to_string()))
             .collect();
-        for (work, count) in graph.citations.outgoing_counts(&unrecorded).await? {
+        for (work, count) in graph.citations.known_fanout_counts(&unrecorded).await? {
             views.insert(
                 work.to_string(),
                 ExpansionView {
@@ -1812,6 +1812,75 @@ mod tests {
             2
         );
         assert_eq!(graph.citations.incoming(work).await.expect("in").len(), 2);
+    }
+
+    #[tokio::test]
+    async fn should_fetch_citer_references_when_citer_came_from_cited_by_expansion() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let marker = marker();
+        let own = format!("W1{marker}");
+        let citer_id = format!("W2{marker}");
+        let reference = format!("W4{marker}");
+        let state = plain_state(
+            graph.clone(),
+            cited_by_transport(&own, &[], std::slice::from_ref(&citer_id)),
+        )
+        .await;
+        let work = new_work(&graph, IdentifierScheme::Openalex, &own).await;
+        state.expand_cited_by(work, false).await.expect("cited by");
+        let citers = graph.citations.incoming(work).await.expect("incoming");
+        assert_eq!(citers.len(), 1);
+        let citer = citers[0].id;
+
+        assert!(
+            !state.expansion_is_cached(citer).await.expect("cached"),
+            "a cited-by edge is not known reference fanout"
+        );
+        let views = state.expansion_views(&[citer]).await.expect("views");
+        assert!(!views.contains_key(&citer.to_string()));
+
+        let citer_state = plain_state(
+            graph.clone(),
+            cited_by_transport(&citer_id, std::slice::from_ref(&reference), &[]),
+        )
+        .await;
+        let report = citer_state
+            .expand_work(citer, false, true)
+            .await
+            .expect("expand citer");
+        assert!(!report.cached);
+        assert_ne!(report.method, Some(ExpansionMethod::Existing));
+        assert_eq!(report.references, 1);
+        assert!(state.expansion_is_cached(citer).await.expect("cached"));
+    }
+
+    #[tokio::test]
+    async fn should_still_treat_ordinary_reference_edges_as_known_fanout_when_counting() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let marker = marker();
+        let state = plain_state(
+            graph.clone(),
+            cited_by_transport(&format!("W1{marker}"), &[], &[]),
+        )
+        .await;
+        let work = new_work(&graph, IdentifierScheme::Openalex, &format!("W1{marker}")).await;
+        let child = new_work(&graph, IdentifierScheme::Openalex, &format!("W2{marker}")).await;
+        graph
+            .citations
+            .add_assertion(work, child, None)
+            .await
+            .expect("edge");
+        assert!(state.expansion_is_cached(work).await.expect("cached"));
+        let report = state.expand_work(work, false, true).await.expect("expand");
+        assert!(report.cached);
+        assert_eq!(report.method, Some(ExpansionMethod::Existing));
+        assert_eq!(report.references, 1);
     }
 
     #[tokio::test]
