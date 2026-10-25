@@ -80,7 +80,7 @@ export function useHistoryCapture({ paperId, view, listId }: HistoryCaptureState
     // Before the flush's own pagehide listener, so `paper_left` rides in the same beacon.
     const onPageHide = (): void => rec.leavePaper();
     const onPageShow = (event: PageTransitionEvent): void => {
-      if (event.persisted) rec.openPaper(latest.current.paperId, latest.current.view);
+      if (event.persisted) rec.openPaper(latest.current.paperId, latest.current.view, null);
     };
     const onListsChanged = (): void => {
       const open = latest.current.listId;
@@ -119,6 +119,13 @@ export function useHistoryCapture({ paperId, view, listId }: HistoryCaptureState
     if (paperId === null) return;
     rec.setVisible(document.visibilityState === "visible");
     rec.setFocused(document.hasFocus());
+    if (rec.workOf(paperId) !== undefined) return;
+    // The Work may resolve after the visit opened; later events and paper_left then carry it.
+    const controller = new AbortController();
+    api.paperWork(paperId, controller.signal).then((found) => {
+      if (found.work !== null) rec.setWork(paperId, found.work.id);
+    }).catch(() => undefined);
+    return () => controller.abort();
   }, [paperId]);
 
   useEffect(() => {

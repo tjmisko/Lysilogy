@@ -60,6 +60,9 @@ export class HistoryRecorder {
   private readonly deps: RecorderDeps;
   private readonly debounce: Debouncer<PendingPosition>;
   private visit: PaperVisit | null = null;
+  /** The visit's base fields; PaperVisit keeps this object, so setting work_id here reaches later events. */
+  private visitBase: { paper_id: string; work_id?: string } | null = null;
+  private readonly knownWork = new Map<string, string>();
   private paperId: string | null = null;
   private view: ReaderView = "abstract";
   private page: number | null = null;
@@ -83,11 +86,12 @@ export class HistoryRecorder {
    * Start a visit to `paperId` (ending any other) or, for the paper already open, note the view.
    * A null `paperId` ends the visit.
    */
-  openPaper(paperId: string | null, view: ReaderView): void {
+  openPaper(paperId: string | null, view: ReaderView, workId?: string | null): void {
     if (paperId === null || paperId.trim() === "") {
       this.leavePaper();
       return;
     }
+    if (workId !== undefined && workId !== null) this.knownWork.set(paperId, workId);
     if (paperId === this.paperId) {
       this.setView(view);
       return;
@@ -95,7 +99,25 @@ export class HistoryRecorder {
     this.leavePaper();
     this.paperId = paperId;
     this.view = view;
-    this.visit = new PaperVisit(this.deps.queue, this.deps, { paper_id: paperId });
+    const known = this.knownWork.get(paperId);
+    const base: { paper_id: string; work_id?: string } = { paper_id: paperId };
+    if (known !== undefined) base.work_id = known;
+    this.visitBase = base;
+    this.visit = new PaperVisit(this.deps.queue, this.deps, base);
+  }
+
+  /**
+   * The Work linked to `paperId` is now known. Events from here on, and `paper_left`, carry it;
+   * `paper_opened` already queued does not.
+   */
+  setWork(paperId: string, workId: string): void {
+    this.knownWork.set(paperId, workId);
+    if (this.paperId === paperId && this.visitBase !== null) this.visitBase.work_id = workId;
+  }
+
+  /** The Work for `paperId`, once known. */
+  workOf(paperId: string): string | undefined {
+    return this.knownWork.get(paperId);
   }
 
   /** Close open timed events, record `paper_left`, and save the waiting position. */
@@ -105,6 +127,7 @@ export class HistoryRecorder {
     this.debounce.flushNow();
     this.visit.end();
     this.visit = null;
+    this.visitBase = null;
     this.paperId = null;
     this.page = null;
     this.sectionId = null;
@@ -135,8 +158,9 @@ export class HistoryRecorder {
 
   /** Record an event for the open paper, unless the draft names its own. */
   record(draft: HistoryEventDraft): void {
+    const work = this.paperId === null ? undefined : this.knownWork.get(this.paperId);
     const base = this.paperId === null ? {} : { paper_id: this.paperId };
-    this.deps.queue.record({ ...base, ...draft });
+    this.deps.queue.record({ ...base, ...(work === undefined ? {} : { work_id: work }), ...draft });
   }
 
   /** The reader shows `page`: `page_reached` once per page per visit, and the position follows. */
@@ -201,7 +225,14 @@ export class HistoryRecorder {
   private finish(entry: TimedEntry): void {
     if (!this.timed.delete(entry)) return;
     const dwell = Math.max(0, entry.visit.dwell() - entry.startDwell);
-    this.deps.queue.record({ kind: entry.kind, paper_id: entry.paperId, detail: entry.detail, dwell_ms: dwell });
+    const work = this.knownWork.get(entry.paperId);
+    this.deps.queue.record({
+      kind: entry.kind,
+      paper_id: entry.paperId,
+      ...(work === undefined ? {} : { work_id: work }),
+      detail: entry.detail,
+      dwell_ms: dwell,
+    });
   }
 
   private pushPosition(): void {

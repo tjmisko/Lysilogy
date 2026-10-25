@@ -276,3 +276,48 @@ test('should clamp the page to 1 when the saved page is 0 or negative', () => {
   assert.equal(restoreTarget({ view: 'pdf', page: 0 }).page, 1);
   assert.equal(restoreTarget({ view: 'pdf', page: -5 }).page, 1);
 });
+
+test('should carry work_id on paper_opened, page_reached and paper_left when the Work is known at open', () => {
+  const { recorder, queue } = setup();
+  recorder.openPaper('p1', 'pdf', 'w1');
+  recorder.pageReached(2);
+  recorder.leavePaper();
+  const events = queue.snapshot();
+  assert.deepEqual(events.map((event) => event.kind), ['paper_opened', 'page_reached', 'paper_left']);
+  for (const event of events) assert.equal(event.work_id, 'w1');
+});
+
+test('should attach work_id to later events and paper_left when the Work resolves after open', () => {
+  const { recorder, queue } = setup();
+  recorder.openPaper('p1', 'pdf');
+  recorder.pageReached(1);
+  recorder.setWork('p1', 'w9');
+  recorder.pageReached(2);
+  recorder.setView('markdown');
+  recorder.leavePaper();
+  const byKind = (kind) => queue.snapshot().filter((event) => event.kind === kind);
+  assert.equal(byKind('paper_opened')[0].work_id, undefined);
+  assert.equal(byKind('page_reached')[0].work_id, undefined);
+  assert.equal(byKind('page_reached')[1].work_id, 'w9');
+  assert.equal(byKind('view_changed')[0].work_id, 'w9');
+  assert.equal(byKind('paper_left')[0].work_id, 'w9');
+});
+
+test('should carry work_id on section_focused and a reopened paper_opened when the Work was learned earlier', () => {
+  const { recorder, queue } = setup();
+  recorder.openPaper('p1', 'pdf', 'w1');
+  recorder.focusSection('s1', 'Intro')();
+  recorder.leavePaper();
+  recorder.openPaper('p1', 'pdf');
+  const events = queue.snapshot();
+  assert.equal(events.find((event) => event.kind === 'section_focused').work_id, 'w1');
+  assert.equal(events.filter((event) => event.kind === 'paper_opened')[1].work_id, 'w1');
+});
+
+test('should not leak a Work onto another paper when setWork names a paper that is not open', () => {
+  const { recorder, queue } = setup();
+  recorder.openPaper('p1', 'pdf');
+  recorder.setWork('p2', 'w2');
+  recorder.leavePaper();
+  assert.equal(queue.snapshot()[1].work_id, undefined);
+});
