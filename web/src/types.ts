@@ -31,9 +31,20 @@ export type PaperOverview = {
   one_line_summary: string | null;
 };
 
+export type LibraryDirectory = {
+  id: string;
+  name: string;
+  path: string;
+  primary: boolean;
+  available: boolean;
+  papers: number;
+};
+
 export type LibraryResponse = {
   name: string;
   papers: PaperOverview[];
+  /** Absent when talking to an older backend. */
+  directories?: LibraryDirectory[];
 };
 
 export type RemotePdfSource = {

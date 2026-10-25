@@ -116,6 +116,20 @@ export const api = {
     if (!response.ok) throw httpError(response, payload);
     return payload as Omit<ImportPdfResponse, "source">;
   },
+  addLibraryDirectory: (path: string): Promise<LibraryResponse> =>
+    request("/api/library/directories", {
+      method: "POST",
+      body: JSON.stringify({ path }),
+    }),
+  removeLibraryDirectory: async (id: string): Promise<LibraryResponse> => {
+    const response = await fetch(`/api/library/directories/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { Accept: "application/json" },
+    });
+    const payload = await responsePayload(response);
+    if (!response.ok) throw httpError(response, payload);
+    return payload as LibraryResponse;
+  },
   queue: (): Promise<ProcessingQueue> => request("/api/queue"),
   experimentCatalog: (): Promise<ExperimentCatalog> => request("/api/experiments"),
   experiments: (id: string): Promise<ExperimentView[]> =>

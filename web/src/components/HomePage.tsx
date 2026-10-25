@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import { api } from "../lib/api";
 import { spatialNeighbor, type Direction } from "../lib/spatialNavigation";
-import type { PaperOverview } from "../types";
+import type { LibraryDirectory, PaperOverview } from "../types";
 import { authorSurnames } from "../lib/authors";
 import { AddMenu } from "./AddMenu";
 import { PaperPreview } from "./PaperPreview";
@@ -17,6 +17,9 @@ type HomePageProps = {
   onSelect: (id: string) => void;
   onImport: () => void;
   onUpload: (file: File) => Promise<void>;
+  directories: LibraryDirectory[];
+  onAddDirectory: (path: string) => Promise<void>;
+  onRemoveDirectory: (id: string) => Promise<void>;
   keyboardEnabled: boolean;
   darkInk: boolean;
   onToggleInk: () => void;
@@ -25,6 +28,18 @@ type HomePageProps = {
 type Filter = "all" | "mapped" | "unmapped";
 const collator = new Intl.Collator(undefined, { sensitivity: "base" });
 const accents = ["#dec282", "#aaa0d8", "#8dc1af", "#d49e87", "#9cb4d4", "#c2bf94"];
+
+const columnLimits = { min: 1, max: 12 };
+const columnsKey = "lysilogy.home.columns";
+
+function storedColumns(): number | null {
+  try {
+    const value = Number(window.localStorage.getItem(columnsKey));
+    return Number.isInteger(value) && value >= columnLimits.min && value <= columnLimits.max ? value : null;
+  } catch {
+    return null;
+  }
+}
 
 function paperAccent(id: string): string {
   let hash = 0;
@@ -52,9 +67,10 @@ function TitleLines({ id, title }: { id: string; title: string }) {
   </>;
 }
 
-export function HomePage({ papers, query, onQuery, activeId, onActive, onSelect, onImport, onUpload, keyboardEnabled, darkInk, onToggleInk }: HomePageProps) {
+export function HomePage({ papers, query, onQuery, activeId, onActive, onSelect, onImport, onUpload, directories, onAddDirectory, onRemoveDirectory, keyboardEnabled, darkInk, onToggleInk }: HomePageProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState("title");
+  const [columns, setColumns] = useState<number | null>(storedColumns);
   const searchRef = useRef<HTMLInputElement>(null);
   const gridRef = useRef<HTMLUListElement>(null);
   const mapped = papers.filter((paper) => paper.status.state === "ready").length;
@@ -108,6 +124,18 @@ export function HomePage({ papers, query, onQuery, activeId, onActive, onSelect,
         onToggleInk();
         return;
       }
+      if (["+", "=", "-", "_"].includes(event.key)) {
+        event.preventDefault();
+        const rendered = gridRef.current === null ? 0 : getComputedStyle(gridRef.current).gridTemplateColumns.split(" ").length;
+        const delta = event.key === "+" || event.key === "=" ? -1 : 1;
+        // Zooming in means fewer, larger columns.
+        setColumns((current) => {
+          const next = Math.min(columnLimits.max, Math.max(columnLimits.min, (current ?? rendered) + delta));
+          try { window.localStorage.setItem(columnsKey, String(next)); } catch { /* the zoom still applies this session */ }
+          return next;
+        });
+        return;
+      }
       if (event.key === "/") {
         event.preventDefault();
         searchRef.current?.focus();
@@ -157,10 +185,11 @@ export function HomePage({ papers, query, onQuery, activeId, onActive, onSelect,
       <p className="home-counts" role="status">{visible.length === papers.length
         ? <><strong>{papers.length}</strong> {papers.length === 1 ? "paper" : "papers"}<span aria-hidden="true"> / </span><strong>{mapped}</strong> mapped</>
         : <><strong>{visible.length}</strong> of <strong>{papers.length}</strong> papers</>}</p>
-      <AddMenu onImportUrl={onImport} onUpload={onUpload} />
+      <AddMenu onImportUrl={onImport} onUpload={onUpload} directories={directories} onAddDirectory={onAddDirectory} onRemoveDirectory={onRemoveDirectory} />
     </div>
 
-    {visible.length > 0 ? <ul className="paper-grid" ref={gridRef} aria-label="Papers">
+    {visible.length > 0 ? <ul className="paper-grid" ref={gridRef} aria-label="Papers"
+      style={columns === null ? undefined : { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
       {visible.map((paper) => <li key={paper.id} style={{ "--paper-accent": paperAccent(paper.id) } as CSSProperties}>
         <button type="button" className={`paper-card ${paper.id === selectedId ? "is-active" : ""} ${paper.status.state === "ready" ? "is-mapped" : ""}`}
           data-paper-id={paper.id} tabIndex={paper.id === selectedId ? 0 : -1}

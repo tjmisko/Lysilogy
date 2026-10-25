@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cachedPdfPreview, loadPdfPreview } from "../lib/pdfPreview";
 
 export function PaperPreview({ url, title }: { url: string; title: string }) {
@@ -6,7 +6,6 @@ export function PaperPreview({ url, title }: { url: string; title: string }) {
   const [near, setNear] = useState(false);
   const [image, setImage] = useState(() => cachedPdfPreview(url));
   const [failed, setFailed] = useState(false);
-  const [ratio, setRatio] = useState<string>();
 
   useEffect(() => {
     const node = host.current;
@@ -29,11 +28,10 @@ export function PaperPreview({ url, title }: { url: string; title: string }) {
     return () => controller.abort();
   }, [image, near, url]);
 
-  return <span ref={host} className="paper-preview" style={ratio === undefined ? undefined : { "--preview-ratio": ratio } as CSSProperties}
+  return <span ref={host} className="paper-preview"
     data-preview-state={image !== undefined ? "ready" : failed ? "failed" : "loading"}>
     {image !== undefined
-      ? <img src={image} alt={`First page of ${title}`} draggable={false}
-        onLoad={(event) => setRatio(`${event.currentTarget.naturalWidth} / ${event.currentTarget.naturalHeight}`)} />
+      ? <img src={image} alt={`First page of ${title}`} draggable={false} />
       : <span className="paper-preview-placeholder" aria-hidden="true">{failed ? "Preview unavailable" : "Loading preview…"}</span>}
   </span>;
 }

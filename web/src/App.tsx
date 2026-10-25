@@ -907,6 +907,27 @@ export function App() {
     }
   }, []);
 
+  const changeLibraryDirectories = useCallback(async (change: () => Promise<LibraryResponse>, notice: string): Promise<void> => {
+    setError(null);
+    try {
+      setLibrary(await change());
+      setNotice(notice);
+    } catch (reason: unknown) {
+      const failure = reason instanceof Error ? reason : new Error("Could not change library folders");
+      setError(failure.message);
+      throw failure;
+    }
+  }, []);
+
+  const addLibraryDirectory = useCallback(
+    (path: string) => changeLibraryDirectories(() => api.addLibraryDirectory(path), "Added the folder to your library."),
+    [changeLibraryDirectories],
+  );
+  const removeLibraryDirectory = useCallback(
+    (id: string) => changeLibraryDirectories(() => api.removeLibraryDirectory(id), "Removed the folder from your library."),
+    [changeLibraryDirectories],
+  );
+
   const markdownConverted = useCallback((): void => {
     if (selectedId === null) return;
     void Promise.all([loadPaper(selectedId), refreshLibrary()]).catch((reason: unknown) => {
@@ -1162,7 +1183,8 @@ export function App() {
             darkInk={darkInk} onToggleInk={() => setDarkInk((value) => !value)}
             query={homeQuery} onQuery={setHomeQuery} onSelect={selectPaper} activeId={homeActiveId} onActive={setHomeActiveId}
             keyboardEnabled={!libraryOpen && !switcherOpen && !commandOpen && !queueOpen && panel === null && !experimentOpen && toolsTab === null}
-            onImport={() => setLibraryOpen(true)} onUpload={uploadPdf} />}
+            onImport={() => setLibraryOpen(true)} onUpload={uploadPdf} directories={library?.directories ?? []}
+            onAddDirectory={addLibraryDirectory} onRemoveDirectory={removeLibraryDirectory} />}
           {!loading && !home && paperView === null && <div className="center-state"><span className="loader large" /><p>Opening paper…</p></div>}
           {!home && currentPaper !== null && paperView !== null && (
             <>
