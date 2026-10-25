@@ -199,6 +199,13 @@ struct Scored<'a> {
     similarity: f64,
 }
 
+/// Whether the record an identifier resolved to is the claimed paper.
+fn identifier_agrees(claim: &Claim, record: &ProviderRecord) -> bool {
+    !titles_disagree(&claim.title, &record.title)
+        && years_agree(claim.year, record.year)
+        && authors_agree(&claim.authors, &record.authors)
+}
+
 /// Rule 3: pick plausible records from a title search.
 fn plausible<'a>(claim: &Claim, records: &'a [ProviderRecord]) -> Vec<Scored<'a>> {
     let key = title_key(&claim.title);
@@ -234,7 +241,8 @@ fn plausible<'a>(claim: &Claim, records: &'a [ProviderRecord]) -> Vec<Scored<'a>
 ///
 /// 1. **Local exact**: a Work with the same title key, a year within one (or no year on
 ///    either side) and a shared author surname (when both sides name authors) is `Matched`;
-///    the smallest Work ID if several.
+///    the smallest Work ID if several. Skipped when a claimed identifier did not resolve or
+///    resolved to a record that disagrees with the claim.
 /// 2. **Identifier**: a lookup that resolves to a record whose title does not disagree, whose
 ///    year is within one and that shares a claimed author surname (when both sides give
 ///    them) is `Verified`. A record that disagrees on any of these marks the claim
@@ -266,7 +274,15 @@ pub fn decide_claim(claim: &Claim, evidence: &ClaimEvidence) -> ClaimVerdict {
     let key = title_key(&claim.title);
     let searchable = !claim.title.trim().is_empty() && key != "untitled";
 
-    if searchable {
+    // A claimed identifier that names nothing, or another paper, makes the claim suspect
+    // even when its title is in the graph.
+    let identifier_conflict = evidence.identifiers.iter().any(|lookup| match lookup {
+        IdentifierLookup::NotFound => true,
+        IdentifierLookup::Resolved(record) => !identifier_agrees(claim, record),
+        IdentifierLookup::TransportError => false,
+    });
+
+    if searchable && !identifier_conflict {
         let local = evidence
             .local
             .iter()
@@ -288,10 +304,7 @@ pub fn decide_claim(claim: &Claim, evidence: &ClaimEvidence) -> ClaimVerdict {
     for lookup in &evidence.identifiers {
         match lookup {
             IdentifierLookup::Resolved(record) => {
-                let agrees = !titles_disagree(&claim.title, &record.title)
-                    && years_agree(claim.year, record.year)
-                    && authors_agree(&claim.authors, &record.authors);
-                if agrees {
+                if identifier_agrees(claim, record) {
                     return verdict(ClaimOutcome::Verified(record.clone()), false);
                 }
                 contradicted = true;
@@ -805,6 +818,43 @@ mod tests {
             assert_eq!(verdict.outcome, ClaimOutcome::Contradicted, "{perturbed:?}");
             assert!(verdict.identifier_dropped);
         }
+    }
+
+    #[test]
+    fn should_not_match_local_work_when_a_claimed_identifier_is_set_aside() {
+        let mut asked = claim(TITLE);
+        asked.year = Some(2020);
+        asked.doi = Some("10.1/made-up".into());
+        let found = record("W1", TITLE, Some(2020), &[]);
+        for lookup in [
+            IdentifierLookup::NotFound,
+            IdentifierLookup::Resolved(record("W9", "Quantum chromodynamics", Some(1999), &[])),
+        ] {
+            let ev = evidence(
+                vec![local(3, TITLE, Some(2020))],
+                vec![lookup],
+                TitleSearch::Results(vec![found.clone()]),
+            );
+            let result = decide_claim(&asked, &ev);
+            assert!(
+                matches!(
+                    result.outcome,
+                    ClaimOutcome::Ambiguous | ClaimOutcome::Contradicted
+                ),
+                "{:?}",
+                result.outcome
+            );
+            assert_eq!(result.candidates, vec![found.clone()]);
+        }
+        let agreeing = evidence(
+            vec![local(3, TITLE, Some(2020))],
+            vec![IdentifierLookup::Resolved(found)],
+            TitleSearch::NotRun,
+        );
+        assert!(matches!(
+            decide_claim(&asked, &agreeing).outcome,
+            ClaimOutcome::Matched(_)
+        ));
     }
 
     #[test]
