@@ -76,6 +76,14 @@ export class HistoryQueue {
     return this.events.length;
   }
 
+  /** Give the waiting events of `paperId` that lack a Work the Work `workId`. */
+  attachWork(paperId: string, workId: string): void {
+    const waiting = (event: HistoryEventInput): boolean => event.paper_id === paperId && event.work_id === undefined;
+    if (!this.events.some(waiting)) return;
+    this.events = this.events.map((event) => (waiting(event) ? { ...event, work_id: workId } : event));
+    this.save();
+  }
+
   /** A copy of the waiting events, oldest first. */
   snapshot(): HistoryEventInput[] {
     return [...this.events];

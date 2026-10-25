@@ -287,7 +287,7 @@ test('should carry work_id on paper_opened, page_reached and paper_left when the
   for (const event of events) assert.equal(event.work_id, 'w1');
 });
 
-test('should attach work_id to later events and paper_left when the Work resolves after open', () => {
+test('should attach work_id to queued and later events when the Work resolves after open', () => {
   const { recorder, queue } = setup();
   recorder.openPaper('p1', 'pdf');
   recorder.pageReached(1);
@@ -296,8 +296,8 @@ test('should attach work_id to later events and paper_left when the Work resolve
   recorder.setView('markdown');
   recorder.leavePaper();
   const byKind = (kind) => queue.snapshot().filter((event) => event.kind === kind);
-  assert.equal(byKind('paper_opened')[0].work_id, undefined);
-  assert.equal(byKind('page_reached')[0].work_id, undefined);
+  assert.equal(byKind('paper_opened')[0].work_id, 'w9');
+  assert.equal(byKind('page_reached')[0].work_id, 'w9');
   assert.equal(byKind('page_reached')[1].work_id, 'w9');
   assert.equal(byKind('view_changed')[0].work_id, 'w9');
   assert.equal(byKind('paper_left')[0].work_id, 'w9');

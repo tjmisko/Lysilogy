@@ -120,12 +120,11 @@ export function useHistoryCapture({ paperId, view, listId }: HistoryCaptureState
     rec.setVisible(document.visibilityState === "visible");
     rec.setFocused(document.hasFocus());
     if (rec.workOf(paperId) !== undefined) return;
-    // The Work may resolve after the visit opened; later events and paper_left then carry it.
-    const controller = new AbortController();
-    api.paperWork(paperId, controller.signal).then((found) => {
+    // The Work may resolve after the visit opened; setWork corrects the events still queued for
+    // this paper. Not aborted on leaving, so a quick visit still gets its paper_left corrected.
+    api.paperWork(paperId).then((found) => {
       if (found.work !== null) rec.setWork(paperId, found.work.id);
     }).catch(() => undefined);
-    return () => controller.abort();
   }, [paperId]);
 
   useEffect(() => {

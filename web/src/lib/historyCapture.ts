@@ -107,11 +107,13 @@ export class HistoryRecorder {
   }
 
   /**
-   * The Work linked to `paperId` is now known. Events from here on, and `paper_left`, carry it;
-   * `paper_opened` already queued does not.
+   * The Work linked to `paperId` is now known. Events from here on carry it, and so do
+   * the events of that paper still waiting in the queue.
    */
   setWork(paperId: string, workId: string): void {
     this.knownWork.set(paperId, workId);
+    // Events still waiting (paper_opened, early page_reached) get it; sent ones cannot.
+    this.deps.queue.attachWork(paperId, workId);
     if (this.paperId === paperId && this.visitBase !== null) this.visitBase.work_id = workId;
   }
 
