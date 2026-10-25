@@ -12,7 +12,7 @@ CREATE TABLE reader.history_event (
         'fetch_requested')),
     paper_id text,
     work_id uuid REFERENCES graph.work(id) ON DELETE SET NULL,
-    list_id uuid,
+    list_id uuid REFERENCES reader.reading_list(id) ON DELETE SET NULL,
     dwell_ms integer CHECK (dwell_ms IS NULL OR dwell_ms >= 0),
     detail jsonb NOT NULL DEFAULT '{}',
     client_seq integer NOT NULL,
@@ -21,17 +21,6 @@ CREATE TABLE reader.history_event (
 CREATE INDEX history_recent ON reader.history_event (workspace_id, occurred_at DESC);
 CREATE INDEX history_paper ON reader.history_event (paper_id, occurred_at DESC);
 CREATE INDEX history_work ON reader.history_event (work_id, occurred_at DESC);
-
--- The list table arrives with the reading-list migration (0011). Tie the history to it
--- when it exists so this migration also applies on a database that predates lists.
-DO $$
-BEGIN
-    IF to_regclass('reader.reading_list') IS NOT NULL THEN
-        ALTER TABLE reader.history_event
-            ADD CONSTRAINT history_event_list_id_fkey
-            FOREIGN KEY (list_id) REFERENCES reader.reading_list(id) ON DELETE SET NULL;
-    END IF;
-END $$;
 
 CREATE TABLE reader.reading_position (
     workspace_id uuid NOT NULL REFERENCES reader.workspace(id) ON DELETE CASCADE,
