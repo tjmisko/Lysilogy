@@ -11,6 +11,7 @@ mod acquisition;
 mod citation_graph;
 mod curation;
 mod expansion;
+mod generation;
 mod history;
 mod labels;
 mod lists;
@@ -86,6 +87,9 @@ pub struct AppState {
     literature_jobs: literature::LiteratureJobs,
     acquisition_jobs: acquisition::AcquisitionJobs,
     expansion_jobs: expansion::ExpansionJobs,
+    pub(crate) generation_jobs: crate::reading_list_planner::jobs::GenerationJobs,
+    /// The model behind list generation; `None` asks `OpenRouter`.
+    pub(crate) planner: Option<Arc<dyn crate::reading_list_planner::ReadingListPlanner>>,
     pub(crate) acquisition_throttle: Arc<lysilogy_ingest::acquire::HostThrottle>,
     pub(crate) acquisition_fetcher: crate::acquisition::SharedFetcher,
     jobs: JobTracker,
@@ -218,6 +222,8 @@ impl AppState {
             literature_jobs: literature::LiteratureJobs::default(),
             acquisition_jobs: acquisition::AcquisitionJobs::default(),
             expansion_jobs: expansion::ExpansionJobs::default(),
+            generation_jobs: crate::reading_list_planner::jobs::GenerationJobs::default(),
+            planner: None,
             acquisition_throttle: Arc::new(lysilogy_ingest::acquire::HostThrottle::polite()),
             acquisition_fetcher: crate::acquisition::SharedFetcher::default(),
             frontend_root: None,
@@ -2034,6 +2040,8 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .merge(acquisition::routes())
         .merge(expansion::routes())
         .merge(lists::routes())
+        .merge(generation::routes())
+        .merge(history::history_routes())
         .merge(provenance::routes())
         .merge(curation::routes())
         .merge(labels::routes())

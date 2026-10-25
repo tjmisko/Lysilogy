@@ -27,6 +27,7 @@ pub mod paper_artifacts;
 pub mod prominence;
 pub mod provenance;
 pub mod reader_tools;
+pub mod reading_list_planner;
 pub mod relevance;
 mod remote;
 pub mod source_index;

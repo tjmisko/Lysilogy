@@ -4,10 +4,6 @@
 //! Check order everywhere: path IDs, body or query, graph availability, existence. The
 //! router is exposed as [`history_routes`] and mounted by `build_router`.
 
-// Not mounted yet: the generation task merges `history_routes()` into `build_router` and
-// removes this allowance.
-#![allow(dead_code)]
-
 use axum::{
     Json, Router,
     body::Bytes,

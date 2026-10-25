@@ -100,15 +100,17 @@ impl GenerationRepository {
     /// Record a run that has started.
     pub async fn create(
         &self,
+        id: GenerationId,
         goal: &str,
         options: &Value,
         list: Option<ListId>,
         model_key: &str,
     ) -> Result<GenerationRow> {
         let row = sqlx::query(&format!(
-            "insert into ops.list_generation (goal, options, state, list_id, model_key) \
-             values ($1, $2, 'running', $3, $4) returning {GENERATION_COLUMNS}"
+            "insert into ops.list_generation (id, goal, options, state, list_id, model_key) \
+             values ($1, $2, $3, 'running', $4, $5) returning {GENERATION_COLUMNS}"
         ))
+        .bind(id.as_uuid())
         .bind(goal)
         .bind(options)
         .bind(list.map(ListId::as_uuid))
@@ -338,7 +340,13 @@ mod tests {
         };
         let repository = GenerationRepository::new(pool);
         let created = repository
-            .create("learn rlhf", &json!({"size": 20}), None, "fake:model")
+            .create(
+                GenerationId::new(),
+                "learn rlhf",
+                &json!({"size": 20}),
+                None,
+                "fake:model",
+            )
             .await
             .expect("create");
         assert_eq!(created.state, GenerationState::Running);
