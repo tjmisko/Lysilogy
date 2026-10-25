@@ -13,7 +13,7 @@ function isEditable(target: EventTarget | null): boolean {
     || target instanceof HTMLSelectElement || (target instanceof HTMLElement && target.isContentEditable);
 }
 
-/** View 6, until the full view replaces it: works not held, `f` fetches the selected one, `F` all. */
+/** View 6: works not held; `f` fetches the selected one, `F` every fetchable one, one after another. */
 export function Acquire(props: ListViewProps) {
   const { detail, actions, selectedId, keyboardEnabled } = props;
   const model = useMemo(() => acquire(detail), [detail]);
