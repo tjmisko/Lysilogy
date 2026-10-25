@@ -44,6 +44,8 @@ pub struct LocalWork {
     pub work_id: WorkId,
     pub title: String,
     pub year: Option<i32>,
+    /// Printed authors; empty when unknown, which never disagrees with a claim.
+    pub authors: Vec<String>,
 }
 
 /// A record from a provider (`OpenAlex`, Crossref).
@@ -117,7 +119,8 @@ impl ClaimOutcome {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClaimVerdict {
     pub outcome: ClaimOutcome,
-    /// At most [`CLAIM_CANDIDATES_MAX`] records, best first; filled when `Ambiguous`.
+    /// At most [`CLAIM_CANDIDATES_MAX`] records, best first; filled when `Ambiguous`, and
+    /// when `Contradicted` with a plausible title match.
     pub candidates: Vec<ProviderRecord>,
     /// True when a claimed identifier was set aside (it resolved to another paper, or did
     /// not resolve) and the outcome rests on the title alone.
@@ -229,8 +232,9 @@ fn plausible<'a>(claim: &Claim, records: &'a [ProviderRecord]) -> Vec<Scored<'a>
 
 /// Decide a claim from gathered evidence. The first decisive rule wins:
 ///
-/// 1. **Local exact**: a Work with the same title key and a year within one (or no year on
-///    either side) is `Matched`; the smallest Work ID if several.
+/// 1. **Local exact**: a Work with the same title key, a year within one (or no year on
+///    either side) and a shared author surname (when both sides name authors) is `Matched`;
+///    the smallest Work ID if several.
 /// 2. **Identifier**: a lookup that resolves to a record whose title does not disagree, whose
 ///    year is within one and that shares a claimed author surname (when both sides give
 ///    them) is `Verified`. A record that disagrees on any of these marks the claim
@@ -246,8 +250,17 @@ fn plausible<'a>(claim: &Claim, records: &'a [ProviderRecord]) -> Vec<Scored<'a>
 ///
 /// A claim with no usable title skips rules 1 and 3.
 ///
-/// Deviation from the spec: rule 2 also requires the year within 1 and a shared author
-/// surname before an identifier verifies; claims_eval should watch the real-set rate.
+/// Deviations from the spec, driven by the `claims_eval` fixtures:
+///
+/// - Rule 1 also requires a shared author surname, so a real title under invented authors
+///   does not match an existing Work.
+/// - Rule 2 also requires the year within 1 and a shared author surname before an
+///   identifier verifies.
+/// - A claimed identifier that was set aside (resolved to another paper, or did not resolve)
+///   means the claim contradicts itself, so a title match alone never verifies it. The
+///   plausible records become candidates and the outcome is `Contradicted` (the identifier
+///   named another paper) or `Ambiguous` (it named nothing), for the user to resolve. A real
+///   title with a made-up DOI is the typical model hallucination.
 #[must_use]
 pub fn decide_claim(claim: &Claim, evidence: &ClaimEvidence) -> ClaimVerdict {
     let key = title_key(&claim.title);
@@ -257,7 +270,11 @@ pub fn decide_claim(claim: &Claim, evidence: &ClaimEvidence) -> ClaimVerdict {
         let local = evidence
             .local
             .iter()
-            .filter(|work| title_key(&work.title) == key && years_agree(claim.year, work.year))
+            .filter(|work| {
+                title_key(&work.title) == key
+                    && years_agree(claim.year, work.year)
+                    && authors_agree(&claim.authors, &work.authors)
+            })
             .map(|work| work.work_id)
             .min();
         if let Some(work_id) = local {
@@ -290,6 +307,21 @@ pub fn decide_claim(claim: &Claim, evidence: &ClaimEvidence) -> ClaimVerdict {
         TitleSearch::Results(records) if searchable => {
             let found = plausible(claim, records);
             let exact = found.iter().filter(|scored| scored.exact).count();
+            if identifier_dropped && !found.is_empty() {
+                return ClaimVerdict {
+                    outcome: if contradicted {
+                        ClaimOutcome::Contradicted
+                    } else {
+                        ClaimOutcome::Ambiguous
+                    },
+                    candidates: found
+                        .iter()
+                        .take(CLAIM_CANDIDATES_MAX)
+                        .map(|scored| scored.record.clone())
+                        .collect(),
+                    identifier_dropped,
+                };
+            }
             match found.as_slice() {
                 [] => {}
                 [only] => {
@@ -356,6 +388,7 @@ mod tests {
             work_id: WorkId::from_uuid(Uuid::from_u128(number)),
             title: title.into(),
             year,
+            authors: Vec::new(),
         }
     }
 
@@ -468,7 +501,7 @@ mod tests {
     }
 
     #[test]
-    fn should_fall_to_title_search_when_identifier_title_disagrees() {
+    fn should_be_contradicted_with_candidate_when_identifier_title_disagrees_but_title_matches() {
         let other = record(
             "W9",
             "Quantum chromodynamics on the lattice",
@@ -482,7 +515,8 @@ mod tests {
             TitleSearch::Results(vec![real.clone()]),
         );
         let result = decide_claim(&claim(TITLE), &ev);
-        assert_eq!(result.outcome, ClaimOutcome::Verified(real));
+        assert_eq!(result.outcome, ClaimOutcome::Contradicted);
+        assert_eq!(result.candidates, vec![real]);
         assert!(result.identifier_dropped);
     }
 
@@ -505,7 +539,7 @@ mod tests {
     }
 
     #[test]
-    fn should_set_aside_identifier_when_it_does_not_resolve() {
+    fn should_be_ambiguous_with_candidate_when_identifier_does_not_resolve_but_title_matches() {
         let real = record("W1", TITLE, Some(2020), &[]);
         let ev = evidence(
             vec![],
@@ -513,7 +547,8 @@ mod tests {
             TitleSearch::Results(vec![real.clone()]),
         );
         let result = decide_claim(&claim(TITLE), &ev);
-        assert_eq!(result.outcome, ClaimOutcome::Verified(real));
+        assert_eq!(result.outcome, ClaimOutcome::Ambiguous);
+        assert_eq!(result.candidates, vec![real]);
         assert!(result.identifier_dropped);
         let none = evidence(
             vec![],
@@ -770,5 +805,28 @@ mod tests {
             assert_eq!(verdict.outcome, ClaimOutcome::Contradicted, "{perturbed:?}");
             assert!(verdict.identifier_dropped);
         }
+    }
+
+    #[test]
+    fn should_not_match_local_work_when_claimed_authors_share_no_surname() {
+        let mut work = local(3, TITLE, Some(2020));
+        work.authors = vec!["Nisan Stiennon".into()];
+        let ev = evidence(vec![work], vec![], TitleSearch::Results(vec![]));
+        let swapped = Claim {
+            authors: vec!["Jane Nobody".into()],
+            ..claim(TITLE)
+        };
+        assert_eq!(
+            decide_claim(&swapped, &ev).outcome,
+            ClaimOutcome::Unverified
+        );
+        let right = Claim {
+            authors: vec!["N. Stiennon".into()],
+            ..claim(TITLE)
+        };
+        assert!(matches!(
+            decide_claim(&right, &ev).outcome,
+            ClaimOutcome::Matched(_)
+        ));
     }
 }
