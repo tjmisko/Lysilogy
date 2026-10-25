@@ -43,6 +43,19 @@ export function positionViewOf(view: ReaderView): PositionView {
   return view === "pdf" || view === "markdown" ? view : "overview";
 }
 
+export type RestoreTarget = { view: "overview" | "text"; textMode: "pdf" | "markdown"; page: number | null };
+
+/** Where a saved position reopens: markdown, the overview, or a PDF page (a section opens its page). */
+export function restoreTarget(
+  position: { view: string; page: number | null } | null,
+): RestoreTarget | null {
+  if (position === null) return null;
+  if (position.view === "markdown") return { view: "text", textMode: "markdown", page: null };
+  if (position.view === "overview" && position.page === null) return { view: "overview", textMode: "pdf", page: null };
+  const page = position.page === null ? null : Math.max(1, position.page);
+  return { view: "text", textMode: "pdf", page };
+}
+
 export class HistoryRecorder {
   private readonly deps: RecorderDeps;
   private readonly debounce: Debouncer<PendingPosition>;

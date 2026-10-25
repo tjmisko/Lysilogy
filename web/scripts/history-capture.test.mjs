@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { HistoryQueue } from '../src/lib/history.ts';
-import { HistoryRecorder, clipText, positionViewOf } from '../src/lib/historyCapture.ts';
+import { HistoryRecorder, clipText, positionViewOf, restoreTarget } from '../src/lib/historyCapture.ts';
 
 function setup() {
   const clock = { t: Date.UTC(2026, 9, 25, 12, 0, 0) };
@@ -246,4 +246,33 @@ test('should map reader views to the position views the server accepts', () => {
   assert.equal(positionViewOf('pdf'), 'pdf');
   assert.equal(positionViewOf('markdown'), 'markdown');
   for (const view of ['abstract', 'overview', 'glossary', 'sources']) assert.equal(positionViewOf(view), 'overview');
+});
+
+test('should open the PDF at the saved page when the position is pdf', () => {
+  assert.deepEqual(restoreTarget({ view: 'pdf', page: 7 }), { view: 'text', textMode: 'pdf', page: 7 });
+});
+
+test('should open markdown without a page when the position is markdown', () => {
+  assert.deepEqual(restoreTarget({ view: 'markdown', page: 3 }), { view: 'text', textMode: 'markdown', page: null });
+});
+
+test('should open the PDF at the section page when the position is a section', () => {
+  assert.deepEqual(restoreTarget({ view: 'section', page: 12 }), { view: 'text', textMode: 'pdf', page: 12 });
+});
+
+test('should open the overview when the position is overview with no page', () => {
+  assert.deepEqual(restoreTarget({ view: 'overview', page: null }), { view: 'overview', textMode: 'pdf', page: null });
+});
+
+test('should open the PDF at the page when the position is overview with a page', () => {
+  assert.deepEqual(restoreTarget({ view: 'overview', page: 4 }), { view: 'text', textMode: 'pdf', page: 4 });
+});
+
+test('should return null when there is no saved position', () => {
+  assert.equal(restoreTarget(null), null);
+});
+
+test('should clamp the page to 1 when the saved page is 0 or negative', () => {
+  assert.equal(restoreTarget({ view: 'pdf', page: 0 }).page, 1);
+  assert.equal(restoreTarget({ view: 'pdf', page: -5 }).page, 1);
 });

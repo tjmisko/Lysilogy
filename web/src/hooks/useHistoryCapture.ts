@@ -98,7 +98,7 @@ export function useHistoryCapture({ paperId, view, listId }: HistoryCaptureState
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener(LISTS_CHANGED_EVENT, onListsChanged);
     return () => {
-      rec.leavePaper();
+      // No leavePaper here: StrictMode re-runs this effect in dev, and pagehide already ends the visit.
       detach();
       window.removeEventListener("pagehide", onPageHide);
       window.removeEventListener("pageshow", onPageShow);

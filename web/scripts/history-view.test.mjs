@@ -169,3 +169,12 @@ test('should target the event paper, work and list, and the busiest paper for a 
   assert.deepEqual(targets, [{ workId: 'w1' }, { listId: 'l1' }]);
   assert.deepEqual(rowTarget(inspected.find((row) => row.type === 'session')), {});
 });
+
+test('should keep one day group when a session crosses midnight and others sit between', () => {
+  const crossing = { session_id: 'late', started_at: at(24, 23, 30), ended_at: at(25, 0, 30), events: [event({ id: 90 })] };
+  const merged = mergeSessions([crossing, session('today', 25, 9, [event({ id: 91 })])], []);
+  assert.deepEqual(merged.map((item) => item.session_id), ['today', 'late']);
+  const rows = buildRows(merged, new Set(), NOW);
+  const keys = rows.map((row) => row.key).filter((key) => key.startsWith('day:'));
+  assert.equal(new Set(keys).size, keys.length);
+});

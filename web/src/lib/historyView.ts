@@ -143,7 +143,7 @@ export function mergeSessions(shown: readonly HistorySession[], more: readonly H
       events: [...events.values()].sort(newestFirst),
     });
   }
-  return [...byId.values()].sort((left, right) => Date.parse(right.ended_at) - Date.parse(left.ended_at));
+  return [...byId.values()].sort((left, right) => Date.parse(right.started_at) - Date.parse(left.started_at));
 }
 
 export type PaperDwell = { paperId: string; dwellMs: number };

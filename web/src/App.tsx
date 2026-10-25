@@ -32,6 +32,7 @@ import { ReaderToolsPanel } from "./components/ReaderToolsPanel";
 import { SectionAtlas } from "./components/SectionAtlas";
 import { useGlobalKeys } from "./hooks/useGlobalKeys";
 import { useHistoryCapture } from "./hooks/useHistoryCapture";
+import { restoreTarget } from "./lib/historyCapture";
 import { useTabPhase } from "./hooks/useTabPhase";
 import { api } from "./lib/api";
 import {
@@ -674,20 +675,12 @@ export function App() {
   // Reopen from the history at the saved place. A section position keeps its page, so it opens the full PDF there.
   const openAtPosition = useCallback((paperId: string, position: ReadingPosition | null): void => {
     selectPaper(paperId);
-    if (position === null) return;
+    const target = restoreTarget(position);
+    if (target === null) return;
     focusRestore.current = null;
-    if (position.view === "markdown") {
-      setTextMode("markdown");
-      setView("text");
-      return;
-    }
-    if (position.view === "overview" && position.page === null) {
-      setView("overview");
-      return;
-    }
-    setTextMode("pdf");
-    setView("text");
-    if (position.page !== null) setPdfPage(Math.max(1, position.page));
+    setTextMode(target.textMode);
+    setView(target.view);
+    if (target.page !== null) setPdfPage(target.page);
   }, [selectPaper]);
 
   const openPage = useCallback((page: number): void => {
