@@ -29,7 +29,8 @@ const node = (kind, id, over = {}) => {
     work: null, ordinal: counter, depth: 0, path_steps: [], ...over,
   };
 };
-const workNode = (id, title, year, over = {}) => node('work', id, { work_id: `w-${id}`, work: workRecord(id, title, year), ...over });
+const contextLink = { work_id: 'w-a', relation: 'builds_on', note: 'same reward model' };
+const workNode = (id, title, year, over = {}) => node('work', id, { work_id: `w-${id}`, work: workRecord(id, title, year), context_links: [contextLink], ...over });
 const state = {
   nodes: [
     workNode('a', 'Attention Is All You Need', 2017),
@@ -95,12 +96,16 @@ try {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   const requests = [];
+  const bodies = [];
   const unexpected = [];
   await page.route('**/*', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const method = request.method();
-    if (url.pathname.startsWith('/api/')) requests.push(`${method} ${url.pathname}${url.search}`);
+    if (url.pathname.startsWith('/api/')) {
+      requests.push(`${method} ${url.pathname}${url.search}`);
+      bodies.push(request.postData());
+    }
     const json = (body, status = 200) => route.fulfill({ status, json: body });
     const body = () => (request.postData() === null ? {} : JSON.parse(request.postData()));
     const segments = url.pathname.split('/');
@@ -110,8 +115,8 @@ try {
     if (url.pathname === `/api/papers/${paperId}`) return json({ paper, analysis });
     if (url.pathname.endsWith('/map')) return json({ layout: { schema_version: 1, pages: [] }, highlights: [] });
     if (url.pathname === `/api/papers/${paperId}/lists`) {
-      const here = state.nodes.find((entry) => entry.id === 'a');
-      return json({ paper_id: paperId, work_id: 'w-a', memberships: here === undefined ? [] : [{ list_id: listId, title: state.title, archived: false, node_id: 'a', topics: [], note: null }] });
+      const here = state.nodes.find((entry) => entry.work_id === 'w-a');
+      return json({ paper_id: paperId, work_id: 'w-a', memberships: here === undefined ? [] : [{ list_id: listId, title: state.title, archived: false, node_id: here.id, topics: [], note: null }] });
     }
     if (url.pathname === `/api/papers/${paperId}/work`) return json({ paper_id: paperId, work: { id: 'w-a' }, link: null });
     if (url.pathname === '/api/history/events') return json({ accepted: 1, duplicates: 0, nudged: [] });
@@ -191,6 +196,9 @@ try {
     return route.fulfill({ body: await readFile(file), contentType: /\.m?js$/.test(file) ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.svg') ? 'image/svg+xml' : 'text/html' });
   });
 
+  // Calls made since `mark`, with their JSON bodies: the observable effect of a key.
+  const since = (mark) => requests.slice(mark).map((call, index) => ({ call, body: bodies[mark + index] === null ? null : JSON.parse(bodies[mark + index] ?? 'null') }));
+  const sent = (mark, call, test = () => true) => since(mark).some((entry) => entry.call === call && test(entry.body));
   const press = async (...keys) => { for (const key of keys) await page.keyboard.press(key); };
   const titles = () => page.$$eval('.list-sequence .list-row .list-row-title', (nodes) => nodes.map((entry) => entry.textContent));
   const rowCount = (count) => page.waitForFunction((n) => document.querySelectorAll('.list-sequence .list-row').length === n, count);
@@ -219,8 +227,10 @@ try {
   await page.getByRole('textbox', { name: 'List title' }).fill('RLHF fundamentals');
   await press('Enter');
   await page.waitForFunction(() => document.body.textContent.includes('RLHF fundamentals'));
+  const archiveMark = requests.length;
   await press('A');
-  assert.ok(requests.some((entry) => entry === `PATCH /api/lists/${listId}`), requests.join('\n'));
+  await page.waitForFunction(() => document.body.textContent.includes('rchived'));
+  assert.ok(sent(archiveMark, `PATCH /api/lists/${listId}`, (body) => body.archived === true), requests.slice(archiveMark).join('\n'));
   await press('z', 'a');
   state.archived = false;
   await press('q'); // from the index, back to the home grid
@@ -247,8 +257,12 @@ try {
   await press('h', 'l');
   await press('5'); await page.waitForSelector('.list-views button[aria-pressed="true"]');
   await press('6'); await page.waitForSelector('[aria-label="Papers to acquire"], .list-empty');
+  const fetchMark = requests.length;
   await press('F');
   await press('f');
+  await page.waitForTimeout(300);
+  const fetched = since(fetchMark).filter((entry) => /^POST \/api\/works\/[^/]+\/fetch/u.test(entry.call));
+  assert.ok(fetched.length > 0 || await page.locator('.list-empty').count() > 0, `Acquire f / F sent no fetch: ${requests.slice(fetchMark).join('\n')}`);
   await press('7'); await page.waitForSelector('[data-node-id], .list-row');
   await press('1'); await page.waitForSelector('.list-sequence .list-row');
 
@@ -296,16 +310,37 @@ try {
   await page.waitForFunction(() => document.querySelector('.list-message')?.textContent?.includes('prerequisite'));
   await press('X'); await page.waitForSelector('[data-list-overlay]');
   await press('Escape'); await overlayGone();
-  await press('C');
-  await page.waitForFunction(() => document.querySelector('.list-message')?.textContent?.includes('no links') || document.querySelector('[data-list-overlay]'));
-  if (await page.locator('[data-list-overlay]').count() > 0) { await press('Escape'); await overlayGone(); }
+  // C needs a Work with context links; step down until one opens the chooser.
+  for (let attempt = 0; attempt < 6 && await page.locator('[data-list-overlay]').count() === 0; attempt += 1) {
+    await press('C');
+    await page.waitForTimeout(200);
+    if (await page.locator('[data-list-overlay]').count() === 0) await press('j');
+  }
+  await page.getByText('Connects to papers you read').waitFor();
+  const contextMark = requests.length;
+  await press('Enter'); // opens the linked paper, or says it is not in the library
+  await overlayGone();
+  await page.waitForTimeout(300);
+  assert.ok(sent(contextMark, 'GET /api/works/w-a/citations'), requests.slice(contextMark).join('\n'));
   await press('g', 'g', 'j');
   await press('A'); await page.getByRole('dialog').waitFor();
   await page.getByText('Neural machine translation').waitFor();
   await press('Space'); await press('Tab'); await press('Tab');
   await press('Escape'); await overlayGone();
+  await press('g', 'g', 'j');
+  await press('A'); await page.getByRole('dialog').waitFor();
+  await page.getByText('Neural machine translation').waitFor();
+  const referencesMark = requests.length;
+  await press('Space'); await press('Enter');
+  await overlayGone();
+  await page.waitForTimeout(300);
+  assert.ok(sent(referencesMark, `POST /api/lists/${listId}/nodes:batch`, (body) => body.nodes.length > 0 && body.nodes.every((one) => typeof one.via_work_id === 'string')), requests.slice(referencesMark).join('\n'));
   await press('a');
   await page.getByRole('textbox', { name: 'Add a paper by name' }).fill('summarize');
+  await press('Tab');
+  await page.getByText(/provider search on/u).waitFor();
+  await press('Tab');
+  await page.getByText(/provider search off/u).waitFor();
   await page.getByRole('option', { name: /Learning to summarize/u }).waitFor();
   await press('Enter');
   await page.waitForFunction(() => document.querySelectorAll('.list-sequence .list-row').length >= 5);
@@ -329,11 +364,52 @@ try {
   // ---- Reader: M, Y, g l, g r, and the generation command ---------------------------------
   await page.goto(`http://localhost/#paper=${paperId}`);
   await page.waitForSelector('.paper-lists');
-  await press('M'); await page.waitForSelector('[data-list-overlay]');
-  await press('j', 'k', 'Escape'); await overlayGone();
+  // Picker: j k are typed into the search, so movement is Ctrl-n / Ctrl-p; Enter adds.
   await press('Y'); await page.waitForSelector('[data-list-overlay]');
-  await press('Tab'); // topic stage for a list the paper is not on, nothing for one it is
+  await page.getByRole('option').first().waitFor();
+  await press('ArrowDown', 'ArrowUp', 'Control+n', 'Control+p');
+  let mark = requests.length;
+  await press('Enter');
   await closeOverlay();
+  assert.ok(sent(mark, `POST /api/lists/${listId}/nodes`), requests.slice(mark).join('\n'));
+  // Ctrl-Enter creates a list from the typed title, then adds.
+  await press('Y'); await page.waitForSelector('[data-list-overlay]');
+  await page.getByRole('textbox', { name: 'Find a list' }).fill('Brand new list');
+  mark = requests.length;
+  await press('Control+Enter');
+  await closeOverlay();
+  const created = since(mark);
+  assert.deepEqual(created.map((entry) => entry.call).slice(0, 2), ['POST /api/lists', `POST /api/lists/${listId}/nodes`], requests.slice(mark).join('\n'));
+  assert.equal(created[0].body.title, 'Brand new list');
+  // Tab opens the topic choice: j moves to the first topic, Enter adds under it.
+  await press('Y'); await page.waitForSelector('[data-list-overlay]');
+  await page.getByRole('option').first().waitFor();
+  await press('Tab');
+  await page.getByText('Choose a topic').waitFor();
+  await press('j');
+  mark = requests.length;
+  await press('Enter');
+  await closeOverlay();
+  assert.ok(sent(mark, `POST /api/lists/${listId}/nodes`, (body) => Array.isArray(body.topic_ids) && body.topic_ids.length === 1), requests.slice(mark).join('\n'));
+  // Membership: j k move, x removes, u undoes, Enter opens the list.
+  await press('M'); await page.waitForSelector('[data-list-overlay]');
+  await page.getByRole('option').first().waitFor();
+  await press('j', 'k');
+  mark = requests.length;
+  await press('x');
+  await page.getByText(/Press u to undo/u).waitFor();
+  assert.ok(requests.slice(mark).some((entry) => entry.startsWith(`DELETE /api/lists/${listId}/nodes/`)), requests.slice(mark).join('\n'));
+  mark = requests.length;
+  await press('u');
+  await page.getByText(/Put back on/u).waitFor();
+  assert.ok(sent(mark, `POST /api/lists/${listId}/nodes`, (body) => body.work_id === 'w-a'), requests.slice(mark).join('\n'));
+  await page.getByRole('option').first().waitFor();
+  await press('Enter');
+  await page.waitForFunction(() => window.location.hash.startsWith('#list='));
+  await page.goto(`http://localhost/#paper=${paperId}`);
+  await page.waitForSelector('.paper-lists');
+  await press('M'); await page.waitForSelector('[data-list-overlay]');
+  await press('Escape'); await overlayGone();
   await page.keyboard.type(':');
   await page.getByRole('textbox', { name: 'Command' }).fill('generate learn RLHF reward modelling');
   await press('Enter');
@@ -346,7 +422,13 @@ try {
   await press('j', 'ArrowDown', 'k', 'ArrowUp', 'G', 'g', 'g', 'Control+d', 'Control+u');
   await press('z', 'o'); await page.waitForSelector('.history-row:not(.history-session)');
   await press('z', 'c', 'z', 'a', 'z', 'R', 'z', 'M');
-  await press(']', '[');
+  await press('g', 'g');
+  const dayAt = await page.locator('.history-row.is-selected').first().innerText();
+  await press(']');
+  const dayNext = await page.locator('.history-row.is-selected').first().innerText();
+  await press('[');
+  assert.equal(await page.locator('.history-row.is-selected').first().innerText(), dayAt);
+  assert.notEqual(dayNext, dayAt, 'History ] moves to the next day');
   await press('/');
   await page.getByLabel('Filter history').fill('reward');
   await press('Enter');

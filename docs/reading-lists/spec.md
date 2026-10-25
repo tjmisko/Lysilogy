@@ -646,9 +646,13 @@ Shipped:
   graph sidebar backed by lists (T11).
 - Archive (Q6), `g l` / `g r` (Q8), the $0.15 default budget (Q4), claims kept as nodes (Q2).
 - T12: the declared keymap with a collision audit (`npm run test:keymap`), the key map overlay
-  groups for Lists, List page and History, and `npm run smoke:lists`, an intercepted-HTTP
-  Playwright smoke that presses every list, history and picker key once against `web/dist`
-  (run `npm run build` first).
+  groups for Lists, List page, the Y picker, the M popover and History, and
+  `npm run smoke:lists`, an intercepted-HTTP Playwright smoke against `web/dist` (run
+  `npm run build` first). It presses the keys of every list, history, picker and popover surface
+  and asserts the HTTP effect of the writes (archive, add, create-and-add, topic add, remove,
+  undo, references with `via_work_id`, fetch, context link). Keys pressed without an assertion on
+  the result: the movement keys, the `z` folds, `h` / `l`, the sort and group keys, and the
+  History kind filters.
 
 Deferred:
 

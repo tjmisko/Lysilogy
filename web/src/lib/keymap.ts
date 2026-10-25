@@ -116,6 +116,35 @@ const LIST_REVIEW_CHOOSER: KeyContext = {
   ],
 };
 
+// The two dialogs own the keyboard while open (useDialogKeys), so each is a context of its own.
+const PICKER: KeyContext = {
+  id: "picker",
+  title: "Add to a list (Y)",
+  help: true,
+  bindings: [
+    { keys: ["ArrowDown", "Ctrl-n"], action: "Next list" },
+    { keys: ["ArrowUp", "Ctrl-p"], action: "Previous list" },
+    { keys: ["Enter"], action: "Add to the highlighted list" },
+    { keys: ["Ctrl-Enter"], action: "Create a list from the typed title and add" },
+    { keys: ["Tab"], action: "Choose a topic of the highlighted list first" },
+    { keys: ["Escape"], action: "Back from the topic choice, then cancel" },
+  ],
+};
+
+const MEMBERSHIP: KeyContext = {
+  id: "membership",
+  title: "Lists this paper is on (M)",
+  help: true,
+  bindings: [
+    { keys: ["j", "ArrowDown"], action: "Next list" },
+    { keys: ["k", "ArrowUp"], action: "Previous list" },
+    { keys: ["Enter"], action: "Open the list" },
+    { keys: ["x"], action: "Remove from the list" },
+    { keys: ["u"], action: "Undo the removal" },
+    { keys: ["M", "q", "Escape"], action: "Close", global: true },
+  ],
+};
+
 const HISTORY: KeyContext = {
   id: "history",
   title: "History",
@@ -185,7 +214,7 @@ const READER: KeyContext = {
   ],
 };
 
-export const KEYMAP: readonly KeyContext[] = [GLOBAL, LISTS, LIST_PAGE, LIST_REVIEW_CHOOSER, HISTORY, GRAPH, READER];
+export const KEYMAP: readonly KeyContext[] = [GLOBAL, LISTS, LIST_PAGE, LIST_REVIEW_CHOOSER, PICKER, MEMBERSHIP, HISTORY, GRAPH, READER];
 
 /**
  * Collisions that are deliberate. `g l` / `g r` are caught in the capture phase and leave a bare

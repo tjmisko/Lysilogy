@@ -111,6 +111,7 @@ const GROUPS = [
       ["Y", "Add the paper, selected card or graph work to a list (picker)"],
       ["M", "Lists this paper or work is on: j/k, Enter open, x remove, u undo"],
       [":lists · :list · :list-new · :generate · :history", "Open or create a list, generate one, open history"],
+      [":order · :verify · :delete-list", "Write a list's order, verify its claims, delete a list by its exact title"],
       [":read · :reading · :unread", "Set the current work's reading status"],
       ["b", "Toggle the library"],
       ["F1", "Toggle the library outside the notes buffer"],
