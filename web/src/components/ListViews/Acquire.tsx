@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "../../lib/api";
 import { acquisitionStatusText } from "../../lib/acquisition";
@@ -7,6 +7,8 @@ import { StubRow } from "./StubRow";
 import type { ListViewProps } from "./props";
 
 const POLL_MILLISECONDS = 2000;
+
+type Job = { state: "running" | "failed"; message: string | null };
 
 function isEditable(target: EventTarget | null): boolean {
   return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
@@ -17,30 +19,71 @@ function isEditable(target: EventTarget | null): boolean {
 export function Acquire(props: ListViewProps) {
   const { detail, actions, selectedId, keyboardEnabled } = props;
   const model = useMemo(() => acquire(detail), [detail]);
-  const [started, setStarted] = useState<ReadonlySet<string>>(() => new Set());
+  // Per-Work job state: running while polled, failed with the server message until fetched again.
+  const [jobs, setJobs] = useState<ReadonlyMap<string, Job>>(() => new Map());
+  const jobsRef = useRef(jobs);
+  useEffect(() => {
+    jobsRef.current = jobs;
+  }, [jobs]);
   const fetchable = useMemo(() => new Set(model.fetchable), [model]);
-  const running = [...started].filter((workId) => fetchable.has(workId));
-  const runningKey = running.sort().join(",");
+  const runningKey = [...jobs].filter(([, job]) => job.state === "running").map(([workId]) => workId).sort().join(",");
 
-  // A fetched Work leaves the fetchable set, which is how a finished fetch shows; reload to see it.
+  const setJob = (workId: string, job: Job | null): void => {
+    setJobs((current) => {
+      const next = new Map(current);
+      if (job === null) next.delete(workId);
+      else next.set(workId, job);
+      return next;
+    });
+  };
+
+  // Poll each running fetch; when its job ends, show a failure or reload to see the new state.
   useEffect(() => {
     if (runningKey === "") return;
-    const timer = window.setInterval(() => void actions.reload(), POLL_MILLISECONDS);
-    return () => window.clearInterval(timer);
+    const controller = new AbortController();
+    const timer = window.setInterval(() => {
+      for (const workId of runningKey.split(",")) {
+        void (async () => {
+          try {
+            const status = await api.workAcquisition(workId, controller.signal);
+            if (controller.signal.aborted || status.job.state === "running") return;
+            setJob(workId, status.job.state === "failed" ? { state: "failed", message: status.job.message ?? null } : null);
+            void actions.reload();
+          } catch (reason: unknown) {
+            if (controller.signal.aborted) return;
+            setJob(workId, { state: "failed", message: reason instanceof Error ? reason.message : null });
+          }
+        })();
+      }
+    }, POLL_MILLISECONDS);
+    return () => {
+      controller.abort();
+      window.clearInterval(timer);
+    };
   }, [actions, runningKey]);
 
-  const fetchWorks = (workIds: readonly string[]): void => {
-    if (workIds.length === 0) {
+  const fetchWorks = (requested: readonly string[]): void => {
+    if (requested.length === 0) {
       actions.notify("Nothing to fetch here.");
       return;
     }
-    setStarted((current) => new Set([...current, ...workIds]));
+    const workIds = requested.filter((workId) => jobsRef.current.get(workId)?.state !== "running");
+    if (workIds.length === 0) {
+      actions.notify("Those fetches are already running.");
+      return;
+    }
+    setJobs((current) => {
+      const next = new Map(current);
+      for (const workId of workIds) next.set(workId, { state: "running", message: null });
+      return next;
+    });
     // One at a time, as the acquisition jobs expect.
     void (async () => {
       for (const workId of workIds) {
         try {
           await api.fetchWork(workId);
         } catch (reason: unknown) {
+          setJob(workId, null);
           actions.fail(reason instanceof Error ? reason.message : "The fetch failed.");
         }
       }
@@ -72,8 +115,11 @@ export function Acquire(props: ListViewProps) {
   return <ol className="list-sequence" aria-label="Papers to acquire">
     {model.rows.map(({ row }) => {
       const view = row.workId === null ? null : (detail.acquisitions[row.workId] ?? null);
-      const job = row.workId !== null && started.has(row.workId) && fetchable.has(row.workId) ? "running" : "none";
-      return <StubRow key={row.id} row={row} props={props} detail={acquisitionStatusText(view, job)} />;
+      const job = row.workId === null ? undefined : jobs.get(row.workId);
+      const text = job?.state === "failed"
+        ? `${acquisitionStatusText(view, "failed")}${job.message === null ? "" : ` ${job.message}`}`
+        : acquisitionStatusText(view, job?.state === "running" && fetchable.has(row.workId ?? "") ? "running" : "none");
+      return <StubRow key={row.id} row={row} props={props} detail={text} />;
     })}
   </ol>;
 }

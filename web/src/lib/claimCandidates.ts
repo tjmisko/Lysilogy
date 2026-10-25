@@ -14,10 +14,13 @@ export function normalizeTitle(title: string): string {
 
 /**
  * The library Work a provider candidate stands for, or null. Only hits that already are Works can
- * receive a claim; a matching DOI wins, else the same title (and the same year when both have one).
+ * receive a claim; a matching provider id or DOI wins, else the same title (and a year within one
+ * when both have one, as verification allows for preprints).
  */
 export function matchCandidateWork(candidate: ClaimCandidate, hits: readonly WorkHit[]): string | null {
   const works = hits.filter((hit): hit is WorkHit & { work_id: string } => hit.work_id !== null);
+  const byProvider = works.find((hit) => hit.openalex_id !== null && hit.openalex_id === candidate.provider_id);
+  if (byProvider !== undefined) return byProvider.work_id;
   const doi = normalizeDoi(candidate.doi);
   if (doi !== null) {
     const byDoi = works.find((hit) => normalizeDoi(hit.doi) === doi);
@@ -26,7 +29,7 @@ export function matchCandidateWork(candidate: ClaimCandidate, hits: readonly Wor
   const title = normalizeTitle(candidate.title);
   if (title === "") return null;
   const byTitle = works.find((hit) => normalizeTitle(hit.title) === title
-    && (hit.year === null || candidate.year === null || hit.year === candidate.year));
+    && (hit.year === null || candidate.year === null || Math.abs(hit.year - candidate.year) <= 1));
   return byTitle?.work_id ?? null;
 }
 

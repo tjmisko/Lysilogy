@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "../../lib/api";
 import { candidateLabel, matchCandidateWork, nextCandidateIndex } from "../../lib/claimCandidates";
@@ -12,6 +12,10 @@ function isEditable(target: EventTarget | null): boolean {
 }
 
 type Chooser = { nodeId: string; index: number };
+type EdgeKey = { from: string; to: string; kind: string };
+
+const sameEdge = (left: EdgeKey | null, right: EdgeKey): boolean =>
+  left !== null && left.from === right.from && left.to === right.to && left.kind === right.kind;
 
 /**
  * View 7: proposed items and links, then claims by state. `a` accepts, `x` rejects, `c` walks the
@@ -22,6 +26,16 @@ export function Review(props: ListViewProps) {
   const { detail, actions, selectedId, keyboardEnabled } = props;
   const sections = useMemo(() => review(detail), [detail]);
   const [openChooser, setChooser] = useState<Chooser | null>(null);
+  // Proposed links are not on the page cursor, so a clicked link keeps a local selection.
+  const [selectedEdge, setSelectedEdge] = useState<EdgeKey | null>(null);
+  const resolving = useRef<Set<string>>(new Set());
+  const [lastSelectedId, setLastSelectedId] = useState<string | null>(selectedId);
+  if (lastSelectedId !== selectedId) {
+    // The cursor moved to another node: close the chooser and drop the link selection.
+    setLastSelectedId(selectedId);
+    setChooser(null);
+    setSelectedEdge(null);
+  }
 
   // A chooser for a claim that has resolved, left the list or lost its candidates is stale.
   const chooserNode = openChooser === null ? undefined : detail.nodes.find((entry) => entry.id === openChooser.nodeId);
@@ -31,18 +45,21 @@ export function Review(props: ListViewProps) {
   const resolveCandidate = async (nodeId: string, index: number): Promise<void> => {
     const node = detail.nodes.find((entry) => entry.id === nodeId);
     const candidate = node?.candidates[index];
-    if (candidate === undefined) return;
+    if (candidate === undefined || resolving.current.has(nodeId)) return;
+    resolving.current.add(nodeId);
     setChooser(null);
     try {
-      const { results } = await api.searchWorks(candidate.title);
+      const { results } = await api.searchWorks(candidate.title, true);
       const workId = matchCandidateWork(candidate, results);
       if (workId === null) {
-        actions.notify(`“${candidate.title}” is not in the library yet. Add it as a paper, then press c again.`);
+        actions.notify(`“${candidate.title}” is not in the library yet. Switch to view 1 and press a to add it as a paper, then press c again.`);
         return;
       }
       await actions.resolveClaim(nodeId, workId);
     } catch (reason: unknown) {
       actions.fail(reason instanceof Error ? reason.message : "The candidate lookup failed.");
+    } finally {
+      resolving.current.delete(nodeId);
     }
   };
 
@@ -67,6 +84,20 @@ export function Review(props: ListViewProps) {
           return;
         }
       }
+      if (selectedEdge !== null && (event.key === "a" || event.key === "x")) {
+        const edge = detail.edges.find((entry) => sameEdge(selectedEdge, entry));
+        if (edge === undefined) {
+          setSelectedEdge(null);
+        } else {
+          event.preventDefault();
+          setSelectedEdge(null);
+          const key = { from: edge.from, to: edge.to, kind: edge.kind };
+          if (event.key === "x") void actions.removeEdge(key);
+          else if (edge.review === "proposed") void actions.acceptEdge(key);
+          else actions.notify("That link is already accepted.");
+          return;
+        }
+      }
       if (selectedId === null || (event.key !== "a" && event.key !== "x" && event.key !== "c")) return;
       const node = detail.nodes.find((entry) => entry.id === selectedId);
       if (node === undefined) return;
@@ -85,31 +116,32 @@ export function Review(props: ListViewProps) {
       else if (node.review === "proposed") void actions.acceptNode(node.id);
       else actions.notify("That item is already accepted.");
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // Capture phase, so the chooser's Enter and Escape run before the page's own handlers.
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
     // resolveCandidate only closes over detail and actions, both listed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [actions, chooser, chooserNode, detail.nodes, keyboardEnabled, selectedId]);
+  }, [actions, chooser, chooserNode, detail.edges, detail.nodes, keyboardEnabled, selectedEdge, selectedId]);
 
   if (sections.length === 0) {
     return <div className="list-empty"><p>Nothing to review. Proposed items and unresolved claims show here.</p></div>;
   }
   const rowOf = (nodeId: string) => detail.nodes.find((node) => node.id === nodeId);
   return <div className="list-review">
-    <p className="list-review-hint">a accept · x reject · c resolve a claim · :verify retry pending claims</p>
+    <p className="list-review-hint"><kbd>a</kbd> accept · <kbd>x</kbd> reject · <kbd>c</kbd> resolve a claim · <kbd>:verify</kbd> retry pending claims (click a link to select it)</p>
     {sections.map((section) => <section key={section.key} className="list-stub-group">
       <p className="list-group-head"><span className="list-group-label">{section.label}</span><span className="list-group-counts">{section.items.length}</span></p>
       <ol className="list-sequence">
         {section.items.map((item) => {
           if (item.kind === "edge") {
             const edge = item.edge;
-            return <li key={`${edge.from}${edge.to}${edge.kind}`} className="list-row" data-edge-kind={edge.kind}>
+            return <li key={`${edge.from}${edge.to}${edge.kind}`} className={`list-row ${sameEdge(selectedEdge, edge) ? "is-selected" : ""}`} data-edge-kind={edge.kind} onClick={() => setSelectedEdge({ from: edge.from, to: edge.to, kind: edge.kind })}>
               <span className="list-row-main">
                 <span className="list-row-line">
                   <span className="list-row-title">{item.fromTitle} → {item.toTitle}</span>
                   <span className="list-row-held">{edge.kind}</span>
-                  <button type="button" className="list-row-action" onClick={() => void actions.acceptEdge({ from: edge.from, to: edge.to, kind: edge.kind })}>accept</button>
-                  <button type="button" className="list-row-action" onClick={() => void actions.removeEdge({ from: edge.from, to: edge.to, kind: edge.kind })}>reject</button>
+                  <button type="button" className="list-row-action" onClick={() => void actions.acceptEdge({ from: edge.from, to: edge.to, kind: edge.kind })}><kbd>a</kbd> accept</button>
+                  <button type="button" className="list-row-action" onClick={() => void actions.removeEdge({ from: edge.from, to: edge.to, kind: edge.kind })}><kbd>x</kbd> reject</button>
                 </span>
               </span>
             </li>;
