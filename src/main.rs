@@ -10,6 +10,7 @@ use std::{
 use clap::{Parser, Subcommand, ValueEnum};
 use lysilogy::acquisition::{AcquireOptions, AcquireReport};
 use lysilogy::expansion::{ExpandOptions, ExpansionReport, WalkReport};
+use lysilogy::history::{HistoryShowArgs, cli_history, cli_history_export, cli_history_prune};
 use lysilogy::lists::render::{ListView, render_list_detail, render_list_summaries};
 use lysilogy::lists::{
     AddNode, OrderStrategy, parse_edge_kind, parse_note, parse_status, parse_strategy,
@@ -18,6 +19,7 @@ use lysilogy::lists::{
 use lysilogy::literature::evidence::LOCAL_EVIDENCE_REQUIRES_WORK;
 use lysilogy::prominence::ProminenceScope;
 use lysilogy::provenance::{ReselectScope, cli_override_value, parse_field, render_provenance};
+use lysilogy::reading_list_planner::{DEFAULT_BUDGET_USD, GenerateRequest, Level};
 use lysilogy::{
     AppState, Error, Result, build_router,
     domain::{
@@ -263,8 +265,43 @@ enum ListCommand {
     },
     /// Retry the list's pending claims.
     Verify { list: String },
+    /// Have the model build a list for a goal, or extend one (needs `OPENROUTER_API_KEY`).
+    Generate {
+        goal: String,
+        /// How many papers to aim for.
+        #[arg(long, default_value_t = 20, value_parser = clap::value_parser!(u8).range(8..=60))]
+        size: u8,
+        #[arg(long, value_parser = parse_level, default_value = "survey")]
+        level: Level,
+        /// A Work to start from; repeat for several.
+        #[arg(long = "anchor")]
+        anchors: Vec<String>,
+        /// Extend this list instead of making one; the additions wait for review.
+        #[arg(long)]
+        into: Option<String>,
+        /// Stop at the next pass once this many US dollars are spent.
+        #[arg(long, default_value_t = DEFAULT_BUDGET_USD)]
+        budget: f64,
+    },
     /// Delete a list and its nodes.
     Delete { list: String },
+}
+
+/// Reading-history subcommands.
+#[derive(Debug, Subcommand)]
+enum HistoryCommand {
+    /// Write the events since a time as JSON lines.
+    Export {
+        /// An age (`7d`), a date, or an RFC 3339 time.
+        #[arg(long)]
+        since: String,
+    },
+    /// Delete the events before a time.
+    Prune {
+        /// An age (`90d`), a date, or an RFC 3339 time.
+        #[arg(long)]
+        before: String,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -494,6 +531,21 @@ enum Command {
     List {
         #[command(subcommand)]
         command: ListCommand,
+    },
+    /// Show what you read and when, a paper's summary, or export and prune the log (needs `LYSILOGY_DATABASE_URL`).
+    #[command(args_conflicts_with_subcommands = true)]
+    History {
+        #[command(subcommand)]
+        command: Option<HistoryCommand>,
+        /// An age (`7d`), a date, or an RFC 3339 time; the default is 7d.
+        #[arg(long)]
+        since: Option<String>,
+        /// Summarize one paper: a PDF path inside the library, a paper ID, or a title fragment.
+        #[arg(long)]
+        paper: Option<String>,
+        /// Only these event kinds, comma separated.
+        #[arg(long, value_delimiter = ',')]
+        kinds: Vec<String>,
     },
     /// Set a Work's reading status in every list (needs `LYSILOGY_DATABASE_URL`).
     Read {
@@ -898,6 +950,19 @@ async fn run(cli: Cli) -> Result<()> {
         }
         Command::Provenance { command } => provenance_command(&state, &cli.library, command).await,
         Command::List { command } => list_command(&state, &cli.library, command).await,
+        Command::History {
+            command,
+            since,
+            paper,
+            kinds,
+        } => {
+            let args = HistoryShowArgs {
+                since,
+                paper,
+                kinds,
+            };
+            history_command(&state, &cli.library, command, args).await
+        }
         Command::Read {
             work,
             paper,
@@ -1906,10 +1971,69 @@ async fn list_command(
                 report.still_pending
             );
         }
+        ListCommand::Generate {
+            goal,
+            size,
+            level,
+            anchors,
+            into,
+            budget,
+        } => {
+            let mut resolved = Vec::with_capacity(anchors.len());
+            for text in &anchors {
+                resolved.push(state.resolve_work_argument(text).await?);
+            }
+            let into_list = match into {
+                Some(text) => Some(state.list_reference(&text).await?),
+                None => None,
+            };
+            let request = GenerateRequest {
+                goal,
+                size: usize::from(size),
+                level,
+                anchors: resolved,
+                into_list,
+                budget_usd: budget,
+            };
+            print!("{}", state.generate_list(request).await?.render());
+        }
         ListCommand::Delete { list } => {
             let list = state.list_reference(&list).await?;
             state.delete_list(list).await?;
             println!("Deleted.");
+        }
+    }
+    Ok(())
+}
+
+fn parse_level(text: &str) -> std::result::Result<Level, String> {
+    text.parse()
+        .map_err(|()| "level is one of intro, survey, deep".to_owned())
+}
+
+async fn history_command(
+    state: &AppState,
+    library: &std::path::Path,
+    command: Option<HistoryCommand>,
+    mut args: HistoryShowArgs,
+) -> Result<()> {
+    let service = state.history_service().await?;
+    let now = chrono::Utc::now();
+    match command {
+        Some(HistoryCommand::Export { since }) => {
+            let (lines, count) = cli_history_export(&service, &since, now).await?;
+            print!("{lines}");
+            eprintln!("Exported {count} events.");
+        }
+        Some(HistoryCommand::Prune { before }) => {
+            let deleted = cli_history_prune(&service, &before, now).await?;
+            println!("Deleted {deleted} events.");
+        }
+        None => {
+            if let Some(text) = args.paper.take() {
+                args.paper = Some(resolve_lit_target(state, library, &text).await?.to_string());
+            }
+            print!("{}", cli_history(&service, &args, now).await?);
         }
     }
     Ok(())
@@ -3233,6 +3357,128 @@ mod tests {
             list_command_of(&["delete", "p1"]),
             Some(ListCommand::Delete { .. })
         ));
+    }
+
+    #[test]
+    fn should_parse_generate_flags_when_arguments_valid() {
+        let parsed = list_command_of(&[
+            "generate",
+            "learn RLHF reward modelling",
+            "--size",
+            "12",
+            "--level",
+            "deep",
+            "--anchor",
+            "doi:10.1/x",
+            "--anchor",
+            "arxiv:1706.03762",
+            "--into",
+            "RLHF",
+            "--budget",
+            "0.4",
+        ]);
+        let Some(ListCommand::Generate {
+            size,
+            level,
+            anchors,
+            into,
+            budget,
+            ..
+        }) = parsed
+        else {
+            panic!("expected generate");
+        };
+        assert_eq!(size, 12);
+        assert_eq!(level, Level::Deep);
+        assert_eq!(anchors.len(), 2);
+        assert_eq!(into.as_deref(), Some("RLHF"));
+        assert!((budget - 0.4).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn should_default_generate_to_twenty_papers_and_fifteen_cents_when_flags_absent() {
+        let Some(ListCommand::Generate {
+            size,
+            level,
+            anchors,
+            into,
+            budget,
+            ..
+        }) = list_command_of(&["generate", "goal"])
+        else {
+            panic!("expected generate");
+        };
+        assert_eq!(size, 20);
+        assert_eq!(level, Level::Survey);
+        assert!(anchors.is_empty() && into.is_none());
+        assert!((budget - 0.15).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn should_reject_generate_when_size_level_or_goal_is_wrong() {
+        assert!(list_command_of(&["generate", "goal", "--size", "7"]).is_none());
+        assert!(list_command_of(&["generate", "goal", "--size", "61"]).is_none());
+        assert!(list_command_of(&["generate", "goal", "--size", "-1"]).is_none());
+        assert!(list_command_of(&["generate", "goal", "--level", "expert"]).is_none());
+        assert!(list_command_of(&["generate"]).is_none());
+    }
+
+    fn history_of(arguments: &[&str]) -> Option<Command> {
+        let mut full = vec!["lysilogy", "history"];
+        full.extend_from_slice(arguments);
+        Cli::try_parse_from(full).ok()?.command
+    }
+
+    #[test]
+    fn should_parse_history_filters_when_no_subcommand_given() {
+        let Some(Command::History {
+            command,
+            since,
+            paper,
+            kinds,
+        }) = history_of(&[
+            "--since",
+            "3d",
+            "--paper",
+            "Attention",
+            "--kinds",
+            "paper_opened,search_run",
+        ])
+        else {
+            panic!("expected history");
+        };
+        assert!(command.is_none());
+        assert_eq!(since.as_deref(), Some("3d"));
+        assert_eq!(paper.as_deref(), Some("Attention"));
+        assert_eq!(kinds, vec!["paper_opened", "search_run"]);
+        assert!(matches!(
+            history_of(&[]),
+            Some(Command::History { command: None, .. })
+        ));
+    }
+
+    #[test]
+    fn should_parse_history_export_and_prune_when_their_time_is_given() {
+        assert!(matches!(
+            history_of(&["export", "--since", "7d"]),
+            Some(Command::History {
+                command: Some(HistoryCommand::Export { .. }),
+                ..
+            })
+        ));
+        assert!(matches!(
+            history_of(&["prune", "--before", "2026-01-01"]),
+            Some(Command::History {
+                command: Some(HistoryCommand::Prune { .. }),
+                ..
+            })
+        ));
+        assert!(history_of(&["export"]).is_none(), "export needs --since");
+        assert!(history_of(&["prune"]).is_none(), "prune needs --before");
+        assert!(
+            history_of(&["--paper", "x", "prune", "--before", "7d"]).is_none(),
+            "filters do not combine with a subcommand"
+        );
     }
 
     #[test]
