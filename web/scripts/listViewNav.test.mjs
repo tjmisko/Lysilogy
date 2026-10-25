@@ -106,3 +106,27 @@ test('should derive citation links between members only, once, and not to itself
   const d = detail([work('a', 1990), work('b', 2000)], [], [['w-b', 'w-a'], ['w-b', 'w-a'], ['w-a', 'w-a'], ['w-b', 'w-zzz']]);
   assert.deepEqual(timeline(d).links, [{ from: 'b', to: 'a' }]);
 });
+
+test('should keep one column slot per empty year when years are 1 to 3 apart', async () => {
+  const { timelineGrid } = await import('../src/lib/listViewNav.ts');
+  const t = timeline(detail([work('a', 1990), work('b', 1991), work('c', 1993)]));
+  const kinds = timelineGrid(t.buckets, t.undated).slots.map((slot) => slot.kind);
+  assert.deepEqual(kinds, ['column', 'column', 'empty_year', 'column']);
+});
+
+test('should make one gap slot when years are more than 3 apart', async () => {
+  const { timelineGrid } = await import('../src/lib/listViewNav.ts');
+  const t = timeline(detail([work('a', 1900), work('b', 1950)]));
+  const slots = timelineGrid(t.buckets, t.undated).slots;
+  assert.deepEqual(slots.map((slot) => slot.kind), ['column', 'gap', 'column']);
+  assert.deepEqual(slots[1], { kind: 'gap', fromYear: 1901, toYear: 1949 });
+});
+
+test('should treat years outside 1..2200 as undated when walking h and l', () => {
+  const t = timeline(detail([work('a', 1990), work('z', 0), work('far', 99999)]));
+  const columns = timelineColumns(t.buckets, t.undated);
+  assert.equal(columns.length, 2);
+  assert.deepEqual(columns[0], ['a']);
+  assert.deepEqual([...columns[1]].sort(), ['far', 'z']);
+  assert.equal(timelineYearMove(columns, 'a', 1) !== null, true);
+});

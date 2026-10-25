@@ -31,7 +31,7 @@ export function Topics(props: ListViewProps) {
   const move = useCallback((delta: -1 | 1) => topicLayerMove(model, selectedId, delta), [model, selectedId]);
   useColumnKeys(keyboardEnabled, move, onSelect);
 
-  const names = useMemo(() => new Map(detail.nodes.filter((node) => node.kind === "topic").map((node) => [node.id, node.label ?? "Untitled"])), [detail.nodes]);
+  const names = useMemo(() => new Map(detail.nodes.filter((node) => node.kind === "topic" && node.review === "accepted").map((node) => [node.id, node.label ?? "Untitled"])), [detail.nodes]);
   const after = useMemo(() => {
     const found = new Map<string, string[]>();
     for (const edge of detail.edges) {

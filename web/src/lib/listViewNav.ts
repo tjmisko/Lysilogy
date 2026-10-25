@@ -2,7 +2,8 @@
 // depth when the next column is shorter. Pure, so the moves are tested without a DOM.
 
 import { groupCursorId } from "./listViewModel.ts";
-import { UNFILED_KEY, type TimelineBucket, type TopicLayers } from "./listViews.ts";
+import { buildHistogramGrid, type HistogramEntry, type HistogramGrid } from "./histogramLayout.ts";
+import { UNFILED_KEY, type ItemRow, type TimelineBucket, type TopicLayers } from "./listViews.ts";
 
 /** Clamp `index` into a column of `length` cursor ids; an empty column has no landing. */
 function landing(column: readonly string[], index: number): string | null {
@@ -44,11 +45,29 @@ export function topicLayerMove(model: TopicLayers, cursor: string | null, delta:
   return null;
 }
 
+/**
+ * The Timeline laid out by the histogram grid: one column per occupied year, narrow empty-year
+ * slots, gap slots. Rows keep manual order within a year (score = -ordinal). Undated rows, and
+ * years outside the histogram range, fall into the grid's unknown column.
+ */
+export function timelineGrid(buckets: readonly TimelineBucket[], undated: readonly ItemRow[]): HistogramGrid {
+  const entry = (row: ItemRow, year: number | null): HistogramEntry => ({ id: row.id, year, score: -row.ordinal, markRank: 1, titleKey: "" });
+  return buildHistogramGrid([
+    ...buckets.flatMap((bucket) => bucket.rows.map((row) => entry(row, bucket.year))),
+    ...undated.map((row) => entry(row, null)),
+  ]);
+}
+
+/** Grid columns as cursor ids in walk order: years oldest first, the unknown column last. */
+export function timelineGridColumns(grid: HistogramGrid): string[][] {
+  const dated = grid.columns.filter((column) => column.year !== null);
+  const unknown = grid.columns.filter((column) => column.year === null);
+  return [...dated, ...unknown].map((column) => column.entries.map((item) => item.id));
+}
+
 /** Cursor columns of the Timeline: one per year with rows, then the undated rows if any. */
-export function timelineColumns(buckets: readonly TimelineBucket[], undated: readonly { id: string }[]): string[][] {
-  const columns = buckets.map((bucket) => bucket.rows.map((row) => row.id));
-  if (undated.length > 0) columns.push(undated.map((row) => row.id));
-  return columns;
+export function timelineColumns(buckets: readonly TimelineBucket[], undated: readonly ItemRow[]): string[][] {
+  return timelineGridColumns(timelineGrid(buckets, undated));
 }
 
 /** Where `h` (-1) or `l` (+1) goes in the Timeline: the same depth in the next year. */

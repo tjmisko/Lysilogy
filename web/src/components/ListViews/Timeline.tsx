@@ -1,22 +1,18 @@
 import { useCallback, useMemo } from "react";
 
-import { EMPTY_RUN_MAX } from "../../lib/histogramLayout";
-import { timelineColumns, timelineYearMove } from "../../lib/listViewNav";
+import { timelineGrid, timelineGridColumns, timelineYearMove } from "../../lib/listViewNav";
 import { statusGlyph, timeline, type ItemRow } from "../../lib/listViews";
 import { useColumnKeys } from "./ColumnKeys";
 import type { ListViewProps } from "./props";
 import "./ListColumns.css";
 
-/** Quiet years between two columns, as a gap note; short runs are not worth a note, as in the histogram. */
-function gapLabel(years: number): string | null {
-  return years > EMPTY_RUN_MAX ? `${years} years without a paper` : null;
-}
-
 /** View 3: works on a year axis, oldest first; the selected work's derived citations are marked. */
 export function Timeline(props: ListViewProps) {
   const { detail, selectedId, onSelect, keyboardEnabled } = props;
   const model = useMemo(() => timeline(detail), [detail]);
-  const columns = useMemo(() => timelineColumns(model.buckets, model.undated), [model]);
+  const grid = useMemo(() => timelineGrid(model.buckets, model.undated), [model]);
+  const columns = useMemo(() => timelineGridColumns(grid), [grid]);
+  const rowById = useMemo(() => new Map([...model.buckets.flatMap((bucket) => bucket.rows), ...model.undated].map((row) => [row.id, row])), [model]);
   const move = useCallback((delta: -1 | 1) => timelineYearMove(columns, selectedId, delta), [columns, selectedId]);
   useColumnKeys(keyboardEnabled, move, onSelect);
 
@@ -56,19 +52,26 @@ export function Timeline(props: ListViewProps) {
     </li>;
   };
 
+  const column = (index: number) => {
+    const col = grid.columns[index];
+    if (col === undefined) return null;
+    const label = col.year === null ? "Undated" : String(col.year);
+    return <section key={col.key} className="list-col" data-year={col.year ?? "undated"}>
+      <h3 className="list-col-head">{label}</h3>
+      <ol>{col.entries.map((entry) => rowById.get(entry.id)).filter((row): row is ItemRow => row !== undefined).map(card)}</ol>
+    </section>;
+  };
+  // The grid puts the unknown column first; the walk order (and h/l) keeps undated rows last.
+  const unknownIndex = grid.columns.findIndex((col) => col.year === null);
   return <div className="list-columns list-timeline" aria-label="Timeline">
-    {model.buckets.map((bucket, index) => {
-      const previous = model.buckets[index - 1];
-      const gap = previous === undefined ? null : gapLabel(bucket.year - previous.year - 1);
-      return <section key={bucket.year} className="list-col" data-year={bucket.year}>
-        {gap !== null && <p className="list-col-gap">{gap}</p>}
-        <h3 className="list-col-head">{bucket.year}</h3>
-        <ol>{bucket.rows.map(card)}</ol>
-      </section>;
+    {grid.slots.map((slot) => {
+      if (slot.kind === "empty_year") return <div key={`empty:${slot.year}`} className="list-col-empty" title={String(slot.year)} aria-hidden="true" />;
+      if (slot.kind === "gap") {
+        const range = `${slot.fromYear}\u2013${slot.toYear}`;
+        return <div key={`gap:${slot.fromYear}`} className="list-col-gapslot" title={`${slot.toYear - slot.fromYear + 1} years without a paper`}>{range}</div>;
+      }
+      return slot.columnIndex === unknownIndex ? null : column(slot.columnIndex);
     })}
-    {model.undated.length > 0 && <section className="list-col" data-year="undated">
-      <h3 className="list-col-head">Undated</h3>
-      <ol>{model.undated.map(card)}</ol>
-    </section>}
+    {unknownIndex >= 0 && column(unknownIndex)}
   </div>;
 }
