@@ -10,10 +10,14 @@ use std::{
 use clap::{Parser, Subcommand, ValueEnum};
 use lysilogy::acquisition::{AcquireOptions, AcquireReport};
 use lysilogy::expansion::{ExpandOptions, ExpansionReport, WalkReport};
+use lysilogy::lists::render::{ListView, render_list_detail, render_list_summaries};
+use lysilogy::lists::{
+    AddNode, OrderStrategy, parse_edge_kind, parse_note, parse_status, parse_strategy,
+    parse_summary, parse_title, parse_topic_label,
+};
 use lysilogy::literature::evidence::LOCAL_EVIDENCE_REQUIRES_WORK;
 use lysilogy::prominence::ProminenceScope;
 use lysilogy::provenance::{ReselectScope, cli_override_value, parse_field, render_provenance};
-use lysilogy::ramps::{RampDetail, RampItemView, RampSummaryView};
 use lysilogy::{
     AppState, Error, Result, build_router,
     domain::{
@@ -24,7 +28,10 @@ use lysilogy::{
 use lysilogy::{
     analysis::LocalCliAnalyzer, field_extraction::SidecarFieldExtractor, labeling::SidecarLabeler,
 };
-use lysilogy_core::{ExpansionState, ReadingStatus, WALK_EXPANSIONS_MAX, WalkBounds, WorkId};
+use lysilogy_core::{
+    EdgeKind, ExpansionDirection, ExpansionState, NodeKind, ReadingStatus, WALK_EXPANSIONS_MAX,
+    WalkBounds, WorkId,
+};
 use lysilogy_ingest::acquire::AcquisitionOutcome;
 use lysilogy_ingest::crossref::{PublisherFetch, PublisherOutcome};
 use lysilogy_ingest::field_model::{FieldHarvestSummary, FieldOptions};
@@ -183,61 +190,81 @@ enum ProvenanceCommand {
     },
 }
 
-/// Reading-ramp subcommands. `<ramp>` is a `p...` ID or a unique title prefix; `<work>`
-/// is a `w...` ID, an `OpenAlex` `W...` ID, `doi:<doi>`, or `arxiv:<id>`.
+/// Reading-list subcommands. `<list>` is a `p...` ID or a unique case-insensitive title
+/// prefix; `<work>` is a `w...` ID, an `OpenAlex` `W...` ID, `doi:<doi>`, or `arxiv:<id>`.
 #[derive(Debug, Subcommand)]
-enum RampCommand {
-    /// Create a ramp seeded at a Work.
+enum ListCommand {
+    /// Create a list, optionally seeded at a Work.
     New {
-        work: String,
-        /// Treat <work> as a paper (path, ID, or title fragment) and use the Work it is linked to.
+        title: String,
+        /// A Work to seed the list with.
         #[arg(long)]
-        paper: bool,
-        /// Ramp title; defaults to the seed's title.
+        seed: Option<String>,
         #[arg(long)]
-        title: Option<String>,
+        description: Option<String>,
     },
-    /// List ramps, most recently updated first.
-    List,
-    /// Print a ramp's items in order.
-    Show { ramp: String },
-    /// Add a Work, optionally reached from an item that cites it.
+    /// List lists, most recently updated first.
+    Ls {
+        /// Only lists holding this Work.
+        #[arg(long)]
+        work: Option<String>,
+        /// Include archived lists.
+        #[arg(long)]
+        archived: bool,
+    },
+    /// Print a list in one of its views.
+    Show {
+        list: String,
+        #[arg(long, value_enum, default_value_t = ListView::Sequence)]
+        view: ListView,
+    },
+    /// Add a Work, a held paper, a topic, or a citation by name (which is verified first).
+    #[command(group(clap::ArgGroup::new("what").required(true).args(["work", "paper", "topic", "claim"])))]
     Add {
-        ramp: String,
-        work: String,
-        /// The ramp item this Work was reached from.
+        list: String,
+        work: Option<String>,
+        /// A paper (path, ID, or title fragment); it is linked to a Work first if needed.
+        #[arg(long)]
+        paper: Option<String>,
+        /// A topic label; --note becomes its summary.
+        #[arg(long)]
+        topic: Option<String>,
+        /// A citation as text: a title, a DOI, an arXiv ID, or a pasted reference.
+        #[arg(long)]
+        claim: Option<String>,
+        /// The member this Work was reached from, which must cite it.
         #[arg(long)]
         via: Option<String>,
+        /// File the Work under the topic with this label.
+        #[arg(long)]
+        topic_of: Option<String>,
         #[arg(long)]
         note: Option<String>,
     },
-    /// Change an item's status or note.
-    Set {
-        ramp: String,
-        work: String,
-        #[arg(
-            long,
-            value_parser = lysilogy::ramps::parse_status,
-            required_unless_present_any = ["note", "clear_note"]
-        )]
-        status: Option<ReadingStatus>,
-        #[arg(long, conflicts_with = "clear_note")]
-        note: Option<String>,
+    /// Remove a node (an `n...` ID, or a Work it holds).
+    Rm { list: String, target: String },
+    /// Add or remove a typed edge between two nodes.
+    Edge {
+        list: String,
+        from: String,
+        to: String,
+        #[arg(long, value_parser = parse_edge_kind)]
+        kind: EdgeKind,
         #[arg(long)]
-        clear_note: bool,
+        remove: bool,
     },
-    /// Remove an item (not the seed).
-    Remove { ramp: String, work: String },
-    /// Reorder a ramp: suggest "foundational first", or list every item once.
+    /// Reorder a list: by a strategy, or list every node once.
     Order {
-        ramp: String,
-        #[arg(long, conflicts_with = "works")]
-        suggest: bool,
-        #[arg(required_unless_present = "suggest")]
-        works: Vec<String>,
+        list: String,
+        #[arg(long, value_parser = parse_strategy, conflicts_with = "nodes")]
+        strategy: Option<OrderStrategy>,
+        #[arg(required_unless_present = "strategy")]
+        nodes: Vec<String>,
     },
-    /// Delete a ramp and its items.
-    Delete { ramp: String },
+    /// Retry the list's pending claims.
+    Verify { list: String },
+    /// Delete a list and its nodes.
+    Delete { list: String },
 }
 
 #[derive(Debug, Subcommand)]
@@ -454,16 +481,30 @@ enum Command {
         /// Skip the cheap-model pass that reads missing authors and years.
         #[arg(long)]
         no_fields: bool,
+        /// Expand the Works that cite this one instead (most cited first, at most 50; one level).
+        #[arg(long)]
+        cited_by: bool,
     },
     /// Inspect and recompute where each Work's title, year and authors come from (needs `LYSILOGY_DATABASE_URL`).
     Provenance {
         #[command(subcommand)]
         command: ProvenanceCommand,
     },
-    /// Build and manage reading ramps: ordered paths backward through a seed's references (needs `LYSILOGY_DATABASE_URL`).
-    Ramp {
+    /// Build and manage reading lists: graphs of papers, topics and prerequisites (needs `LYSILOGY_DATABASE_URL`).
+    List {
         #[command(subcommand)]
-        command: RampCommand,
+        command: ListCommand,
+    },
+    /// Set a Work's reading status in every list (needs `LYSILOGY_DATABASE_URL`).
+    Read {
+        /// A Work: a w... ID, an `OpenAlex` W... ID, `doi:<doi>`, or `arxiv:<id>`.
+        /// With --paper: a PDF path inside the library, a paper ID, or a title fragment.
+        work: String,
+        /// Treat <work> as a paper and use the Work it is linked to.
+        #[arg(long)]
+        paper: bool,
+        #[arg(long, value_parser = parse_status)]
+        status: ReadingStatus,
     },
     /// Analyze all papers that are not ready, continuing past individual faults.
     Ingest {
@@ -846,16 +887,27 @@ async fn run(cli: Cli) -> Result<()> {
             refresh,
             no_local,
             no_fields: _,
+            cited_by,
         } => {
             let options = ExpandOptions {
                 bounds: WalkBounds { depth, fanout },
                 refresh,
                 local: !no_local,
             };
-            expand_command(&state, &cli.library, &work, paper, options).await
+            expand_command(&state, &cli.library, &work, paper, cited_by, options).await
         }
         Command::Provenance { command } => provenance_command(&state, &cli.library, command).await,
-        Command::Ramp { command } => ramp_command(&state, &cli.library, command).await,
+        Command::List { command } => list_command(&state, &cli.library, command).await,
+        Command::Read {
+            work,
+            paper,
+            status,
+        } => {
+            let work = resolve_work_target(&state, &cli.library, &work, paper).await?;
+            let stored = state.set_work_reading_state(work, status).await?;
+            println!("{} is {}", stored.work_id, stored.status);
+            Ok(())
+        }
         Command::RefreshStructure {
             query,
             provider,
@@ -1632,6 +1684,7 @@ async fn expand_command(
     library: &std::path::Path,
     text: &str,
     paper: bool,
+    cited_by: bool,
     options: ExpandOptions,
 ) -> Result<()> {
     let seed = if paper {
@@ -1641,7 +1694,12 @@ async fn expand_command(
         state.resolve_work_argument(text).await?
     };
     let started = std::time::Instant::now();
-    let report = state.walk_from(seed, options).await?;
+    let direction = if cited_by {
+        ExpansionDirection::CitedBy
+    } else {
+        ExpansionDirection::References
+    };
+    let report = state.walk_from_directed(seed, direction, options).await?;
     let works: Vec<WorkId> = report
         .expansions
         .iter()
@@ -1655,8 +1713,8 @@ async fn expand_command(
     Ok(())
 }
 
-/// A Work for a ramp command: a Work reference, or with `paper` the Work a paper is linked to.
-async fn resolve_ramp_work(
+/// A Work for a command: a Work reference, or with `paper` the Work a paper is linked to.
+async fn resolve_work_target(
     state: &AppState,
     library: &std::path::Path,
     text: &str,
@@ -1676,7 +1734,7 @@ async fn provenance_command(
 ) -> Result<()> {
     match command {
         ProvenanceCommand::Show { work, paper } => {
-            let work = resolve_ramp_work(state, library, &work, paper).await?;
+            let work = resolve_work_target(state, library, &work, paper).await?;
             print!("{}", render_provenance(&state.work_provenance(work).await?));
             Ok(())
         }
@@ -1688,14 +1746,14 @@ async fn provenance_command(
         } => {
             let field = parse_field(&field)?;
             let value = cli_override_value(field, &value)?;
-            let work = resolve_ramp_work(state, library, &work, paper).await?;
+            let work = resolve_work_target(state, library, &work, paper).await?;
             let view = state.set_field_override(work, field, &value).await?;
             print!("{}", render_provenance(&view));
             Ok(())
         }
         ProvenanceCommand::Clear { work, paper, field } => {
             let field = parse_field(&field)?;
-            let work = resolve_ramp_work(state, library, &work, paper).await?;
+            let work = resolve_work_target(state, library, &work, paper).await?;
             let view = state.clear_field_override(work, field).await?;
             print!("{}", render_provenance(&view));
             Ok(())
@@ -1703,7 +1761,7 @@ async fn provenance_command(
         ProvenanceCommand::Reselect { work, paper, all } => {
             let scope = match (work, all) {
                 (Some(text), false) => {
-                    ReselectScope::Work(resolve_ramp_work(state, library, &text, paper).await?)
+                    ReselectScope::Work(resolve_work_target(state, library, &text, paper).await?)
                 }
                 (None, true) => ReselectScope::All,
                 _ => {
@@ -1719,167 +1777,216 @@ async fn provenance_command(
     }
 }
 
-async fn ramp_command(
+// One arm per subcommand; splitting them would only move the dispatch.
+#[allow(clippy::too_many_lines)]
+async fn list_command(
     state: &AppState,
     library: &std::path::Path,
-    command: RampCommand,
+    command: ListCommand,
 ) -> Result<()> {
     match command {
-        RampCommand::New { work, paper, title } => {
-            let seed = resolve_ramp_work(state, library, &work, paper).await?;
-            let title = title
-                .as_deref()
-                .map(lysilogy::ramps::parse_title)
-                .transpose()?;
-            let detail = state.create_ramp(seed, title).await?;
-            print!("{}", render_ramp_detail(&detail));
-        }
-        RampCommand::List => {
-            let ramps = state.list_ramps(None).await?;
-            print!("{}", render_ramp_list(&ramps));
-        }
-        RampCommand::Show { ramp } => {
-            let ramp = state.ramp_reference(&ramp).await?;
-            print!("{}", render_ramp_detail(&state.ramp_detail(ramp).await?));
-        }
-        RampCommand::Add {
-            ramp,
-            work,
-            via,
-            note,
+        ListCommand::New {
+            title,
+            seed,
+            description,
         } => {
-            let ramp = state.ramp_reference(&ramp).await?;
-            let work = state.resolve_work_argument(&work).await?;
-            let via = match via {
-                Some(via) => Some(state.resolve_work_argument(&via).await?),
+            let title = parse_title(&title)?;
+            let description = lysilogy::lists::parse_description(description.as_deref())?;
+            let seed = match seed {
+                Some(text) => Some(state.resolve_work_argument(&text).await?),
                 None => None,
             };
-            let note = lysilogy::ramps::parse_note(note.as_deref())?;
-            let item = state.add_ramp_item(ramp, work, via, note).await?;
-            println!("Added: {}", render_ramp_item_line(&item, None));
+            let detail = state.create_list(&title, description, seed).await?;
+            print!("{}", render_list_detail(&detail, ListView::Sequence));
         }
-        RampCommand::Set {
-            ramp,
+        ListCommand::Ls { work, archived } => {
+            let work = match work {
+                Some(text) => Some(state.resolve_work_argument(&text).await?),
+                None => None,
+            };
+            let scope = if archived {
+                lysilogy_db::list::ArchiveScope::All
+            } else {
+                lysilogy_db::list::ArchiveScope::Active
+            };
+            let lists = state.list_summaries(work, scope).await?;
+            print!("{}", render_list_summaries(&lists));
+        }
+        ListCommand::Show { list, view } => {
+            let list = state.list_reference(&list).await?;
+            print!(
+                "{}",
+                render_list_detail(&state.list_detail(list).await?, view)
+            );
+        }
+        ListCommand::Add {
+            list,
             work,
-            status,
+            paper,
+            topic,
+            claim,
+            via,
+            topic_of,
             note,
-            clear_note,
         } => {
-            let ramp = state.ramp_reference(&ramp).await?;
-            let work = state.resolve_work_argument(&work).await?;
-            let note = if clear_note {
-                Some(None)
-            } else {
-                note.map(|note| lysilogy::ramps::parse_note(Some(&note)))
-                    .transpose()?
-            };
-            let item = state.update_ramp_item(ramp, work, status, note).await?;
-            println!("Updated: {}", render_ramp_item_line(&item, None));
+            let list = state.list_reference(&list).await?;
+            let add = list_add_target(
+                state,
+                library,
+                list,
+                ListAddArguments {
+                    work,
+                    paper,
+                    topic,
+                    claim,
+                    via,
+                    topic_of,
+                    note,
+                },
+            )
+            .await?;
+            let node = state.add_list_node(list, add).await?;
+            println!("Added {} {}", node.node.kind, node.node.id);
         }
-        RampCommand::Remove { ramp, work } => {
-            let ramp = state.ramp_reference(&ramp).await?;
-            let work = state.resolve_work_argument(&work).await?;
-            state.remove_ramp_item(ramp, work).await?;
-            println!("Removed.");
+        ListCommand::Rm { list, target } => {
+            let list = state.list_reference(&list).await?;
+            let node = state.list_node_reference(list, &target).await?;
+            let removed = state.remove_list_node(list, node).await?;
+            println!(
+                "Removed {} {} and {} edges",
+                removed.node.kind,
+                removed.node.id,
+                removed.edges.len()
+            );
         }
-        RampCommand::Order {
-            ramp,
-            suggest,
-            works,
+        ListCommand::Edge {
+            list,
+            from,
+            to,
+            kind,
+            remove,
         } => {
-            let ramp = state.ramp_reference(&ramp).await?;
-            let detail = if suggest {
-                state.suggest_ramp_order(ramp).await?
+            let list = state.list_reference(&list).await?;
+            let from = state.list_node_reference(list, &from).await?;
+            let to = state.list_node_reference(list, &to).await?;
+            if remove {
+                state.remove_list_edge(list, from, to, kind).await?;
+                println!("Removed {kind} edge {from} -> {to}");
             } else {
-                let mut order = Vec::with_capacity(works.len());
-                for work in &works {
-                    order.push(state.resolve_work_argument(work).await?);
+                state.add_list_edge(list, from, to, kind).await?;
+                println!("Added {kind} edge {from} -> {to}");
+            }
+        }
+        ListCommand::Order {
+            list,
+            strategy,
+            nodes,
+        } => {
+            let list = state.list_reference(&list).await?;
+            let detail = if let Some(strategy) = strategy {
+                state.order_list_by(list, strategy).await?
+            } else {
+                let mut order = Vec::with_capacity(nodes.len());
+                for text in &nodes {
+                    order.push(state.list_node_reference(list, text).await?);
                 }
-                state.reorder_ramp(ramp, &order).await?
+                state.reorder_list(list, &order).await?
             };
-            print!("{}", render_ramp_detail(&detail));
+            print!("{}", render_list_detail(&detail, ListView::Sequence));
         }
-        RampCommand::Delete { ramp } => {
-            let ramp = state.ramp_reference(&ramp).await?;
-            state.delete_ramp(ramp).await?;
+        ListCommand::Verify { list } => {
+            let list = state.list_reference(&list).await?;
+            let report = state.verify_list(list).await?;
+            println!(
+                "Checked {} pending claims: {} resolved, {} reclassified, {} still pending",
+                report.checked, report.resolved, report.reclassified, report.still_pending
+            );
+        }
+        ListCommand::Delete { list } => {
+            let list = state.list_reference(&list).await?;
+            state.delete_list(list).await?;
             println!("Deleted.");
         }
     }
     Ok(())
 }
 
-fn render_ramp_list(ramps: &[RampSummaryView]) -> String {
-    if ramps.is_empty() {
-        return "No ramps.\n".to_owned();
-    }
-    let mut text = String::new();
-    for ramp in ramps {
-        let _ = writeln!(
-            text,
-            "{}  {} ({} items: {} unread, {} reading, {} read)",
-            ramp.id,
-            ramp.title,
-            ramp.item_count,
-            ramp.status_counts.unread,
-            ramp.status_counts.reading,
-            ramp.status_counts.read
-        );
-    }
-    text
+/// The arguments of `list add`, before they are resolved.
+struct ListAddArguments {
+    work: Option<String>,
+    paper: Option<String>,
+    topic: Option<String>,
+    claim: Option<String>,
+    via: Option<String>,
+    topic_of: Option<String>,
+    note: Option<String>,
 }
 
-/// One item: `<ordinal>. [<status>] <title> (<year>) · depth <d> · via <title> · <local>`.
-/// `local` is `held`, `fetch:<state>`, or a dash; it is left off when `None`.
-fn render_ramp_item_line(item: &RampItemView, local: Option<&str>) -> String {
-    let title = item
-        .work
-        .display_title
-        .clone()
-        .unwrap_or_else(|| item.work.id.to_string());
-    let year = item
-        .work
-        .display_year
-        .map_or_else(|| "n.d.".to_owned(), |year| year.to_string());
-    let mut line = format!(
-        "{}. [{}] {title} ({year}) · depth {}",
-        item.ordinal, item.status, item.depth
-    );
-    if let Some(via) = item.via_work_id {
-        let via_title = item
-            .path
-            .iter()
-            .find(|step| step.work_id == via)
-            .and_then(|step| step.title.clone())
-            .unwrap_or_else(|| via.to_string());
-        let _ = write!(line, " · via {via_title}");
+/// What `list add` was asked to add, with Work, paper and topic references resolved.
+async fn list_add_target(
+    state: &AppState,
+    library: &std::path::Path,
+    list: lysilogy_core::ListId,
+    arguments: ListAddArguments,
+) -> Result<AddNode> {
+    let note = parse_note(arguments.note.as_deref())?;
+    if let Some(label) = arguments.topic {
+        return Ok(AddNode::Topic {
+            label: parse_topic_label(&label)?,
+            summary: parse_summary(arguments.note.as_deref())?,
+        });
     }
-    if let Some(local) = local {
-        let _ = write!(line, " · {local}");
-    }
-    line
-}
-
-fn render_ramp_detail(detail: &RampDetail) -> String {
-    let mut text = format!(
-        "{} ({}) · {} items\n",
-        detail.ramp.title, detail.ramp.id, detail.ramp.item_count
-    );
-    for item in &detail.items {
-        let key = item.work.id.to_string();
-        let local = if detail.local_papers.contains_key(&key) {
-            "held".to_owned()
-        } else {
-            detail
-                .acquisitions
-                .get(&key)
-                .map_or_else(|| "—".to_owned(), |brief| format!("fetch:{}", brief.state))
+    if let Some(text) = arguments.claim {
+        let claim = lysilogy_core::Claim {
+            title: text.clone(),
+            raw: Some(text),
+            ..lysilogy_core::Claim::default()
         };
-        let _ = writeln!(text, "{}", render_ramp_item_line(item, Some(&local)));
-        if let Some(note) = &item.note {
-            let _ = writeln!(text, "    note: {note}");
-        }
+        return Ok(AddNode::Claim { claim, note });
     }
-    text
+    let mut topics = Vec::new();
+    if let Some(label) = arguments.topic_of {
+        let wanted = label.trim().to_lowercase();
+        let detail = state.list_detail(list).await?;
+        let found = detail.nodes.iter().find(|node| {
+            node.node.kind == NodeKind::Topic
+                && node
+                    .node
+                    .label
+                    .as_ref()
+                    .is_some_and(|label| label.to_lowercase() == wanted)
+        });
+        let Some(found) = found else {
+            return Err(Error::InvalidRequest(format!(
+                "the list has no topic {label:?}"
+            )));
+        };
+        topics.push(found.node.id);
+    }
+    if let Some(text) = arguments.paper {
+        let paper = resolve_lit_target(state, library, &text).await?;
+        return Ok(AddNode::Paper {
+            paper,
+            topics,
+            note,
+        });
+    }
+    let Some(text) = arguments.work else {
+        return Err(Error::InvalidRequest(
+            "give a <work>, --paper, --topic, or --claim".to_owned(),
+        ));
+    };
+    let work = state.resolve_work_argument(&text).await?;
+    let via = match arguments.via {
+        Some(text) => Some(state.resolve_work_argument(&text).await?),
+        None => None,
+    };
+    Ok(AddNode::Work {
+        work,
+        via,
+        topics,
+        note,
+    })
 }
 
 fn render_expansion_line(report: &ExpansionReport, titles: &BTreeMap<WorkId, String>) -> String {
@@ -3059,95 +3166,186 @@ mod tests {
         ));
     }
 
-    fn ramp_command_of(arguments: &[&str]) -> Option<RampCommand> {
-        let mut full = vec!["lysilogy", "ramp"];
+    fn list_command_of(arguments: &[&str]) -> Option<ListCommand> {
+        let mut full = vec!["lysilogy", "list"];
         full.extend_from_slice(arguments);
         match Cli::try_parse_from(full).ok()?.command {
-            Some(Command::Ramp { command }) => Some(command),
+            Some(Command::List { command }) => Some(command),
             _ => None,
         }
     }
 
     #[test]
-    fn should_parse_ramp_subcommands_when_arguments_valid() {
+    fn should_parse_list_subcommands_when_arguments_valid() {
         assert!(matches!(
-            ramp_command_of(&["new", "doi:10.1/x", "--title", "T"]),
-            Some(RampCommand::New {
-                paper: false,
-                title: Some(_),
+            list_command_of(&[
+                "new",
+                "RLHF basics",
+                "--seed",
+                "doi:10.1/x",
+                "--description",
+                "d"
+            ]),
+            Some(ListCommand::New {
+                seed: Some(_),
+                description: Some(_),
                 ..
             })
         ));
         assert!(matches!(
-            ramp_command_of(&["new", "Some title", "--paper"]),
-            Some(RampCommand::New {
-                paper: true,
-                title: None,
+            list_command_of(&["new", "Just a title"]),
+            Some(ListCommand::New { seed: None, .. })
+        ));
+        assert!(matches!(
+            list_command_of(&["ls", "--work", "w1", "--archived"]),
+            Some(ListCommand::Ls {
+                work: Some(_),
+                archived: true
+            })
+        ));
+        assert!(matches!(
+            list_command_of(&["show", "RLHF", "--view", "next"]),
+            Some(ListCommand::Show {
+                view: ListView::Next,
                 ..
             })
         ));
         assert!(matches!(
-            ramp_command_of(&["list"]),
-            Some(RampCommand::List)
+            list_command_of(&["show", "RLHF"]),
+            Some(ListCommand::Show {
+                view: ListView::Sequence,
+                ..
+            })
         ));
         assert!(matches!(
-            ramp_command_of(&["show", "Learning"]),
-            Some(RampCommand::Show { .. })
+            list_command_of(&["rm", "p1", "n1"]),
+            Some(ListCommand::Rm { .. })
         ));
         assert!(matches!(
-            ramp_command_of(&["add", "p1", "w1", "--via", "w2", "--note", "n"]),
-            Some(RampCommand::Add {
+            list_command_of(&["verify", "p1"]),
+            Some(ListCommand::Verify { .. })
+        ));
+        assert!(matches!(
+            list_command_of(&["delete", "p1"]),
+            Some(ListCommand::Delete { .. })
+        ));
+    }
+
+    #[test]
+    fn should_require_exactly_one_target_when_parsing_list_add() {
+        assert!(matches!(
+            list_command_of(&[
+                "add",
+                "p1",
+                "w1",
+                "--via",
+                "w2",
+                "--topic-of",
+                "T",
+                "--note",
+                "n"
+            ]),
+            Some(ListCommand::Add {
+                work: Some(_),
                 via: Some(_),
-                note: Some(_),
+                topic_of: Some(_),
                 ..
             })
         ));
         assert!(matches!(
-            ramp_command_of(&["set", "p1", "w1", "--status", "reading"]),
-            Some(RampCommand::Set {
-                status: Some(ReadingStatus::Reading),
-                clear_note: false,
+            list_command_of(&["add", "p1", "--paper", "Some title"]),
+            Some(ListCommand::Add { paper: Some(_), .. })
+        ));
+        assert!(matches!(
+            list_command_of(&["add", "p1", "--topic", "Alignment"]),
+            Some(ListCommand::Add { topic: Some(_), .. })
+        ));
+        assert!(matches!(
+            list_command_of(&["add", "p1", "--claim", "Attention is all you need"]),
+            Some(ListCommand::Add { claim: Some(_), .. })
+        ));
+        assert!(list_command_of(&["add", "p1"]).is_none(), "needs a target");
+        assert!(
+            list_command_of(&["add", "p1", "w1", "--topic", "T"]).is_none(),
+            "a Work and a topic together"
+        );
+        assert!(
+            list_command_of(&["add", "p1", "--paper", "x", "--claim", "y"]).is_none(),
+            "a paper and a claim together"
+        );
+    }
+
+    #[test]
+    fn should_parse_edge_kinds_and_orders_when_arguments_valid() {
+        assert!(matches!(
+            list_command_of(&["edge", "p1", "n1", "n2", "--kind", "prerequisite"]),
+            Some(ListCommand::Edge {
+                kind: EdgeKind::Prerequisite,
+                remove: false,
                 ..
             })
         ));
         assert!(matches!(
-            ramp_command_of(&["set", "p1", "w1", "--clear-note"]),
-            Some(RampCommand::Set {
-                status: None,
-                clear_note: true,
+            list_command_of(&["edge", "p1", "n1", "n2", "--kind", "covers", "--remove"]),
+            Some(ListCommand::Edge {
+                kind: EdgeKind::Covers,
+                remove: true,
+                ..
+            })
+        ));
+        assert!(
+            list_command_of(&["edge", "p1", "n1", "n2"]).is_none(),
+            "kind is required"
+        );
+        assert!(
+            list_command_of(&["edge", "p1", "n1", "n2", "--kind", "cites"]).is_none(),
+            "unknown kind"
+        );
+        assert!(matches!(
+            list_command_of(&["order", "p1", "--strategy", "foundational-first"]),
+            Some(ListCommand::Order {
+                strategy: Some(OrderStrategy::FoundationalFirst),
                 ..
             })
         ));
         assert!(matches!(
-            ramp_command_of(&["remove", "p1", "w1"]),
-            Some(RampCommand::Remove { .. })
-        ));
-        assert!(matches!(
-            ramp_command_of(&["order", "p1", "--suggest"]),
-            Some(RampCommand::Order {
-                suggest: true,
-                works,
+            list_command_of(&["order", "p1", "n1", "n2", "n3"]),
+            Some(ListCommand::Order {
+                strategy: None,
+                nodes,
                 ..
-            }) if works.is_empty()
+            }) if nodes.len() == 3
         ));
+        assert!(
+            list_command_of(&["order", "p1"]).is_none(),
+            "needs an order"
+        );
+        assert!(
+            list_command_of(&["order", "p1", "--strategy", "year", "n1"]).is_none(),
+            "a strategy and nodes together"
+        );
+        assert!(
+            list_command_of(&["order", "p1", "--strategy", "alphabetical"]).is_none(),
+            "unknown strategy"
+        );
+    }
+
+    #[test]
+    fn should_parse_read_status_when_arguments_valid() {
+        let parsed = Cli::try_parse_from(["lysilogy", "read", "doi:10.1/x", "--status", "read"])
+            .expect("read");
         assert!(matches!(
-            ramp_command_of(&["order", "p1", "w1", "w2", "w3"]),
-            Some(RampCommand::Order {
-                suggest: false,
-                works,
+            parsed.command,
+            Some(Command::Read {
+                paper: false,
+                status: ReadingStatus::Read,
                 ..
-            }) if works.len() == 3
-        ));
-        assert!(matches!(
-            ramp_command_of(&["delete", "p1"]),
-            Some(RampCommand::Delete { .. })
+            })
         ));
         for arguments in [
-            vec!["lysilogy", "ramp"],
-            vec!["lysilogy", "ramp", "show"],
-            vec!["lysilogy", "ramp", "add", "p1"],
-            vec!["lysilogy", "ramp", "set", "p1", "w1", "--status", "done"],
-            vec!["lysilogy", "ramp", "frobnicate"],
+            vec!["lysilogy", "read", "w1"],
+            vec!["lysilogy", "read", "w1", "--status", "done"],
+            vec!["lysilogy", "read", "--status", "read"],
         ] {
             assert!(
                 Cli::try_parse_from(arguments.clone()).is_err(),
@@ -3157,68 +3355,26 @@ mod tests {
     }
 
     #[test]
-    fn should_reject_order_without_suggest_or_works_when_parsing() {
-        assert!(ramp_command_of(&["order", "p1"]).is_none());
-        assert!(ramp_command_of(&["order", "p1", "--suggest", "w1"]).is_none());
+    fn should_drop_the_ramp_command_when_lists_replace_it() {
+        assert!(Cli::try_parse_from(["lysilogy", "ramp", "list"]).is_err());
     }
 
     #[test]
-    fn should_reject_note_with_clear_note_when_parsing_set() {
-        assert!(ramp_command_of(&["set", "p1", "w1", "--note", "n", "--clear-note"]).is_none());
-        assert!(
-            ramp_command_of(&["set", "p1", "w1"]).is_none(),
-            "set needs something to change"
-        );
-        assert!(ramp_command_of(&["set", "p1", "w1", "--note", "n"]).is_some());
-    }
-
-    #[test]
-    fn should_render_ramp_item_line_with_via_and_local_state() {
-        use lysilogy::ramps::PathStep;
-        use lysilogy_core::{FieldState, Visibility, WorkKind};
-        let (seed, child) = (WorkId::new(), WorkId::new());
-        let now = chrono::Utc::now();
-        let item = RampItemView {
-            work: lysilogy_core::Work {
-                id: child,
-                kind: WorkKind::Article,
-                visibility: Visibility::Private,
-                display_title: Some("Child".to_owned()),
-                title_state: FieldState::Known,
-                display_year: Some(2019),
-                year_state: FieldState::Known,
-                display_authors: None,
-                authors_state: FieldState::Unknown,
-                created_at: now,
-                updated_at: now,
-            },
-            ordinal: 2,
-            depth: 1,
-            via_work_id: Some(seed),
-            path: vec![
-                PathStep {
-                    work_id: seed,
-                    title: Some("Seed".to_owned()),
-                },
-                PathStep {
-                    work_id: child,
-                    title: Some("Child".to_owned()),
-                },
-            ],
-            status: ReadingStatus::Reading,
-            note: None,
-            added_at: now,
-            updated_at: now,
-            status_changed_at: None,
-        };
-        assert_eq!(
-            render_ramp_item_line(&item, Some("held")),
-            "2. [reading] Child (2019) · depth 1 · via Seed · held"
-        );
-        assert_eq!(
-            render_ramp_item_line(&item, None),
-            "2. [reading] Child (2019) · depth 1 · via Seed"
-        );
+    fn should_parse_cited_by_flag_when_expanding() {
+        let parsed =
+            Cli::try_parse_from(["lysilogy", "expand", "w1", "--cited-by"]).expect("expand");
+        assert!(matches!(
+            parsed.command,
+            Some(Command::Expand { cited_by: true, .. })
+        ));
+        let plain = Cli::try_parse_from(["lysilogy", "expand", "w1"]).expect("expand");
+        assert!(matches!(
+            plain.command,
+            Some(Command::Expand {
+                cited_by: false,
+                ..
+            })
+        ));
     }
 
     #[test]

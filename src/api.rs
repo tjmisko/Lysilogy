@@ -13,11 +13,11 @@ mod curation;
 mod expansion;
 mod history;
 mod labels;
+mod lists;
 mod literature;
 mod neighbors;
 mod notes;
 mod provenance;
-mod ramps;
 mod reader_tools;
 mod source_index;
 mod vimrc;
@@ -308,6 +308,8 @@ impl AppState {
         Ok(self)
     }
 
+    // Both guards are read across the whole summary, so tightening them would split it.
+    #[allow(clippy::significant_drop_tightening)]
     pub async fn library(&self) -> LibraryResponse {
         let catalog = self.catalog.read().await;
         let extras = self.extra_libraries.read().await;
@@ -2031,7 +2033,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .merge(literature::routes())
         .merge(acquisition::routes())
         .merge(expansion::routes())
-        .merge(ramps::routes())
+        .merge(lists::routes())
         .merge(provenance::routes())
         .merge(curation::routes())
         .merge(labels::routes())

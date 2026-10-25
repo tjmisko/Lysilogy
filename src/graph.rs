@@ -4,7 +4,6 @@
 //! database never stops the reader; graph routes report an explicit unavailable
 //! state instead.
 
-use crate::ramps::legacy::RampRepository;
 use lysilogy_db::PgPool;
 use lysilogy_db::acquisition::AcquisitionRepository;
 use lysilogy_db::citation::CitationRepository;
@@ -13,7 +12,9 @@ use lysilogy_db::curation::CurationRepository;
 use lysilogy_db::document::DocumentRepository;
 use lysilogy_db::evidence::EvidenceRepository;
 use lysilogy_db::expansion::ExpansionRepository;
+use lysilogy_db::list::ListRepository;
 use lysilogy_db::prominence::ProminenceRepository;
+use lysilogy_db::reading_state::ReadingStateRepository;
 use lysilogy_db::relationship::RelationshipRepository;
 use lysilogy_db::source_record::SourceRecordRepository;
 use lysilogy_db::work::WorkRepository;
@@ -31,7 +32,8 @@ pub struct GraphState {
     pub acquisitions: AcquisitionRepository,
     pub curation: CurationRepository,
     pub prominence: ProminenceRepository,
-    pub ramps: RampRepository,
+    pub lists: ListRepository,
+    pub reading_states: ReadingStateRepository,
     pub expansions: ExpansionRepository,
 }
 
@@ -55,7 +57,8 @@ impl GraphState {
             acquisitions: AcquisitionRepository::new(pool.clone()),
             curation: CurationRepository::new(pool.clone()),
             prominence: ProminenceRepository::new(pool.clone()),
-            ramps: RampRepository::new(pool.clone()),
+            lists: ListRepository::new(pool.clone()),
+            reading_states: ReadingStateRepository::new(pool.clone()),
             expansions: ExpansionRepository::new(pool),
         }
     }
