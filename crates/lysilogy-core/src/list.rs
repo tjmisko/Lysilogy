@@ -333,6 +333,7 @@ mod tests {
             ListError::InvalidEdgeKind,
             ListError::DescriptionTooLong,
             ListError::InvalidTopicLabel,
+            ListError::NodeNotFound,
         ]
         .iter()
         .map(|error| error.code())
@@ -353,7 +354,8 @@ mod tests {
                 "edge_cycle",
                 "invalid_edge_kind",
                 "invalid_description",
-                "invalid_topic_label"
+                "invalid_topic_label",
+                "node_not_found"
             ]
         );
     }

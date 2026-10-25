@@ -215,7 +215,8 @@ fn find_work_cycle(order: &BTreeMap<NodeId, BTreeSet<NodeId>>) -> Option<Vec<Nod
 }
 
 /// The cycle the new edge adds to the expanded Work order, if it adds one. A list whose
-/// stored edges already cycle accepts further edges that add nothing new.
+/// stored edges already cycle accepts further edges that add nothing new. Merges (T2)
+/// must therefore drop any edge that closes a cycle, so validation stays strict.
 fn expanded_cycle<S: BuildHasher>(
     nodes: &HashMap<NodeId, NodeKind, S>,
     existing: &[ListEdge],
@@ -642,7 +643,7 @@ mod tests {
     }
 
     #[test]
-    fn should_reject_self_edges_as_one_node_cycles() {
+    fn should_reject_as_one_node_cycle_when_edge_is_a_self_edge() {
         let nodes = kinds(&[(1, NodeKind::Work), (10, NodeKind::Topic)]);
         assert_eq!(
             validate_edge(&nodes, &[], edge(1, 1, EdgeKind::Prerequisite)),
@@ -832,7 +833,7 @@ mod tests {
     }
 
     #[test]
-    fn should_place_the_seed_last_and_ignore_its_constraints() {
+    fn should_place_seed_last_when_it_has_constraints() {
         let mut seed = item(9, 0, 1.0, Some(2020));
         seed.is_seed = true;
         let items = [item(1, 1, 0.1, None), seed, item(2, 2, 0.1, None)];
@@ -841,7 +842,7 @@ mod tests {
     }
 
     #[test]
-    fn should_handle_claims_duplicates_unknown_ids_and_empty_input() {
+    fn should_skip_unknown_ids_and_keep_first_when_items_repeat() {
         let mut claim = item(7, 1, 0.0, None);
         claim.work_id = None;
         let items = [
@@ -958,7 +959,7 @@ mod tests {
     }
 
     #[test]
-    fn should_rank_frontier_by_order_and_put_unlisted_works_last() {
+    fn should_put_unlisted_works_last_when_ranking_frontier() {
         use ReadingStatus::Unread;
         let works = status(&[(1, Unread), (2, Unread), (3, Unread), (3, Unread)]);
         assert_eq!(frontier(&works, &[], &ids(&[2, 1])), ids(&[2, 1, 3]));

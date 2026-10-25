@@ -134,7 +134,7 @@ const fn verdict(outcome: ClaimOutcome, identifier_dropped: bool) -> ClaimVerdic
 
 const fn years_agree(left: Option<i32>, right: Option<i32>) -> bool {
     match (left, right) {
-        (Some(a), Some(b)) => (a - b).abs() <= 1,
+        (Some(a), Some(b)) => a.abs_diff(b) <= 1,
         _ => true,
     }
 }
@@ -147,10 +147,22 @@ fn titles_disagree(claimed: &str, found: &str) -> bool {
 }
 
 fn family_key(author: &str) -> Option<String> {
-    let family = citation_family(author).or_else(|| {
-        author
-            .split_whitespace()
-            .next_back()
+    let words: Vec<&str> = author.split_whitespace().collect();
+    // Vancouver style puts initials last ("Stiennon N"), so the family is first.
+    let initials_last = !author.contains(',')
+        && words.len() > 1
+        && words.last().is_some_and(|word| {
+            let word = word.trim_end_matches('.');
+            (1..=2).contains(&word.chars().count()) && word.chars().all(char::is_uppercase)
+        });
+    let family = if initials_last {
+        words.first().map(|word| (*word).to_owned())
+    } else {
+        citation_family(author)
+    }
+    .or_else(|| {
+        words
+            .last()
             .map(|word| word.trim_end_matches('.').to_owned())
     })?;
     let key = title_key(&family);
@@ -233,6 +245,9 @@ fn plausible<'a>(claim: &Claim, records: &'a [ProviderRecord]) -> Vec<Scored<'a>
 ///    at another paper, else `Unverified`.
 ///
 /// A claim with no usable title skips rules 1 and 3.
+///
+/// Deviation from the spec: rule 2 also requires the year within 1 and a shared author
+/// surname before an identifier verifies; claims_eval should watch the real-set rate.
 #[must_use]
 pub fn decide_claim(claim: &Claim, evidence: &ClaimEvidence) -> ClaimVerdict {
     let key = title_key(&claim.title);
@@ -357,6 +372,30 @@ mod tests {
     }
 
     const TITLE: &str = "Learning to summarize from human feedback";
+
+    #[test]
+    fn should_not_panic_when_claimed_year_is_out_of_range() {
+        let found = record("W1", TITLE, Some(2020), &[]);
+        for year in [i32::MIN, i32::MAX] {
+            let mut asked = claim(TITLE);
+            asked.doi = Some("10.1/x".into());
+            asked.year = Some(year);
+            let ev = evidence(
+                vec![],
+                vec![IdentifierLookup::Resolved(found.clone())],
+                TitleSearch::TransportError,
+            );
+            let _ = decide_claim(&asked, &ev);
+        }
+        assert!(!years_agree(Some(i32::MIN), Some(i32::MAX)));
+        assert!(!years_agree(Some(i32::MAX), Some(2020)));
+    }
+
+    #[test]
+    fn should_use_first_word_as_family_when_name_ends_in_initials() {
+        assert_eq!(family_key("Stiennon N"), family_key("Nisan Stiennon"));
+        assert_eq!(family_key("Stiennon NJ"), Some("stiennon".into()));
+    }
 
     #[test]
     fn should_match_existing_work_when_title_key_and_year_agree() {
