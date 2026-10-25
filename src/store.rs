@@ -185,6 +185,22 @@ impl ArtifactStore {
         write_atomic(&directory.join("job.json"), &json).await
     }
 
+    /// Extra library directories the user added, in the order they were added.
+    pub async fn load_extra_libraries(&self) -> Result<Vec<crate::library::ExtraLibrary>> {
+        Ok(read_json_if_present(&self.root.join("libraries.json"))
+            .await?
+            .unwrap_or_default())
+    }
+
+    pub async fn save_extra_libraries(
+        &self,
+        libraries: &[crate::library::ExtraLibrary],
+    ) -> Result<()> {
+        let mut json = serde_json::to_vec_pretty(libraries)?;
+        json.push(b'\n');
+        write_atomic(&self.root.join("libraries.json"), &json).await
+    }
+
     pub async fn save_remote_source(&self, id: &PaperId, source: &RemotePdfSource) -> Result<()> {
         let directory = self.paper_dir(id);
         fs::create_dir_all(&directory)

@@ -60,7 +60,7 @@ use crate::{
     extract::PdfExtractor,
     graph::GraphState,
     jobs::JobTracker,
-    library::LibraryCatalog,
+    library::{ExtraLibrary, LibraryCatalog},
     remote::{PublicResource, download_public_resource},
     store::ArtifactStore,
 };
@@ -75,6 +75,7 @@ const MAX_REMOTE_URL_LENGTH: usize = 4_096;
 pub struct AppState {
     pub(crate) catalog: Arc<RwLock<LibraryCatalog>>,
     pub(crate) library_root: Arc<PathBuf>,
+    extra_libraries: Arc<RwLock<Vec<ExtraLibrary>>>,
     pub(crate) store: ArtifactStore,
     pub(crate) extractor: PdfExtractor,
     analysis: AnalysisService,
@@ -136,6 +137,24 @@ struct ImportPdfResponse {
 pub struct LibraryResponse {
     pub name: String,
     pub papers: Vec<PaperOverview>,
+    pub directories: Vec<LibraryDirectory>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct LibraryDirectory {
+    /// `primary` for the root the server was started with, else `lib-<hex>`.
+    pub id: String,
+    pub name: String,
+    pub path: String,
+    pub primary: bool,
+    /// False while the folder is missing or unreadable; its papers are hidden.
+    pub available: bool,
+    pub papers: usize,
+}
+
+#[derive(Debug, Deserialize)]
+struct AddDirectoryRequest {
+    path: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -173,11 +192,13 @@ impl AppState {
         let library_root = library_root.into();
         let store = ArtifactStore::new(data_root);
         store.initialize().await?;
-        let catalog = LibraryCatalog::scan(&library_root, &store).await?;
+        let extra_libraries = store.load_extra_libraries().await?;
+        let catalog = LibraryCatalog::scan_all(&library_root, &extra_libraries, &store).await?;
         let jobs = JobTracker::load(store.clone()).await?;
         Ok(Self {
             catalog: Arc::new(RwLock::new(catalog)),
             library_root: Arc::new(library_root),
+            extra_libraries: Arc::new(RwLock::new(extra_libraries)),
             store,
             extractor,
             analysis,
@@ -288,21 +309,107 @@ impl AppState {
 
     pub async fn library(&self) -> LibraryResponse {
         let catalog = self.catalog.read().await;
+        let extras = self.extra_libraries.read().await;
+        let papers = catalog.overviews();
+        let count_in = |prefix: &str| {
+            papers
+                .iter()
+                .filter(|paper| {
+                    paper
+                        .relative_path
+                        .strip_prefix(prefix)
+                        .is_some_and(|rest| rest.starts_with('/'))
+                })
+                .count()
+        };
+        let extra_papers = extras
+            .iter()
+            .map(|extra| count_in(&extra.id))
+            .collect::<Vec<_>>();
+        let mut directories = vec![LibraryDirectory {
+            id: "primary".to_owned(),
+            name: directory_name(catalog.root()),
+            path: catalog.root().display().to_string(),
+            primary: true,
+            available: true,
+            papers: papers.len() - extra_papers.iter().sum::<usize>(),
+        }];
+        directories.extend(extras.iter().zip(extra_papers).map(|(extra, count)| {
+            LibraryDirectory {
+                id: extra.id.clone(),
+                name: directory_name(&extra.path),
+                path: extra.path.display().to_string(),
+                primary: false,
+                available: extra.path.is_dir(),
+                papers: count,
+            }
+        }));
         LibraryResponse {
-            name: catalog
-                .root()
-                .file_name()
-                .and_then(|name| name.to_str())
-                .unwrap_or("Articles")
-                .to_owned(),
-            papers: catalog.overviews(),
+            name: directory_name(catalog.root()),
+            papers,
+            directories,
         }
     }
 
     pub async fn refresh(&self) -> Result<LibraryResponse> {
-        let replacement = LibraryCatalog::scan(self.library_root.as_ref(), &self.store).await?;
+        let extras = self.extra_libraries.read().await.clone();
+        let replacement =
+            LibraryCatalog::scan_all(self.library_root.as_ref(), &extras, &self.store).await?;
         self.catalog.write().await.replace_with(replacement);
         Ok(self.library().await)
+    }
+
+    /// Adds `path` as another library directory. Overlapping directories are
+    /// refused because they would list the same PDF twice under different IDs.
+    pub async fn add_library_directory(&self, path: &str) -> Result<LibraryResponse> {
+        let trimmed = path.trim();
+        if trimmed.is_empty() || !Path::new(trimmed).is_absolute() {
+            return Err(Error::InvalidRequest(
+                "library folder must be an absolute path".to_owned(),
+            ));
+        }
+        let canonical = tokio::fs::canonicalize(trimmed)
+            .await
+            .map_err(|_| Error::InvalidRequest(format!("not a readable directory: {trimmed}")))?;
+        if !canonical.is_dir() {
+            return Err(Error::InvalidRequest(format!(
+                "not a directory: {}",
+                canonical.display()
+            )));
+        }
+        let _guard = self.import_write.lock().await;
+        let primary = tokio::fs::canonicalize(self.library_root.as_ref())
+            .await
+            .map_err(|error| Error::io(self.library_root.as_ref(), error))?;
+        let mut libraries = self.extra_libraries.read().await.clone();
+        let overlaps = |other: &Path| canonical.starts_with(other) || other.starts_with(&canonical);
+        if overlaps(&primary) || libraries.iter().any(|extra| overlaps(&extra.path)) {
+            return Err(Error::InvalidRequest(format!(
+                "{} overlaps a folder already in the library",
+                canonical.display()
+            )));
+        }
+        libraries.push(ExtraLibrary::for_path(canonical));
+        self.store.save_extra_libraries(&libraries).await?;
+        *self.extra_libraries.write().await = libraries;
+        self.refresh().await
+    }
+
+    /// Stops listing a directory. Files and generated artifacts stay on disk, so
+    /// adding the folder again restores each paper's analysis.
+    pub async fn remove_library_directory(&self, id: &str) -> Result<LibraryResponse> {
+        let _guard = self.import_write.lock().await;
+        let mut libraries = self.extra_libraries.read().await.clone();
+        let before = libraries.len();
+        libraries.retain(|extra| extra.id != id);
+        if libraries.len() == before {
+            return Err(Error::InvalidRequest(format!(
+                "no such library folder: {id}"
+            )));
+        }
+        self.store.save_extra_libraries(&libraries).await?;
+        *self.extra_libraries.write().await = libraries;
+        self.refresh().await
     }
 
     async fn import_remote_pdf(&self, value: &str) -> Result<ImportPdfResponse> {
@@ -1819,6 +1926,13 @@ fn parse_remote_pdf_url(value: &str) -> Result<Url> {
     Ok(url)
 }
 
+fn directory_name(path: &Path) -> String {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("Articles")
+        .to_owned()
+}
+
 fn remote_pdf_filename(url: &Url) -> String {
     let candidate = url
         .path_segments()
@@ -1927,6 +2041,11 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .route("/api/library", get(library))
         .route("/api/library/scan", post(scan_library))
         .route("/api/library/import", post(import_pdf))
+        .route("/api/library/directories", post(add_library_directory))
+        .route(
+            "/api/library/directories/{id}",
+            delete(remove_library_directory),
+        )
         .route(
             "/api/library/upload",
             post(upload_pdf).layer(DefaultBodyLimit::max(MAX_UPLOAD_BYTES)),
@@ -2144,6 +2263,21 @@ async fn import_pdf(
 ) -> Result<(StatusCode, Json<ImportPdfResponse>)> {
     let imported = state.import_remote_pdf(&request.url).await?;
     Ok((StatusCode::CREATED, Json(imported)))
+}
+
+async fn add_library_directory(
+    State(state): State<AppState>,
+    Json(request): Json<AddDirectoryRequest>,
+) -> Result<(StatusCode, Json<LibraryResponse>)> {
+    let library = state.add_library_directory(&request.path).await?;
+    Ok((StatusCode::CREATED, Json(library)))
+}
+
+async fn remove_library_directory(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<String>,
+) -> Result<Json<LibraryResponse>> {
+    state.remove_library_directory(&id).await.map(Json)
 }
 
 async fn upload_pdf(
@@ -2639,6 +2773,105 @@ mod tests {
             .await
             .map_err(|error| Error::Task(error.to_string()))?;
         Ok(response.status())
+    }
+
+    const FIXTURE_PDF: &[u8] = b"%PDF-1.7\nfixture\n%%EOF\n";
+
+    fn write_pdf(directory: &Path, name: &str) -> Result<()> {
+        std::fs::write(directory.join(name), FIXTURE_PDF).map_err(|error| Error::io(name, error))
+    }
+
+    #[tokio::test]
+    async fn lists_papers_from_every_added_directory_under_distinct_ids() -> Result<()> {
+        let primary = tempdir().map_err(|error| Error::io("primary", error))?;
+        let extra = tempdir().map_err(|error| Error::io("extra", error))?;
+        let data = tempdir().map_err(|error| Error::io("data", error))?;
+        write_pdf(primary.path(), "same.pdf")?;
+        write_pdf(extra.path(), "same.pdf")?;
+        let state = AppState::new(primary.path(), data.path()).await?;
+        let library = state
+            .add_library_directory(&extra.path().display().to_string())
+            .await?;
+        assert_eq!(library.papers.len(), 2);
+        assert_ne!(library.papers[0].id, library.papers[1].id);
+        let counts = library
+            .directories
+            .iter()
+            .map(|directory| (directory.primary, directory.papers))
+            .collect::<Vec<_>>();
+        assert_eq!(counts, [(true, 1), (false, 1)]);
+        for paper in &library.papers {
+            assert!(state.source_path(&paper.id).await?.exists());
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn keeps_added_directories_across_restarts_and_skips_missing_ones() -> Result<()> {
+        let primary = tempdir().map_err(|error| Error::io("primary", error))?;
+        let extra = tempdir().map_err(|error| Error::io("extra", error))?;
+        let data = tempdir().map_err(|error| Error::io("data", error))?;
+        write_pdf(extra.path(), "kept.pdf")?;
+        let state = AppState::new(primary.path(), data.path()).await?;
+        state
+            .add_library_directory(&extra.path().display().to_string())
+            .await?;
+        let restarted = AppState::new(primary.path(), data.path()).await?;
+        assert_eq!(restarted.library().await.papers.len(), 1);
+        drop(extra);
+        let without_folder = AppState::new(primary.path(), data.path()).await?;
+        let library = without_folder.library().await;
+        assert!(library.papers.is_empty());
+        assert!(!library.directories[1].available);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn rejects_directories_that_overlap_existing_ones() -> Result<()> {
+        let primary = tempdir().map_err(|error| Error::io("primary", error))?;
+        let data = tempdir().map_err(|error| Error::io("data", error))?;
+        let nested = primary.path().join("nested");
+        std::fs::create_dir(&nested).map_err(|error| Error::io(&nested, error))?;
+        let state = AppState::new(primary.path(), data.path()).await?;
+        for path in [
+            primary.path().display().to_string(),
+            nested.display().to_string(),
+            "relative/dir".to_owned(),
+            String::new(),
+        ] {
+            assert!(
+                matches!(
+                    state.add_library_directory(&path).await,
+                    Err(Error::InvalidRequest(_))
+                ),
+                "{path:?} should be rejected"
+            );
+        }
+        let other = tempdir().map_err(|error| Error::io("other", error))?;
+        let other_path = other.path().display().to_string();
+        state.add_library_directory(&other_path).await?;
+        assert!(state.add_library_directory(&other_path).await.is_err());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn removes_a_directory_without_deleting_its_files() -> Result<()> {
+        let primary = tempdir().map_err(|error| Error::io("primary", error))?;
+        let extra = tempdir().map_err(|error| Error::io("extra", error))?;
+        let data = tempdir().map_err(|error| Error::io("data", error))?;
+        write_pdf(extra.path(), "kept.pdf")?;
+        let state = AppState::new(primary.path(), data.path()).await?;
+        let added = state
+            .add_library_directory(&extra.path().display().to_string())
+            .await?;
+        let id = added.directories[1].id.clone();
+        let library = state.remove_library_directory(&id).await?;
+        assert!(library.papers.is_empty());
+        assert_eq!(library.directories.len(), 1);
+        assert!(extra.path().join("kept.pdf").exists());
+        assert!(state.remove_library_directory(&id).await.is_err());
+        assert!(state.remove_library_directory("primary").await.is_err());
+        Ok(())
     }
 
     #[tokio::test]

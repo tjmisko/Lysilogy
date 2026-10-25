@@ -3,6 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use serde::{Deserialize, Serialize};
 use walkdir::{DirEntry, WalkDir};
 
 use crate::{
@@ -18,6 +19,25 @@ pub struct CatalogEntry {
     pub source_path: PathBuf,
 }
 
+/// An additional directory the user added to the library. Papers inside it get
+/// IDs derived from `<id>/<relative path>`, so the primary root's IDs never change.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct ExtraLibrary {
+    pub id: String,
+    pub path: PathBuf,
+}
+
+impl ExtraLibrary {
+    #[must_use]
+    pub fn for_path(path: PathBuf) -> Self {
+        let digest = PaperId::from_relative_path(&path);
+        Self {
+            id: format!("lib-{}", &digest.as_str()[..8]),
+            path,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct LibraryCatalog {
     root: PathBuf,
@@ -26,6 +46,17 @@ pub struct LibraryCatalog {
 
 impl LibraryCatalog {
     pub async fn scan(root: impl Into<PathBuf>, store: &ArtifactStore) -> Result<Self> {
+        Self::scan_all(root, &[], store).await
+    }
+
+    /// Scans the primary root, then each extra directory that is currently
+    /// readable. An unavailable extra (unmounted drive, deleted folder) is
+    /// skipped so the rest of the library still opens.
+    pub async fn scan_all(
+        root: impl Into<PathBuf>,
+        extras: &[ExtraLibrary],
+        store: &ArtifactStore,
+    ) -> Result<Self> {
         let root = root.into();
         if !root.is_dir() {
             return Err(Error::InvalidRequest(format!(
@@ -33,51 +64,10 @@ impl LibraryCatalog {
                 root.display()
             )));
         }
-
-        let mut paths = WalkDir::new(&root)
-            .follow_links(false)
-            .into_iter()
-            .filter_entry(visible_entry)
-            .filter_map(std::result::Result::ok)
-            .filter(|entry| entry.file_type().is_file() && is_pdf(entry.path()))
-            .map(DirEntry::into_path)
-            .collect::<Vec<_>>();
-        paths.sort();
-
         let mut entries = BTreeMap::new();
-        for path in paths {
-            let relative = path.strip_prefix(&root).map_err(|error| {
-                Error::InvalidRequest(format!("could not relativize {}: {error}", path.display()))
-            })?;
-            let id = PaperId::from_relative_path(relative);
-            let analysis = store.load_analysis(&id).await?;
-            let extraction = store.load_extraction(&id).await?;
-            let mut metadata = metadata_from_filename(&path);
-            if let Some(extracted) = &extraction {
-                merge_metadata(&mut metadata, &extracted.metadata);
-            }
-            let status = if analysis.is_some() {
-                ProcessingStatus::Ready
-            } else if extraction.is_some() {
-                ProcessingStatus::Extracted
-            } else {
-                ProcessingStatus::Discovered
-            };
-            let overview = PaperOverview {
-                id: id.clone(),
-                metadata,
-                relative_path: relative.to_string_lossy().replace('\\', "/"),
-                status,
-                analyzed_at: analysis.as_ref().map(|value| value.generated_at),
-                one_line_summary: analysis.as_ref().map(|value| value.thesis.clone()),
-            };
-            entries.insert(
-                id,
-                CatalogEntry {
-                    overview,
-                    source_path: path,
-                },
-            );
+        scan_root(&root, None, store, &mut entries).await?;
+        for extra in extras.iter().filter(|extra| extra.path.is_dir()) {
+            scan_root(&extra.path, Some(&extra.id), store, &mut entries).await?;
         }
         Ok(Self { root, entries })
     }
@@ -137,6 +127,64 @@ impl LibraryCatalog {
             };
         }
     }
+}
+
+async fn scan_root(
+    root: &Path,
+    prefix: Option<&str>,
+    store: &ArtifactStore,
+    entries: &mut BTreeMap<PaperId, CatalogEntry>,
+) -> Result<()> {
+    let mut paths = WalkDir::new(root)
+        .follow_links(false)
+        .into_iter()
+        .filter_entry(visible_entry)
+        .filter_map(std::result::Result::ok)
+        .filter(|entry| entry.file_type().is_file() && is_pdf(entry.path()))
+        .map(DirEntry::into_path)
+        .collect::<Vec<_>>();
+    paths.sort();
+
+    for path in paths {
+        let relative = path.strip_prefix(root).map_err(|error| {
+            Error::InvalidRequest(format!("could not relativize {}: {error}", path.display()))
+        })?;
+        let relative_path = relative.to_string_lossy().replace('\\', "/");
+        let relative_path = match prefix {
+            Some(prefix) => format!("{prefix}/{relative_path}"),
+            None => relative_path,
+        };
+        let id = PaperId::from_relative_path(Path::new(&relative_path));
+        let analysis = store.load_analysis(&id).await?;
+        let extraction = store.load_extraction(&id).await?;
+        let mut metadata = metadata_from_filename(&path);
+        if let Some(extracted) = &extraction {
+            merge_metadata(&mut metadata, &extracted.metadata);
+        }
+        let status = if analysis.is_some() {
+            ProcessingStatus::Ready
+        } else if extraction.is_some() {
+            ProcessingStatus::Extracted
+        } else {
+            ProcessingStatus::Discovered
+        };
+        let overview = PaperOverview {
+            id: id.clone(),
+            metadata,
+            relative_path,
+            status,
+            analyzed_at: analysis.as_ref().map(|value| value.generated_at),
+            one_line_summary: analysis.as_ref().map(|value| value.thesis.clone()),
+        };
+        entries.insert(
+            id,
+            CatalogEntry {
+                overview,
+                source_path: path,
+            },
+        );
+    }
+    Ok(())
 }
 
 fn visible_entry(entry: &DirEntry) -> bool {
