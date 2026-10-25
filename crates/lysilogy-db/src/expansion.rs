@@ -5,7 +5,8 @@
 
 use chrono::{DateTime, Utc};
 use lysilogy_core::{
-    ExpansionMethod, ExpansionState, ExpansionUnavailableReason, SourceRecordId, WorkId,
+    ExpansionDirection, ExpansionMethod, ExpansionState, ExpansionUnavailableReason,
+    SourceRecordId, WorkId,
 };
 use serde::Serialize;
 use sqlx::postgres::PgRow;
@@ -14,7 +15,7 @@ use uuid::Uuid;
 
 use crate::Result;
 
-const EXPANSION_COLUMNS: &str = "work_id, state, method, unavailable_reason, provider_key, \
+const EXPANSION_COLUMNS: &str = "work_id, direction, state, method, unavailable_reason, provider_key, \
     source_record_id, references_count, new_works, warnings, attempts, last_error, \
     expanded_at, created_at, updated_at";
 
@@ -22,6 +23,7 @@ const EXPANSION_COLUMNS: &str = "work_id, state, method, unavailable_reason, pro
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct ExpansionRow {
     pub work_id: WorkId,
+    pub direction: ExpansionDirection,
     pub state: ExpansionState,
     pub method: Option<ExpansionMethod>,
     pub unavailable_reason: Option<ExpansionUnavailableReason>,
@@ -63,42 +65,75 @@ impl ExpansionRepository {
         Self { pool }
     }
 
-    /// The ledger row for a Work, if any.
+    /// The references ledger row for a Work, if any.
     pub async fn get(&self, work: WorkId) -> Result<Option<ExpansionRow>> {
+        self.get_directed(work, ExpansionDirection::References)
+            .await
+    }
+
+    /// The ledger row for a Work in one direction, if any.
+    pub async fn get_directed(
+        &self,
+        work: WorkId,
+        direction: ExpansionDirection,
+    ) -> Result<Option<ExpansionRow>> {
         let row = sqlx::query(&format!(
-            "select {EXPANSION_COLUMNS} from ops.work_expansion where work_id = $1"
+            "select {EXPANSION_COLUMNS} from ops.work_expansion \
+             where work_id = $1 and direction = $2"
         ))
         .bind(work.as_uuid())
+        .bind(direction.as_str())
         .fetch_optional(&self.pool)
         .await?;
         row.as_ref().map(expansion_from_row).transpose()
     }
 
-    /// Ledger rows for the given Works, ordered by Work ID.
+    /// References ledger rows for the given Works, ordered by Work ID.
     pub async fn rows_for(&self, works: &[WorkId]) -> Result<Vec<ExpansionRow>> {
+        self.rows_for_directed(works, ExpansionDirection::References)
+            .await
+    }
+
+    /// Ledger rows in one direction for the given Works, ordered by Work ID.
+    pub async fn rows_for_directed(
+        &self,
+        works: &[WorkId],
+        direction: ExpansionDirection,
+    ) -> Result<Vec<ExpansionRow>> {
         if works.is_empty() {
             return Ok(Vec::new());
         }
         let ids: Vec<Uuid> = works.iter().map(|work| work.as_uuid()).collect();
         let rows = sqlx::query(&format!(
             "select {EXPANSION_COLUMNS} from ops.work_expansion \
-             where work_id = any($1) order by work_id"
+             where work_id = any($1) and direction = $2 order by work_id"
         ))
         .bind(ids)
+        .bind(direction.as_str())
         .fetch_all(&self.pool)
         .await?;
         rows.iter().map(expansion_from_row).collect()
     }
 
-    /// Store an outcome, replacing any earlier one. Each call counts as an attempt,
-    /// stamps `expanded_at`, and clears the last error.
+    /// Store a references outcome, replacing any earlier one. Each call counts as an
+    /// attempt, stamps `expanded_at`, and clears the last error.
     pub async fn record(&self, expansion: NewExpansion) -> Result<ExpansionRow> {
+        self.record_directed(ExpansionDirection::References, expansion)
+            .await
+    }
+
+    /// Like [`Self::record`], for one direction; the other direction's row is untouched.
+    pub async fn record_directed(
+        &self,
+        direction: ExpansionDirection,
+        expansion: NewExpansion,
+    ) -> Result<ExpansionRow> {
         let row = sqlx::query(&format!(
             "insert into ops.work_expansion as e \
-                 (work_id, state, method, unavailable_reason, provider_key, source_record_id, \
-                  references_count, new_works, warnings, attempts) \
-             values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 1) \
-             on conflict (work_id) do update set \
+                 (work_id, direction, state, method, unavailable_reason, provider_key, \
+                  source_record_id, references_count, new_works, warnings, attempts) \
+             values ($1, $10, $2, $3, $4, $5, $6, $7, $8, $9, 1) \
+             on conflict (work_id, direction) do update set \
                  state = excluded.state, method = excluded.method, \
                  unavailable_reason = excluded.unavailable_reason, \
                  provider_key = excluded.provider_key, \
@@ -122,19 +157,33 @@ impl ExpansionRepository {
         .bind(expansion.references_count)
         .bind(expansion.new_works)
         .bind(serde_json::json!(expansion.warnings))
+        .bind(direction.as_str())
         .fetch_one(&self.pool)
         .await?;
         expansion_from_row(&row)
     }
 
-    /// Note a failed attempt on an existing row; a Work with no row is left untouched.
+    /// Note a failed attempt on an existing references row; a Work with no row is left
+    /// untouched.
     pub async fn record_failure(&self, work: WorkId, message: &str) -> Result<()> {
+        self.record_failure_directed(work, ExpansionDirection::References, message)
+            .await
+    }
+
+    /// Like [`Self::record_failure`], for one direction.
+    pub async fn record_failure_directed(
+        &self,
+        work: WorkId,
+        direction: ExpansionDirection,
+        message: &str,
+    ) -> Result<()> {
         sqlx::query(
             "update ops.work_expansion set attempts = attempts + 1, last_error = $2, \
-                 updated_at = now() where work_id = $1",
+                 updated_at = now() where work_id = $1 and direction = $3",
         )
         .bind(work.as_uuid())
         .bind(message)
+        .bind(direction.as_str())
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -142,12 +191,14 @@ impl ExpansionRepository {
 }
 
 fn expansion_from_row(row: &PgRow) -> Result<ExpansionRow> {
+    let direction: String = row.try_get("direction")?;
     let state: String = row.try_get("state")?;
     let method: Option<String> = row.try_get("method")?;
     let reason: Option<String> = row.try_get("unavailable_reason")?;
     let warnings: serde_json::Value = row.try_get("warnings")?;
     Ok(ExpansionRow {
         work_id: WorkId::from_uuid(row.try_get("work_id")?),
+        direction: direction.parse()?,
         state: state.parse()?,
         method: method.map(|text| text.parse()).transpose()?,
         unavailable_reason: reason.map(|text| text.parse()).transpose()?,
@@ -307,5 +358,84 @@ mod tests {
         assert_eq!(row.attempts, 3);
         assert_eq!(row.last_error.as_deref(), Some("second"));
         assert_eq!(row.state, ExpansionState::Expanded);
+    }
+
+    #[tokio::test]
+    async fn should_keep_directions_independent_when_recording_same_work() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let repo = ExpansionRepository::new(pool.clone());
+        let work = test_support::new_work(&pool).await;
+        let cited_by = ExpansionDirection::CitedBy;
+
+        repo.record(expanded(work, 3)).await.expect("references");
+        assert!(
+            repo.get_directed(work, cited_by)
+                .await
+                .expect("get")
+                .is_none()
+        );
+
+        let row = repo
+            .record_directed(cited_by, expanded(work, 9))
+            .await
+            .expect("cited by");
+        assert_eq!(row.direction, cited_by);
+        assert_eq!(row.attempts, 1, "attempts are counted per direction");
+        assert_eq!(
+            repo.get(work)
+                .await
+                .expect("get")
+                .expect("row")
+                .references_count,
+            3
+        );
+
+        repo.record_failure_directed(work, cited_by, "boom")
+            .await
+            .expect("failure");
+        let failed = repo
+            .get_directed(work, cited_by)
+            .await
+            .expect("get")
+            .expect("row");
+        assert_eq!(failed.last_error.as_deref(), Some("boom"));
+        let untouched = repo.get(work).await.expect("get").expect("row");
+        assert_eq!(untouched.last_error, None);
+        assert_eq!(untouched.attempts, 1);
+
+        let rows = repo.rows_for(&[work]).await.expect("rows");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].direction, ExpansionDirection::References);
+        let rows = repo
+            .rows_for_directed(&[work], cited_by)
+            .await
+            .expect("rows");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].references_count, 9);
+    }
+
+    #[tokio::test]
+    async fn should_refuse_local_method_when_direction_is_cited_by() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let repo = ExpansionRepository::new(pool.clone());
+        let work = test_support::new_work(&pool).await;
+        let mut local = expanded(work, 1);
+        local.method = Some(ExpansionMethod::Local);
+        assert!(
+            repo.record_directed(ExpansionDirection::CitedBy, local.clone())
+                .await
+                .is_err()
+        );
+        repo.record_directed(ExpansionDirection::References, local)
+            .await
+            .expect("local references are fine");
     }
 }
