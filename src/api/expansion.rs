@@ -6,12 +6,12 @@ use std::{collections::HashMap, sync::Arc};
 use axum::{
     Json, Router,
     body::Bytes,
-    extract::{Path as AxumPath, State},
+    extract::{Path as AxumPath, Query, State, rejection::QueryRejection},
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::{get, post},
 };
-use lysilogy_core::{WalkBounds, WorkId};
+use lysilogy_core::{ExpansionDirection, WalkBounds, WorkId};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::sync::{Mutex, Semaphore};
@@ -32,10 +32,12 @@ pub struct ExpandBody {
     pub fanout: Option<i64>,
     pub refresh: Option<bool>,
     pub local: Option<bool>,
+    /// `references` (the default) or `cited_by`; cited-by is a single level.
+    pub direction: Option<ExpansionDirection>,
 }
 
 impl ExpandBody {
-    fn options(self) -> Result<ExpandOptions, Box<Response>> {
+    fn options(self) -> Result<(ExpandOptions, ExpansionDirection), Box<Response>> {
         let bounds = WalkBounds::parse(self.depth, self.fanout).map_err(|error| {
             Box::new(graph_error(
                 StatusCode::BAD_REQUEST,
@@ -43,19 +45,30 @@ impl ExpandBody {
                 &error.to_string(),
             ))
         })?;
-        Ok(ExpandOptions {
-            bounds,
-            refresh: self.refresh.unwrap_or(false),
-            local: self.local.unwrap_or(true),
-        })
+        let direction = self.direction.unwrap_or(ExpansionDirection::References);
+        if direction == ExpansionDirection::CitedBy && bounds.depth != 1 {
+            return Err(Box::new(graph_error(
+                StatusCode::BAD_REQUEST,
+                "invalid_depth",
+                "cited_by expansion is a single level; depth must be 1",
+            )));
+        }
+        Ok((
+            ExpandOptions {
+                bounds,
+                refresh: self.refresh.unwrap_or(false),
+                local: self.local.unwrap_or(true),
+            },
+            direction,
+        ))
     }
 }
 
 /// An empty or whitespace body means defaults; anything else must be a JSON
 /// object of known fields.
-fn parse_options(body: &Bytes) -> Result<ExpandOptions, Box<Response>> {
+fn parse_options(body: &Bytes) -> Result<(ExpandOptions, ExpansionDirection), Box<Response>> {
     if body.iter().all(u8::is_ascii_whitespace) {
-        return Ok(ExpandOptions::default());
+        return Ok((ExpandOptions::default(), ExpansionDirection::References));
     }
     let invalid = |detail: String| {
         Box::new(graph_error(
@@ -93,7 +106,7 @@ impl ExpansionJobState {
 /// that run at once.
 #[derive(Clone, Debug)]
 pub struct ExpansionJobs {
-    jobs: Arc<Mutex<HashMap<WorkId, ExpansionJobState>>>,
+    jobs: Arc<Mutex<HashMap<(WorkId, ExpansionDirection), ExpansionJobState>>>,
     permits: Arc<Semaphore>,
 }
 
@@ -110,23 +123,45 @@ impl ExpansionJobs {
     /// Start a job unless one is already running for the Work. Returns the
     /// current state. A request the cache answers finishes before this returns,
     /// without waiting for a permit.
+    #[cfg(test)]
     pub async fn start(
         &self,
         state: AppState,
         work: WorkId,
         options: ExpandOptions,
     ) -> ExpansionJobState {
+        self.start_directed(state, work, ExpansionDirection::References, options)
+            .await
+    }
+
+    /// Like [`Self::start`]. Each direction of a Work has its own job, so a cited-by
+    /// job never blocks or replaces a references job.
+    pub async fn start_directed(
+        &self,
+        state: AppState,
+        work: WorkId,
+        direction: ExpansionDirection,
+        options: ExpandOptions,
+    ) -> ExpansionJobState {
+        let key = (work, direction);
         let mut jobs = self.jobs.lock().await;
-        if matches!(jobs.get(&work), Some(ExpansionJobState::Running)) {
+        if matches!(jobs.get(&key), Some(ExpansionJobState::Running)) {
             return ExpansionJobState::Running;
         }
-        jobs.insert(work, ExpansionJobState::Running);
+        jobs.insert(key, ExpansionJobState::Running);
         drop(jobs);
 
         let single_level = options.bounds.depth == 1 && !options.refresh;
-        if single_level && state.expansion_is_cached(work).await.unwrap_or(false) {
-            let finished = ExpansionJobState::finished(state.walk_from(work, options).await);
-            self.jobs.lock().await.insert(work, finished.clone());
+        if single_level
+            && state
+                .expansion_is_cached_directed(work, direction)
+                .await
+                .unwrap_or(false)
+        {
+            let finished = ExpansionJobState::finished(
+                state.walk_from_directed(work, direction, options).await,
+            );
+            self.jobs.lock().await.insert(key, finished.clone());
             return finished;
         }
 
@@ -138,20 +173,30 @@ impl ExpansionJobs {
                     .acquire_owned()
                     .await
                     .map_err(|error| crate::Error::Literature(error.to_string()))?;
-                state.walk_from(work, options).await
+                state.walk_from_directed(work, direction, options).await
             })
             .await;
             let finished = match worker {
                 Ok(result) => ExpansionJobState::finished(result),
                 Err(error) => ExpansionJobState::Failed(format!("the job stopped: {error}")),
             };
-            registry.jobs.lock().await.insert(work, finished);
+            registry.jobs.lock().await.insert(key, finished);
         });
         ExpansionJobState::Running
     }
 
+    #[cfg(test)]
     async fn get(&self, work: WorkId) -> Option<ExpansionJobState> {
-        self.jobs.lock().await.get(&work).cloned()
+        self.get_directed(work, ExpansionDirection::References)
+            .await
+    }
+
+    async fn get_directed(
+        &self,
+        work: WorkId,
+        direction: ExpansionDirection,
+    ) -> Option<ExpansionJobState> {
+        self.jobs.lock().await.get(&(work, direction)).cloned()
     }
 }
 
@@ -202,8 +247,8 @@ async fn start_expand(
         Ok(work_id) => work_id,
         Err(response) => return *response,
     };
-    let options = match parse_options(&body) {
-        Ok(options) => options,
+    let (options, direction) = match parse_options(&body) {
+        Ok(parsed) => parsed,
         Err(response) => return *response,
     };
     let graph = match graph_or_unavailable(&state) {
@@ -215,14 +260,33 @@ async fn start_expand(
         Err(response) => return *response,
     };
     let jobs = state.expansion_jobs.clone();
-    let current = jobs.start(state, work.id, options).await;
+    let current = jobs
+        .start_directed(state, work.id, direction, options)
+        .await;
     (StatusCode::ACCEPTED, Json(JobView::from(Some(current)))).into_response()
+}
+
+/// Query of `GET /api/works/{id}/expansion`.
+#[derive(Debug, Default, Deserialize)]
+struct StatusQuery {
+    direction: Option<ExpansionDirection>,
 }
 
 async fn expansion_status(
     State(state): State<AppState>,
     AxumPath(id): AxumPath<String>,
+    query: Result<Query<StatusQuery>, QueryRejection>,
 ) -> Response {
+    let direction = match query {
+        Ok(Query(query)) => query.direction.unwrap_or(ExpansionDirection::References),
+        Err(rejection) => {
+            return graph_error(
+                StatusCode::BAD_REQUEST,
+                "invalid_direction",
+                &format!("The query is not valid: {rejection}"),
+            );
+        }
+    };
     let work_id = match parse_work_id(&id) {
         Ok(work_id) => work_id,
         Err(response) => return *response,
@@ -235,17 +299,24 @@ async fn expansion_status(
         Ok(work) => work,
         Err(response) => return *response,
     };
-    let mut views = match state.expansion_views_raw(graph, &[work.id]).await {
-        Ok(views) => views,
-        Err(error) => return graph_query_failure(&error),
+    let expansion = if direction == ExpansionDirection::CitedBy {
+        match state.cited_by_view_raw(graph, work.id).await {
+            Ok(view) => view,
+            Err(error) => return graph_query_failure(&error),
+        }
+    } else {
+        match state.expansion_views_raw(graph, &[work.id]).await {
+            Ok(mut views) => views.remove(&work.id.to_string()),
+            Err(error) => return graph_query_failure(&error),
+        }
     };
-    let job = state.expansion_jobs.get(work.id).await;
+    let job = state.expansion_jobs.get_directed(work.id, direction).await;
     (
         StatusCode::OK,
         Json(ExpansionStatusResponse {
             work_id: work.id,
             job: JobView::from(job),
-            expansion: views.remove(&work.id.to_string()),
+            expansion,
         }),
     )
         .into_response()
@@ -607,5 +678,93 @@ mod tests {
         let view = JobView::from(None);
         assert_eq!(view.state, "idle");
         assert!(view.report.is_none() && view.message.is_none());
+    }
+
+    #[tokio::test]
+    async fn should_reject_unknown_direction_and_deep_cited_by_when_parsing_body() {
+        let state = bare_state().await;
+        let uri = format!("/api/works/{}/expand", WorkId::new());
+        let cases = [
+            (r#"{"direction":"sideways"}"#, "invalid_body"),
+            (r#"{"direction":1}"#, "invalid_body"),
+            (r#"{"direction":"CITED_BY"}"#, "invalid_body"),
+            (r#"{"direction":"cited_by","depth":2}"#, "invalid_depth"),
+            (r#"{"direction":"cited_by","depth":0}"#, "invalid_depth"),
+        ];
+        for (body, code) in cases {
+            let (status, json) = request(&state, "POST", &uri, Some(body)).await;
+            assert_eq!(status, StatusCode::BAD_REQUEST, "{body}: {json}");
+            assert_eq!(json["error"], code, "{body}");
+        }
+    }
+
+    #[tokio::test]
+    async fn should_return_json_error_when_status_query_has_bad_direction() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let state = plain_state(graph, ScriptedTransport::new(|_| Ok(serde_json::json!({})))).await;
+        let base = format!("/api/works/{}/expansion", WorkId::new());
+        let (status, json) =
+            request(&state, "GET", &format!("{base}?direction=sideways"), None).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{json}");
+        assert_eq!(json["error"], "invalid_direction");
+        let (status, json) = request(&state, "GET", &format!("{base}?cache=1"), None).await;
+        assert_eq!(
+            status,
+            StatusCode::NOT_FOUND,
+            "extra parameters are ignored: {json}"
+        );
+    }
+
+    #[tokio::test]
+    async fn should_run_cited_by_job_and_report_its_status_when_direction_is_cited_by() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let marker = marker();
+        let own = format!("W1{marker}");
+        let citer = format!("W2{marker}");
+        let record = record_json(&own, "Own", &[]);
+        let citing = serde_json::json!({"results": [{
+            "id": format!("https://openalex.org/{citer}"),
+            "display_name": "Citer", "publication_year": 2022, "authorships": []}]});
+        let transport = ScriptedTransport::new(move |url| {
+            if url.contains("filter=cites:") {
+                return Ok(citing.clone());
+            }
+            Ok(record.clone())
+        });
+        let state = plain_state(graph.clone(), transport).await;
+        let work = new_work(&graph, IdentifierScheme::Openalex, &own).await;
+
+        let uri = format!("/api/works/{work}/expand");
+        let (status, _) = request(&state, "POST", &uri, Some(r#"{"direction":"cited_by"}"#)).await;
+        assert_eq!(status, StatusCode::ACCEPTED);
+        let done = {
+            let status_uri = format!("/api/works/{work}/expansion?direction=cited_by");
+            tokio::time::timeout(Duration::from_secs(20), async {
+                loop {
+                    let (code, json) = request(&state, "GET", &status_uri, None).await;
+                    assert_eq!(code, StatusCode::OK, "{json}");
+                    if json["job"]["state"] != "running" {
+                        return json;
+                    }
+                    tokio::time::sleep(Duration::from_millis(25)).await;
+                }
+            })
+            .await
+            .expect("finished")
+        };
+        assert_eq!(done["job"]["state"], "succeeded", "{done}");
+        assert_eq!(done["job"]["report"]["expansions"][0]["references"], 1);
+        assert_eq!(done["expansion"]["state"], "expanded");
+
+        let (_, references) =
+            request(&state, "GET", &format!("/api/works/{work}/expansion"), None).await;
+        assert_eq!(references["job"]["state"], "idle", "{references}");
+        assert!(references["expansion"].is_null(), "{references}");
     }
 }

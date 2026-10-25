@@ -10,12 +10,14 @@ use std::path::Path;
 
 use chrono::{DateTime, Datelike, Utc};
 use lysilogy_core::{
-    ExpansionMethod, ExpansionState, ExpansionUnavailableReason, WALK_EXPANSIONS_MAX, WalkBounds,
-    WorkId,
+    ExpansionDirection, ExpansionMethod, ExpansionState, ExpansionUnavailableReason,
+    WALK_EXPANSIONS_MAX, WalkBounds, WorkId,
 };
 use lysilogy_db::DbError;
 use lysilogy_db::expansion::{ExpansionRow, NewExpansion};
-use lysilogy_ingest::expand::{ExpandContext, ProviderExpansion, expand_from_provider};
+use lysilogy_ingest::expand::{
+    ExpandContext, ProviderExpansion, expand_cited_by_from_provider, expand_from_provider,
+};
 use lysilogy_ingest::literature::LiteratureStatus;
 use serde::Serialize;
 
@@ -254,6 +256,129 @@ impl AppState {
         Ok(counts.get(&work).is_some_and(|count| *count > 0))
     }
 
+    /// Whether expanding the Work in `direction` without `refresh` would be answered
+    /// from the ledger or the existing graph. Cited-by is answered from its ledger row
+    /// only: the graph's incoming edges say nothing about how complete they are.
+    ///
+    /// # Errors
+    /// `InvalidRequest` without a database; `Literature` for database failures.
+    pub async fn expansion_is_cached_directed(
+        &self,
+        work: WorkId,
+        direction: ExpansionDirection,
+    ) -> Result<bool> {
+        if direction == ExpansionDirection::References {
+            return self.expansion_is_cached(work).await;
+        }
+        let graph = self.expansion_graph()?;
+        Ok(graph
+            .expansions
+            .get_directed(work, direction)
+            .await
+            .map_err(|error| database(&error))?
+            .is_some())
+    }
+
+    /// Expand a Work in one direction. `References` is [`Self::expand_work`];
+    /// `CitedBy` is [`Self::expand_cited_by`] and ignores `local`.
+    ///
+    /// # Errors
+    /// As the underlying flow.
+    pub async fn expand_work_directed(
+        &self,
+        work: WorkId,
+        direction: ExpansionDirection,
+        refresh: bool,
+        local: bool,
+    ) -> Result<ExpansionReport> {
+        match direction {
+            ExpansionDirection::References => self.expand_work(work, refresh, local).await,
+            ExpansionDirection::CitedBy => self.expand_cited_by(work, refresh).await,
+        }
+    }
+
+    /// Fetch the Works citing this one (`OpenAlex`, most cited first, at most 50) and
+    /// assert each as `citing -> work`. A ledger row for the `cited_by` direction is a
+    /// cache hit unless `refresh`; the references direction is never consulted. The
+    /// report's `references` counts the citing edges.
+    ///
+    /// # Errors
+    /// `InvalidRequest` without a database; `Literature` for database or provider
+    /// failures. A failure is noted on the Work's `cited_by` row, if one exists.
+    pub async fn expand_cited_by(&self, work: WorkId, refresh: bool) -> Result<ExpansionReport> {
+        let graph = self.expansion_graph()?;
+        let outcome = self.expand_cited_by_unrecorded(graph, work, refresh).await;
+        if let Err(error) = &outcome
+            && let Err(note) = graph
+                .expansions
+                .record_failure_directed(work, ExpansionDirection::CitedBy, &error.to_string())
+                .await
+        {
+            tracing::warn!(%work, error = %note, "could not note the cited-by failure");
+        }
+        outcome
+    }
+
+    async fn expand_cited_by_unrecorded(
+        &self,
+        graph: &GraphState,
+        work: WorkId,
+        refresh: bool,
+    ) -> Result<ExpansionReport> {
+        let direction = ExpansionDirection::CitedBy;
+        if !refresh
+            && let Some(row) = graph
+                .expansions
+                .get_directed(work, direction)
+                .await
+                .map_err(|error| database(&error))?
+        {
+            let warnings = match row.state {
+                ExpansionState::Expanded => Vec::new(),
+                ExpansionState::Unavailable => row.warnings.clone(),
+            };
+            return Ok(report_from_row(&row, true, 0, None, warnings));
+        }
+        let context = ExpandContext {
+            works: &graph.works,
+            citations: &graph.citations,
+            claims: &graph.claims,
+            records: &graph.source_records,
+            client: self.literature.client(),
+        };
+        let outcome = expand_cited_by_from_provider(&context, work, refresh).await?;
+        let mut warnings = Vec::new();
+        let row = graph
+            .expansions
+            .record_directed(direction, provider_row(work, outcome, &mut warnings))
+            .await
+            .map_err(|error| database(&error))?;
+        Ok(self.finish_expansion(work, &row, None, warnings).await)
+    }
+
+    /// Like [`Self::walk_from`] in one direction. Cited-by is a single level: the Work
+    /// itself is expanded and nothing is followed from its citers.
+    ///
+    /// # Errors
+    /// As [`Self::walk_from`].
+    pub async fn walk_from_directed(
+        &self,
+        seed: WorkId,
+        direction: ExpansionDirection,
+        options: ExpandOptions,
+    ) -> Result<WalkReport> {
+        if direction == ExpansionDirection::References {
+            return self.walk_from(seed, options).await;
+        }
+        let report = self.expand_cited_by(seed, options.refresh).await?;
+        Ok(WalkReport {
+            seed,
+            expansions: vec![report],
+            levels: 1,
+            truncated: false,
+        })
+    }
+
     /// Make one Work's outgoing fanout known (Decision 3 order): a known fanout
     /// is a cache hit; a cached unavailable row is returned; a held Work runs
     /// the local flow; anything else runs the provider flow.
@@ -419,47 +544,7 @@ impl AppState {
             records: &graph.source_records,
             client: self.literature.client(),
         };
-        let expansion = match expand_from_provider(&context, work).await? {
-            ProviderExpansion::Expanded {
-                provider_key,
-                source_record,
-                references,
-                new_works,
-                warnings: provider_warnings,
-                ..
-            } => {
-                warnings.extend(provider_warnings);
-                NewExpansion {
-                    work_id: work,
-                    state: ExpansionState::Expanded,
-                    method: Some(ExpansionMethod::Provider),
-                    unavailable_reason: None,
-                    provider_key: Some(provider_key),
-                    source_record_id: Some(source_record),
-                    references_count: ledger_count(references),
-                    new_works: ledger_count(new_works),
-                    warnings: warnings.clone(),
-                }
-            }
-            ProviderExpansion::Unavailable {
-                reason,
-                provider_key,
-                warnings: provider_warnings,
-            } => {
-                warnings.extend(provider_warnings);
-                NewExpansion {
-                    work_id: work,
-                    state: ExpansionState::Unavailable,
-                    method: None,
-                    unavailable_reason: Some(reason),
-                    provider_key,
-                    source_record_id: None,
-                    references_count: 0,
-                    new_works: 0,
-                    warnings: warnings.clone(),
-                }
-            }
-        };
+        let expansion = provider_row(work, expand_from_provider(&context, work).await?, warnings);
         graph
             .expansions
             .record(expansion)
@@ -512,6 +597,19 @@ impl AppState {
             );
         }
         Ok(views)
+    }
+
+    /// The cited-by expansion state of a Work, from its ledger row alone.
+    pub(crate) async fn cited_by_view_raw(
+        &self,
+        graph: &GraphState,
+        work: WorkId,
+    ) -> std::result::Result<Option<ExpansionView>, DbError> {
+        let row = graph
+            .expansions
+            .get_directed(work, ExpansionDirection::CitedBy)
+            .await?;
+        Ok(row.as_ref().map(ExpansionView::from))
     }
 
     /// Expansion state of each Work whose fanout is known.
@@ -632,6 +730,55 @@ impl AppState {
                 mark: marks.get(&child.id).copied(),
             })
             .collect())
+    }
+}
+
+/// The ledger row for a provider flow's outcome; its warnings join `warnings`.
+fn provider_row(
+    work: WorkId,
+    outcome: ProviderExpansion,
+    warnings: &mut Vec<String>,
+) -> NewExpansion {
+    match outcome {
+        ProviderExpansion::Expanded {
+            provider_key,
+            source_record,
+            references,
+            new_works,
+            warnings: provider_warnings,
+            ..
+        } => {
+            warnings.extend(provider_warnings);
+            NewExpansion {
+                work_id: work,
+                state: ExpansionState::Expanded,
+                method: Some(ExpansionMethod::Provider),
+                unavailable_reason: None,
+                provider_key: Some(provider_key),
+                source_record_id: Some(source_record),
+                references_count: ledger_count(references),
+                new_works: ledger_count(new_works),
+                warnings: warnings.clone(),
+            }
+        }
+        ProviderExpansion::Unavailable {
+            reason,
+            provider_key,
+            warnings: provider_warnings,
+        } => {
+            warnings.extend(provider_warnings);
+            NewExpansion {
+                work_id: work,
+                state: ExpansionState::Unavailable,
+                method: None,
+                unavailable_reason: Some(reason),
+                provider_key,
+                source_record_id: None,
+                references_count: 0,
+                new_works: 0,
+                warnings: warnings.clone(),
+            }
+        }
     }
 }
 
@@ -1567,5 +1714,201 @@ mod tests {
         assert!(!views.contains_key(&child.to_string()));
         assert!(!views.contains_key(&unknown.to_string()));
         assert!(state.expansion_views(&[]).await.expect("empty").is_empty());
+    }
+
+    /// Answers a cited-by list of `citers`, and the Work's own record with `references`.
+    fn cited_by_transport(
+        own: &str,
+        references: &[String],
+        citers: &[String],
+    ) -> ScriptedTransport {
+        let record = record_json(own, "Own", references);
+        let results: Vec<serde_json::Value> = citers
+            .iter()
+            .map(|id| {
+                serde_json::json!({
+                    "id": format!("https://openalex.org/{id}"),
+                    "display_name": format!("Citer {id}"),
+                    "publication_year": 2022,
+                    "authorships": [],
+                })
+            })
+            .collect();
+        ScriptedTransport::new(move |url| {
+            if url.contains("filter=cites:") {
+                return Ok(serde_json::json!({ "results": results.clone() }));
+            }
+            if url.contains("filter=openalex:") {
+                return Ok(super::fixtures::batch_reply(url));
+            }
+            Ok(record.clone())
+        })
+    }
+
+    #[tokio::test]
+    async fn should_store_citing_edges_and_cache_by_direction_when_expanding_cited_by() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let marker = marker();
+        let own = format!("W1{marker}");
+        let citers = [format!("W2{marker}"), format!("W3{marker}")];
+        let transport = cited_by_transport(&own, &[], &citers);
+        let state = plain_state(graph.clone(), transport.clone()).await;
+        let work = new_work(&graph, IdentifierScheme::Openalex, &own).await;
+
+        let report = state.expand_cited_by(work, false).await.expect("expand");
+        assert!(!report.cached);
+        assert_eq!(report.state, ExpansionState::Expanded);
+        assert_eq!(report.method, Some(ExpansionMethod::Provider));
+        assert_eq!((report.references, report.new_works), (2, 2));
+        assert_eq!(graph.citations.incoming(work).await.expect("in").len(), 2);
+        assert!(
+            graph
+                .citations
+                .outgoing(work)
+                .await
+                .expect("out")
+                .is_empty()
+        );
+        assert!(
+            graph.expansions.get(work).await.expect("get").is_none(),
+            "the references ledger is untouched"
+        );
+        let row = graph
+            .expansions
+            .get_directed(work, ExpansionDirection::CitedBy)
+            .await
+            .expect("get")
+            .expect("row");
+        assert_eq!(row.references_count, 2);
+        assert_eq!(row.direction, ExpansionDirection::CitedBy);
+
+        let requests = transport.urls().len();
+        let again = state.expand_cited_by(work, false).await.expect("again");
+        assert!(again.cached);
+        assert_eq!(again.references, 2);
+        assert_eq!(
+            transport.urls().len(),
+            requests,
+            "no request on a cache hit"
+        );
+
+        let refreshed = state.expand_cited_by(work, true).await.expect("refresh");
+        assert!(!refreshed.cached);
+        assert!(
+            transport.urls().len() > requests,
+            "refresh reruns the fetch"
+        );
+        assert_eq!(
+            graph
+                .expansions
+                .get_directed(work, ExpansionDirection::CitedBy)
+                .await
+                .expect("get")
+                .expect("row")
+                .attempts,
+            2
+        );
+        assert_eq!(graph.citations.incoming(work).await.expect("in").len(), 2);
+    }
+
+    #[tokio::test]
+    async fn should_keep_directions_independent_when_expanding_both_on_one_work() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let marker = marker();
+        let own = format!("W1{marker}");
+        let references = [format!("W4{marker}")];
+        let citers = [format!("W2{marker}"), format!("W3{marker}")];
+        let transport = cited_by_transport(&own, &references, &citers);
+        let state = plain_state(graph.clone(), transport).await;
+        let work = new_work(&graph, IdentifierScheme::Openalex, &own).await;
+
+        let cited_by = state
+            .expand_work_directed(work, ExpansionDirection::CitedBy, false, true)
+            .await
+            .expect("cited by");
+        assert_eq!(cited_by.references, 2);
+        assert!(
+            !state
+                .expansion_is_cached_directed(work, ExpansionDirection::References)
+                .await
+                .expect("cached"),
+            "cited-by does not make the references fanout known"
+        );
+        let forward = state
+            .expand_work_directed(work, ExpansionDirection::References, false, true)
+            .await
+            .expect("references");
+        assert!(!forward.cached, "references still runs its own flow");
+        assert_eq!(forward.references, 1);
+        for direction in [ExpansionDirection::References, ExpansionDirection::CitedBy] {
+            assert!(
+                state
+                    .expansion_is_cached_directed(work, direction)
+                    .await
+                    .expect("cached"),
+                "{direction}"
+            );
+        }
+        assert_eq!(graph.citations.outgoing(work).await.expect("out").len(), 1);
+        assert_eq!(graph.citations.incoming(work).await.expect("in").len(), 2);
+    }
+
+    #[tokio::test]
+    async fn should_note_failure_on_cited_by_row_only_when_provider_errors() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let marker = marker();
+        let own = format!("W1{marker}");
+        let ok = cited_by_transport(&own, &[], &[format!("W2{marker}")]);
+        let work = new_work(&graph, IdentifierScheme::Openalex, &own).await;
+        let state = plain_state(graph.clone(), ok).await;
+        state.expand_cited_by(work, false).await.expect("first");
+        state
+            .expand_work(work, false, true)
+            .await
+            .expect("references");
+
+        let failing = ScriptedTransport::new(|_| Err(ProviderError::Status(503)));
+        let state = plain_state(graph.clone(), failing).await;
+        assert!(state.expand_cited_by(work, true).await.is_err());
+        let cited_by = graph
+            .expansions
+            .get_directed(work, ExpansionDirection::CitedBy)
+            .await
+            .expect("get")
+            .expect("row");
+        assert!(cited_by.last_error.is_some());
+        let references = graph.expansions.get(work).await.expect("get").expect("row");
+        assert_eq!(references.last_error, None);
+    }
+
+    #[tokio::test]
+    async fn should_run_one_level_when_walking_cited_by() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let marker = marker();
+        let own = format!("W1{marker}");
+        let transport = cited_by_transport(&own, &[], &[format!("W2{marker}")]);
+        let state = plain_state(graph.clone(), transport).await;
+        let work = new_work(&graph, IdentifierScheme::Openalex, &own).await;
+        let report = state
+            .walk_from_directed(work, ExpansionDirection::CitedBy, ExpandOptions::default())
+            .await
+            .expect("walk");
+        assert_eq!(
+            (report.levels, report.expansions.len(), report.truncated),
+            (1, 1, false)
+        );
+        assert_eq!(report.seed, work);
     }
 }
