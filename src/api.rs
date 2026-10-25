@@ -11,6 +11,7 @@ mod acquisition;
 mod citation_graph;
 mod curation;
 mod expansion;
+mod history;
 mod labels;
 mod literature;
 mod neighbors;

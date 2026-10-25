@@ -28,6 +28,13 @@ impl WorkRepository {
         Self { pool }
     }
 
+    /// The connection pool, so services can build sibling repositories from the graph
+    /// state without it carrying each of them.
+    #[must_use]
+    pub const fn pool(&self) -> &PgPool {
+        &self.pool
+    }
+
     /// Fetch a Work by its opaque identifier.
     pub async fn get(&self, id: WorkId) -> Result<Option<Work>> {
         let row = sqlx::query(&format!(

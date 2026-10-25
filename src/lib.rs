@@ -14,6 +14,7 @@ pub mod extract;
 pub mod field_extraction;
 mod frontmatter;
 pub mod graph;
+pub mod history;
 pub mod jobs;
 pub mod labeling;
 pub mod layout;
