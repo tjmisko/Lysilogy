@@ -53,11 +53,10 @@ export function Review(props: ListViewProps) {
       const { results } = await api.searchWorks(candidate.title, true);
       const workId = matchCandidateWork(candidate, results);
       if (workId === null) {
-        // Not a Work yet: add the candidate in place, then drop the claim it answers.
-        const added = await actions.addNode({ claim: { title: candidate.title, authors: candidate.authors, year: candidate.year, doi: candidate.doi } });
-        if (added === null) return;
-        if (added.kind === "work") await actions.remove(nodeId);
-        else actions.notify(`“${candidate.title}” was added as a claim to verify. Remove the original claim with x once it resolves.`);
+        // The server cannot yet make a Work from a provider candidate in place. Re-adding the title
+        // as a new claim and deleting this one would lose its rationale, note, links and topics, so
+        // the claim stays untouched until it can be resolved with PATCH resolve_to.
+        actions.notify(`“${candidate.title}” is not a Work in your library yet, so this claim cannot be resolved in place. Import it first, then press c again.`);
         return;
       }
       await actions.resolveClaim(nodeId, workId);
