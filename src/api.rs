@@ -23,8 +23,8 @@ mod vimrc;
 
 use axum::{
     Json, Router,
-    body::Body,
-    extract::{Path as AxumPath, State},
+    body::{Body, Bytes},
+    extract::{DefaultBodyLimit, Path as AxumPath, Query, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
     response::{IntoResponse, Response},
     routing::{any, delete, get, post},
@@ -111,6 +111,19 @@ struct HealthResponse {
 struct ImportPdfRequest {
     url: String,
 }
+
+#[derive(Debug, Deserialize)]
+struct UploadPdfQuery {
+    filename: String,
+}
+
+#[derive(Debug, Serialize)]
+struct UploadPdfResponse {
+    paper: PaperOverview,
+    library: LibraryResponse,
+}
+
+const MAX_UPLOAD_BYTES: usize = 200 * 1024 * 1024;
 
 #[derive(Debug, Serialize)]
 struct ImportPdfResponse {
@@ -328,6 +341,40 @@ impl AppState {
         imported
     }
 
+    async fn upload_pdf(&self, preferred: &str, bytes: &[u8]) -> Result<UploadPdfResponse> {
+        if !bytes.starts_with(b"%PDF-") {
+            return Err(Error::InvalidRequest(
+                "the uploaded file is not a PDF".to_owned(),
+            ));
+        }
+        let _guard = self.import_write.lock().await;
+        let filename = available_import_filename(
+            self.library_root.as_ref(),
+            &sanitize_import_filename(preferred),
+        )
+        .await?;
+        let final_path = self.library_root.join(&filename);
+        let temporary_path = self.library_root.join(format!(".{filename}.upload"));
+        tokio::fs::write(&temporary_path, bytes)
+            .await
+            .map_err(|error| Error::io(&temporary_path, error))?;
+        if let Err(error) = tokio::fs::rename(&temporary_path, &final_path).await {
+            remove_temporary_import(&temporary_path).await;
+            return Err(Error::io(&final_path, error));
+        }
+        let id = PaperId::from_relative_path(Path::new(&filename));
+        let library = self.refresh().await?;
+        let paper = library
+            .papers
+            .iter()
+            .find(|paper| paper.id == id)
+            .cloned()
+            .ok_or_else(|| {
+                Error::Task("uploaded PDF was not discovered after rescan".to_owned())
+            })?;
+        Ok(UploadPdfResponse { paper, library })
+    }
+
     async fn finish_remote_import(
         &self,
         original: &Url,
@@ -515,9 +562,7 @@ impl AppState {
             match component {
                 AnalysisComponent::Structure | AnalysisComponent::Abstract => {
                     let analysis = analysis.as_mut().ok_or_else(|| {
-                        Error::InvalidRequest(
-                            "Analyze this paper before refreshing it".to_owned(),
-                        )
+                        Error::InvalidRequest("Analyze this paper before refreshing it".to_owned())
                     })?;
                     let pdf = self.source_path(id).await?;
                     let (progress, forwarder) = self.jobs.progress_reporter(id, task);
@@ -990,7 +1035,7 @@ impl AppState {
         Ok(())
     }
 
-    pub async fn processing_queue(&self) -> Result<ProcessingQueue> {
+    async fn processing_queue(&self) -> Result<ProcessingQueue> {
         self.jobs.queue().await
     }
 
@@ -1882,6 +1927,10 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .route("/api/library", get(library))
         .route("/api/library/scan", post(scan_library))
         .route("/api/library/import", post(import_pdf))
+        .route(
+            "/api/library/upload",
+            post(upload_pdf).layer(DefaultBodyLimit::max(MAX_UPLOAD_BYTES)),
+        )
         .route("/api/queue", get(processing_queue))
         .route("/api/experiments", get(experiment_catalog))
         .route("/api/works/{id}", get(get_work))
@@ -2095,6 +2144,15 @@ async fn import_pdf(
 ) -> Result<(StatusCode, Json<ImportPdfResponse>)> {
     let imported = state.import_remote_pdf(&request.url).await?;
     Ok((StatusCode::CREATED, Json(imported)))
+}
+
+async fn upload_pdf(
+    State(state): State<AppState>,
+    Query(query): Query<UploadPdfQuery>,
+    body: Bytes,
+) -> Result<(StatusCode, Json<UploadPdfResponse>)> {
+    let uploaded = state.upload_pdf(&query.filename, &body).await?;
+    Ok((StatusCode::CREATED, Json(uploaded)))
 }
 
 async fn processing_queue(State(state): State<AppState>) -> Result<Json<ProcessingQueue>> {
@@ -2561,6 +2619,64 @@ mod tests {
                 .map_err(|error| Error::io(library.path(), error))?
                 .is_none()
         );
+        Ok(())
+    }
+
+    async fn post_upload(
+        state: &AppState,
+        filename: &str,
+        body: &'static [u8],
+    ) -> Result<StatusCode> {
+        let response = build_router(state.clone(), None)
+            .oneshot(
+                axum::http::Request::builder()
+                    .method("POST")
+                    .uri(format!("/api/library/upload?filename={filename}"))
+                    .header(header::CONTENT_TYPE, "application/pdf")
+                    .body(Body::from(body))
+                    .map_err(|error| Error::Task(error.to_string()))?,
+            )
+            .await
+            .map_err(|error| Error::Task(error.to_string()))?;
+        Ok(response.status())
+    }
+
+    #[tokio::test]
+    async fn rejects_uploads_that_are_not_pdfs_without_writing_files() -> Result<()> {
+        let library = tempdir().map_err(|error| Error::io("library", error))?;
+        let data = tempdir().map_err(|error| Error::io("data", error))?;
+        let state = AppState::new(library.path(), data.path()).await?;
+        let status = post_upload(&state, "notes.pdf", b"<html>not a pdf</html>").await?;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert!(
+            tokio::fs::read_dir(library.path())
+                .await
+                .map_err(|error| Error::io(library.path(), error))?
+                .next_entry()
+                .await
+                .map_err(|error| Error::io(library.path(), error))?
+                .is_none()
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn keeps_both_files_when_an_uploaded_name_already_exists() -> Result<()> {
+        let library = tempdir().map_err(|error| Error::io("library", error))?;
+        let data = tempdir().map_err(|error| Error::io("data", error))?;
+        let state = AppState::new(library.path(), data.path()).await?;
+        let pdf: &'static [u8] = b"%PDF-1.7\nfixture\n%%EOF\n";
+        assert_eq!(
+            post_upload(&state, "a%2Fb.pdf", pdf).await?,
+            StatusCode::CREATED
+        );
+        assert_eq!(
+            post_upload(&state, "a%2Fb.pdf", pdf).await?,
+            StatusCode::CREATED
+        );
+        assert!(library.path().join("a_b.pdf").exists());
+        assert!(library.path().join("a_b (2).pdf").exists());
+        assert_eq!(state.library().await.papers.len(), 2);
         Ok(())
     }
 
