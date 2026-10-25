@@ -234,7 +234,7 @@ export function AddByNameDialog(props: {
           value={query}
           maxLength={500}
           onChange={(event) => { setQuery(event.target.value); setActive(0); }}
-          placeholder="Title, author, DOI or arXiv id"
+          placeholder="Title or author"
           aria-label="Add a paper by name"
           autoComplete="off"
           spellCheck={false}
@@ -264,7 +264,7 @@ export function AddByNameDialog(props: {
             </button>
           );
         })}
-        {text === "" && <p>Type a title, an author, or a DOI.</p>}
+        {text === "" && <p>Type a title or an author.</p>}
         {text !== "" && searching && hits.length === 0 && <p>Searching…</p>}
         {problem !== null && <p role="alert">{problem}</p>}
       </div>

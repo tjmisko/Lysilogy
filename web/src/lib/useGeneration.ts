@@ -25,7 +25,8 @@ export function useGeneration(onFinished: (run: GenerationRun) => void) {
   const latest = useRef<GenerationRun | null>(null);
   useEffect(() => { finished.current = onFinished; }, [onFinished]);
   useEffect(() => { latest.current = run; }, [run]);
-  const runId = run?.status?.state === "running" || (run !== null && run.status === null && run.error === null) ? run.id : null;
+  // Keep polling until a terminal status arrives, even after a failed poll: the server job is still running.
+  const runId = run !== null && (run.status === null || run.status.state === "running") ? run.id : null;
 
   useEffect(() => {
     if (runId === null) return;

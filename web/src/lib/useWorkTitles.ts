@@ -19,9 +19,11 @@ export function useWorkTitles(workIds: readonly string[]): Record<string, string
   useEffect(() => {
     const ids = key === "" ? [] : key.split(",");
     const controller = new AbortController();
+    const mine: string[] = [];
     for (const id of ids) {
       if (known.has(id) || inflight.has(id)) continue;
       inflight.add(id);
+      mine.push(id);
       void api.workCitations(id, controller.signal).then((result) => {
         known.set(id, result.work.display_title);
       }).catch(() => {
@@ -31,7 +33,11 @@ export function useWorkTitles(workIds: readonly string[]): Record<string, string
         if (!controller.signal.aborted) setVersion((now) => now + 1);
       });
     }
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      // Release aborted lookups now so the next effect retries them.
+      for (const id of mine) inflight.delete(id);
+    };
   }, [key]);
 
   const found: Record<string, string> = {};

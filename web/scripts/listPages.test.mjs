@@ -310,7 +310,7 @@ test('should cap the title length when the typed text is huge', () => {
   assert.equal([...claimFromText('x'.repeat(2000)).claim.title].length, 500);
 });
 
-test('should add a Work by id, a held paper by paper id, and a provider hit as a claim', () => {
+test('should add a Work by id, a held paper by paper id, and a provider hit as a claim when turning hits into adds', () => {
   const base = { title: 'T', year: 2020, authors: ['A B'], source: 'graph', in_graph: true, openalex_id: null, doi: null };
   assert.deepEqual(hitToAdd({ ...base, work_id: 'w1', paper_id: 'x' }), { work_id: 'w1' });
   assert.deepEqual(hitToAdd({ ...base, work_id: null, paper_id: 'x' }), { paper_id: 'x' });

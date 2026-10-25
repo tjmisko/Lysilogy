@@ -148,7 +148,7 @@ export function ListPage({ listId, view, keyboardEnabled, reloadToken, onView, o
   const cursor = selectedId !== null && ids.includes(selectedId) ? selectedId : (ids[0] ?? null);
   const node = nodeAt(detail, cursor);
   const contextWorkIds = useMemo(
-    () => (detail?.nodes ?? []).flatMap((entry) => entry.context_links.slice(0, 1).map((link) => link.work_id)),
+    () => (detail?.nodes ?? []).flatMap((entry) => entry.context_links.map((link) => link.work_id)),
     [detail],
   );
   const workTitles = useWorkTitles(contextWorkIds);

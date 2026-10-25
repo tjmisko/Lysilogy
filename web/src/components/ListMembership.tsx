@@ -160,7 +160,7 @@ export function ListMembership(props: {
         ))}
         {memberships === null && <p>Loading…</p>}
         {memberships !== null && rows.length === 0 && (
-          <p>{linked ? "Not on any list. Press Y to add it to one." : "This paper is not linked to a Work yet, so it cannot be on a list. Press Y to link and add it."}</p>
+          <p>{linked ? "Not on any list. Press Esc, then Y to add it to one." : "This paper is not linked to a Work yet, so it cannot be on a list. Press Esc, then Y to link and add it."}</p>
         )}
       </div>
       {(message !== null || problem !== null) && (

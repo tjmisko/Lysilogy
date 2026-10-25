@@ -287,6 +287,6 @@ export function GenerationStrip({ run, onOpenList, onDismiss }: {
     <span className="generation-strip-spend">${spend.toFixed(4)}</span>
     {run.error !== null && <span className="generation-strip-error">{run.error}</span>}
     {state !== "running" && listId !== null && <button type="button" onClick={() => onOpenList(listId)}>Open</button>}
-    {state !== "running" && <button type="button" aria-label="Dismiss" onClick={onDismiss}>×</button>}
+    {(state !== "running" || run.error !== null) && <button type="button" aria-label="Dismiss" onClick={onDismiss}>×</button>}
   </aside>;
 }

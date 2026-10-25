@@ -462,6 +462,12 @@ export function App() {
       }
       const graphNode = active?.closest<HTMLElement>(".literature-graph [data-node-id]") ?? null;
       if (graphNode?.dataset.nodeId !== undefined) return { workId: graphNode.dataset.nodeId };
+      // The graph's j/k moves .is-active without moving focus.
+      const activeNode = document.querySelector<HTMLElement>(".literature-graph .literature-node.is-active[data-node-id]");
+      if (activeNode?.dataset.nodeId !== undefined) {
+        const label = activeNode.getAttribute("aria-label");
+        return { workId: activeNode.dataset.nodeId, ...(label === null || label === "" ? {} : { title: label }) };
+      }
       if (context.selectedId !== null) {
         const paper = context.papers.find((entry) => entry.id === context.selectedId);
         return { paperId: context.selectedId, ...(paper === undefined ? {} : { title: paper.metadata.title }) };
