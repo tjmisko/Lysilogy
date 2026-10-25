@@ -46,7 +46,7 @@ export async function loadPdfPreview(url: string, signal: AbortSignal): Promise<
       const page = await Promise.race([document.getPage(1), cancelled]);
       signal.throwIfAborted();
       const original = page.getViewport({ scale: 1 });
-      const viewport = page.getViewport({ scale: 640 / Math.max(original.width, original.height) });
+      const viewport = page.getViewport({ scale: 960 / Math.max(original.width, original.height) });
       const canvas = window.document.createElement("canvas");
       canvas.width = Math.ceil(viewport.width);
       canvas.height = Math.ceil(viewport.height);

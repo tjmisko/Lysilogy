@@ -893,6 +893,20 @@ export function App() {
     }
   }, [selectPaper]);
 
+  const uploadPdf = useCallback(async (file: File): Promise<void> => {
+    setError(null);
+    setNotice(`Uploading ${file.name}…`);
+    try {
+      const imported = await api.uploadPdf(file);
+      setLibrary(imported.library);
+      setNotice(`Added ${imported.paper.metadata.title}.`);
+    } catch (reason: unknown) {
+      const failure = reason instanceof Error ? reason : new Error("Could not upload PDF");
+      setError(failure.message);
+      throw failure;
+    }
+  }, []);
+
   const markdownConverted = useCallback((): void => {
     if (selectedId === null) return;
     void Promise.all([loadPaper(selectedId), refreshLibrary()]).catch((reason: unknown) => {
@@ -1045,7 +1059,7 @@ export function App() {
             <button type="button" aria-label="Lysilogy home" title="Home" onClick={() => openHome()}>⌂</button>
             <button type="button" aria-label="Toggle library (F1)" title="Library (F1)" onClick={() => setLibraryOpen((value) => !value)}>☰</button>
           </nav>
-          {home ? <span className="home-topbar-label">Your reading library</span> : <div className="view-switch" role="group" aria-label="Reader view">
+          {home ? <span aria-hidden="true" /> : <div className="view-switch" role="group" aria-label="Reader view">
             {analysis === null ? <>
               <button type="button" className={textMode === "pdf" ? "is-active" : ""} onClick={() => setTextMode("pdf")}>PDF</button>
               <button type="button" className={textMode === "markdown" ? "is-active" : ""} onClick={() => setTextMode("markdown")}>Text</button>
@@ -1148,7 +1162,7 @@ export function App() {
             darkInk={darkInk} onToggleInk={() => setDarkInk((value) => !value)}
             query={homeQuery} onQuery={setHomeQuery} onSelect={selectPaper} activeId={homeActiveId} onActive={setHomeActiveId}
             keyboardEnabled={!libraryOpen && !switcherOpen && !commandOpen && !queueOpen && panel === null && !experimentOpen && toolsTab === null}
-            onImport={() => setLibraryOpen(true)} />}
+            onImport={() => setLibraryOpen(true)} onUpload={uploadPdf} />}
           {!loading && !home && paperView === null && <div className="center-state"><span className="loader large" /><p>Opening paper…</p></div>}
           {!home && currentPaper !== null && paperView !== null && (
             <>

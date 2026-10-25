@@ -106,6 +106,16 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ url }),
     }),
+  uploadPdf: async (file: File): Promise<Omit<ImportPdfResponse, "source">> => {
+    const response = await fetch(`/api/library/upload?filename=${encodeURIComponent(file.name)}`, {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/pdf" },
+      body: file,
+    });
+    const payload = await responsePayload(response);
+    if (!response.ok) throw httpError(response, payload);
+    return payload as Omit<ImportPdfResponse, "source">;
+  },
   queue: (): Promise<ProcessingQueue> => request("/api/queue"),
   experimentCatalog: (): Promise<ExperimentCatalog> => request("/api/experiments"),
   experiments: (id: string): Promise<ExperimentView[]> =>

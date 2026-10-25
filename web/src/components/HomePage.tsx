@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { api } from "../lib/api";
 import { spatialNeighbor, type Direction } from "../lib/spatialNavigation";
 import type { PaperOverview } from "../types";
+import { authorSurnames } from "../lib/authors";
+import { AddMenu } from "./AddMenu";
 import { PaperPreview } from "./PaperPreview";
 import "./HomePage.css";
 
@@ -14,6 +16,7 @@ type HomePageProps = {
   onActive: (id: string) => void;
   onSelect: (id: string) => void;
   onImport: () => void;
+  onUpload: (file: File) => Promise<void>;
   keyboardEnabled: boolean;
   darkInk: boolean;
   onToggleInk: () => void;
@@ -40,7 +43,16 @@ function paperStatus(paper: PaperOverview): string {
   }
 }
 
-export function HomePage({ papers, query, onQuery, activeId, onActive, onSelect, onImport, keyboardEnabled, darkInk, onToggleInk }: HomePageProps) {
+/** Splits "Main: Sub" or "Main — Sub" so the subtitle can sit quieter under the title. */
+function TitleLines({ id, title }: { id: string; title: string }) {
+  const match = /^(.+?)\s*(?:—|–|:)\s+(.+)$/u.exec(title);
+  return <>
+    <h2 id={id} title={title}>{match?.[1] ?? title}</h2>
+    {match?.[2] !== undefined && <span className="paper-card-subtitle" aria-hidden="true">{match[2]}</span>}
+  </>;
+}
+
+export function HomePage({ papers, query, onQuery, activeId, onActive, onSelect, onImport, onUpload, keyboardEnabled, darkInk, onToggleInk }: HomePageProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState("title");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -131,10 +143,6 @@ export function HomePage({ papers, query, onQuery, activeId, onActive, onSelect,
   }, [keyboardEnabled, onSelect, onToggleInk, selectedId, visible]);
 
   return <section className={`home-page${darkInk ? " dark-ink" : ""}`}>
-    <header className="home-intro">
-      <p className="home-counts"><strong>{papers.length}</strong> {papers.length === 1 ? "paper" : "papers"}<span aria-hidden="true"> / </span><strong>{mapped}</strong> mapped</p>
-    </header>
-
     <div className="home-controls">
       <label className="home-search">
         <span aria-hidden="true">⌕</span>
@@ -146,9 +154,11 @@ export function HomePage({ papers, query, onQuery, activeId, onActive, onSelect,
           <button type="button" key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}
       </div>
       <label className="home-sort"><span>Sort</span><select aria-label="Sort papers" value={sort} onChange={(event) => setSort(event.target.value)}><option value="title">Title A–Z</option><option value="newest">Newest first</option></select></label>
+      <p className="home-counts" role="status">{visible.length === papers.length
+        ? <><strong>{papers.length}</strong> {papers.length === 1 ? "paper" : "papers"}<span aria-hidden="true"> / </span><strong>{mapped}</strong> mapped</>
+        : <><strong>{visible.length}</strong> of <strong>{papers.length}</strong> papers</>}</p>
+      <AddMenu onImportUrl={onImport} onUpload={onUpload} />
     </div>
-
-    <div className="home-results-line"><span role="status">{visible.length === papers.length ? "On the shelves" : `${visible.length} of ${papers.length} papers`}</span><button type="button" onClick={onImport}>Add a paper <span aria-hidden="true">↗</span></button></div>
 
     {visible.length > 0 ? <ul className="paper-grid" ref={gridRef} aria-label="Papers">
       {visible.map((paper) => <li key={paper.id} style={{ "--paper-accent": paperAccent(paper.id) } as CSSProperties}>
@@ -157,16 +167,18 @@ export function HomePage({ papers, query, onQuery, activeId, onActive, onSelect,
           aria-labelledby={`card-title-${paper.id}`} onFocus={() => onActive(paper.id)} onClick={() => onSelect(paper.id)}>
           <PaperPreview url={api.source(paper.id)} title={paper.metadata.title} />
           <span className="paper-card-caption">
-          <span className="paper-card-top"><span className={`paper-card-status state-${paper.status.state}`}>{paperStatus(paper)}</span><span>{paper.metadata.year ?? "Undated"}</span></span>
-          <h2 id={`card-title-${paper.id}`} title={paper.metadata.title}>{paper.metadata.title}</h2>
-          <p className="paper-card-authors" title={paper.metadata.authors.join(", ")}>{paper.metadata.authors.join(", ") || "Author not listed"}</p>
+          <span className="paper-card-top" title={`${paper.metadata.authors.join(", ")} — ${paperStatus(paper)}`}>
+            <span className="paper-card-authors">{authorSurnames(paper.metadata.authors) || "Unknown"}</span>
+            <span className="paper-card-year">{paper.metadata.year ?? "n.d."}</span>
+          </span>
+          <TitleLines id={`card-title-${paper.id}`} title={paper.metadata.title} />
           </span>
         </button>
       </li>)}
     </ul> : <div className="home-empty">
       <h2>{papers.length === 0 ? "Room for your next idea." : "No papers match this view."}</h2>
-      <p>{papers.length === 0 ? "Add a paper to start your reading library." : "Try another title, author, year, or filter."}</p>
-      {papers.length === 0 ? <button type="button" onClick={onImport}>Add a paper ↗</button> : <button type="button" onClick={() => { onQuery(""); setFilter("all"); }}>Show all papers</button>}
+      <p>{papers.length === 0 ? "Use Add to import or upload a paper." : "Try another title, author, year, or filter."}</p>
+      {papers.length > 0 && <button type="button" onClick={() => { onQuery(""); setFilter("all"); }}>Show all papers</button>}
     </div>}
   </section>;
 }
