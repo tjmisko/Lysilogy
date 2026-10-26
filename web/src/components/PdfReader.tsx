@@ -189,8 +189,16 @@ function PdfPageCanvas({
           : crop === undefined ? base.width : readingWidth ?? base.width;
         const fitHeight = visualFit ? (visual.y_max - visual.y_min) * base.height
           : crop === undefined ? base.height : readingHeight ?? base.height;
+        const host = frameRef.current?.closest<HTMLElement>(".pdf-viewport");
+        const caption = frameRef.current?.querySelector("figcaption");
+        const hostStyle = host === null || host === undefined ? null : getComputedStyle(host);
+        const captionStyle = caption == null ? null : getComputedStyle(caption);
+        const verticalSpacing = hostStyle === null ? 40
+          : parseFloat(hostStyle.paddingTop) + parseFloat(hostStyle.paddingBottom)
+            + (caption?.getBoundingClientRect().height ?? 0)
+            + parseFloat(captionStyle?.marginTop ?? "0") + parseFloat(captionStyle?.marginBottom ?? "0");
         const fitScale = Math.max(0.1, fit === "height"
-          ? (slotHeight - 40) / fitHeight : (slotWidth - 28) / fitWidth);
+          ? (slotHeight - verticalSpacing) / fitHeight : (slotWidth - 28) / fitWidth);
         const viewport = pdfPage.getViewport({ scale: fitScale * zoom });
         const scaleX = viewport.width / (layout?.width ?? base.width);
         const scaleY = viewport.height / (layout?.height ?? base.height);
@@ -521,7 +529,8 @@ export function PdfReader({
         if (distance !== 0) action = () => host.scrollBy(flow === "paged" || axis === "vertical" ? { top: direction * distance } : { left: direction * distance });
       }
       const turnPage = !event.ctrlKey && ["h", "l", "ArrowLeft", "ArrowRight"].includes(event.key)
-        || flow === "paged" && (["PageUp", "PageDown"].includes(event.key) || event.ctrlKey && ["d", "u"].includes(event.key))
+        || flow === "paged" && !event.ctrlKey && ["PageUp", "PageDown"].includes(event.key)
+        || flow === "paged" && event.ctrlKey && ["d", "u"].includes(event.key)
           && host !== null && (["PageUp", "u"].includes(event.key) ? host.scrollTop <= 1 : host.scrollTop + host.clientHeight >= host.scrollHeight - 1);
       if (turnPage) action = () => {
         const current = flow === "continuous" && host !== null ? visiblePdfPage(host) ?? page : page;

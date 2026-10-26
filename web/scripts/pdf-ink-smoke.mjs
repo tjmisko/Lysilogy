@@ -48,6 +48,24 @@ try {
   await page.goto(`http://lysilogy.test/#paper=${id}`);
   await ready(1);
   await page.locator('.pdf-reader').focus();
+  const fitsHeight = async () => {
+    const overflow = await page.locator('.pdf-viewport').evaluate(node => node.scrollHeight - node.clientHeight);
+    assert.equal(overflow, 0, 'height-fit pages leave no vertical scroll sliver');
+  };
+  await fitsHeight();
+  await page.keyboard.press('PageDown');
+  await ready(2);
+  await fitsHeight();
+  await page.keyboard.press('PageUp');
+  await ready(1);
+  // Page keys turn immediately even when manual zoom leaves room to scroll.
+  await page.keyboard.press('+');
+  await page.keyboard.press('PageDown');
+  await ready(2);
+  await page.keyboard.press('PageUp');
+  await ready(1);
+  await page.keyboard.press('H');
+  await fitsHeight();
   await pressVisualFit(page, 'H');
   await aligned();
   const before = await geometry();

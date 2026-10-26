@@ -10,7 +10,7 @@ const GROUPS = [
       ["g g / G", "First / last tile"],
       ["[ / ]", "Previous / next paper or PDF page"],
       ["Ctrl-d / Ctrl-u", "Half-screen down / up; turn PDF page at the scrolling edge"],
-      ["PageDown / PageUp", "Half-screen in PDF; full-screen in text views"],
+      ["PageDown / PageUp", "Next / previous PDF page in paged mode; scroll in continuous and text views"],
       ["/", "Regex search in the paper; filter library or Glossary there"],
       ["b · j/k · ↵", "Open, move through, and choose from the mobile library"],
     ],
