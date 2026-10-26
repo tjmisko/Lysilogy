@@ -1,7 +1,7 @@
 # Held-out claim verifier fixtures
 
-Two sets for scoring the claim verifier (`decide_claim` and `verify_claim`, frozen at HEAD
-`f28c030` for this evaluation) on cases the development fixtures in `tests/fixtures/claims/`
+Two sets for scoring the claim verifier (`decide_claim` and `verify_claim`, frozen at
+`0913e7f`, the last commit before these fixtures; their last change is `1896ecb`, for this evaluation) on cases the development fixtures in `tests/fixtures/claims/`
 never used. Both are built by `examples/build_claim_fixtures.rs --set holdout` and load with
 `tests/claims_support` (`load_fixtures`), the same as the base fixtures: `cases.json` is
 `{real, fake, near_miss}` and `responses.json` is the recorded provider responses, so
@@ -57,7 +57,9 @@ Cases (350 planned):
 Recording order puts the cases that cost no title search first (DOI cases), then each real
 `title` case with the three fakes that reuse its search (`fabricated_doi`,
 `real_doi_wrong_title`, `authors_swapped`), then the remaining kinds round-robin, so a partial
-recording is still a balanced sample of real, near-miss and fake cases.
+recording is NOT a balanced sample: the 45 DOI real cases come first, then title cases with
+their fakes (the 53 recorded so far are 45 DOI reals, 2 title reals and 6 fakes, with no
+near-miss). Do not score a partial E1.
 
 ### E1 status
 
@@ -72,19 +74,24 @@ and continues where it stopped:
 
 ```
 LYSILOGY_TEST_DATABASE_URL=postgresql://$USER@127.0.0.1:5433/lysilogy_test \
-  cargo run --example build_claim_fixtures -- --set holdout --part e1 --rerecord --max-searches 95
+  cargo run --example build_claim_fixtures -- --set holdout --part e1 --max-searches 95
 ```
+
+(With `LYSILOGY_OPENALEX_API_KEY` set the budget is larger and one run finishes the set. The
+free budget resets at midnight UTC; it was still exhausted when this was last tried.)
 
 The plan is read from `e1/cases.planned.json`, so the run needs no dev database and cannot
 drift with it (`--replan` rebuilds it). The run records one case at a time, drops a case whose
 requests were refused, replays what it recorded in a fresh scratch database, and writes
-`cases.json` and `responses.json` only if the replay misses nothing. `--rerecord` is needed
-because the files exist; it replaces them with the longer recording. Deleting the cache file
+`cases.json` and `responses.json` only if the replay misses nothing. An incomplete set resumes
+without `--rerecord`; `--rerecord` is only for deliberately re-recording a complete set. A run
+that would write fewer cases than `status.recorded` in the committed `cases.json` (for example
+after the scratch responses file was lost) is refused unless `--allow-shrink` is given. Deleting the cache file
 makes the next run fetch everything again.
 
 ## E3: hard cases
 
-70 hand-specified cases in `e3/spec.json` (57 accept, 13 must-not-accept). Each accept case
+70 hand-specified cases in `e3/spec.json` (58 accept, 12 must-not-accept). Each accept case
 names an OpenAlex Work as `truth_id` with the title it should have (`truth_title`). The
 builder fetches that Work (free lookup) and fails unless its title matches `truth_title`
 (similarity at least 0.9); if the claim carries a DOI it must resolve to the truth or an
@@ -102,8 +109,9 @@ down. Accept cases go in `real` with `truth` set, must-not-accept cases in `fake
   after seeing a result.
 - `truth_title`, `truth_year`: what OpenAlex holds. `note`: why the case is hard.
 
-Kinds (count): `same_title` (8 accept; generic titles such as "Deep learning", "Attention",
-"Dropout", each tied to a different paper by authors and year), `same_title_wrong_paper` (2) and
+Kinds (count): `same_title` (9 accept; generic titles such as "Deep learning", "Attention",
+"Dropout", each tied to a different paper by authors and year, plus the JMLR paper cited as
+"Dropout"), `same_title_wrong_paper` (1: "Attention" with authors who wrote no such paper) and
 `same_title_wrong_year` (1) must-not-accept, `preprint_vs_published` (9; year or title
 changed, one with an arXiv ID that OpenAlex resolves to a mis-titled record, one old-style
 arXiv ID), `book` (5), `chapter` (4), `thesis` (3), `initials_authors` (3), `et_al_authors`
@@ -119,17 +127,22 @@ a preprint DOI resolving to an unrelated paper, empty author lists. Those are re
 ground truth is the Work a person would mean, not whatever OpenAlex returns for the DOI.
 
 Baseline of the frozen verifier on E3, informational only (the decision rules were not
-changed): 36 of 57 accept cases resolve to `truth`; 5 more resolve to a listed `alt_truth`;
-16 do not resolve to the paper (7 unverified, 4 ambiguous, 3 contradicted, and the 2 that
-resolve to a wrong Work: a different `Deep learning` record with no authors, and the Nature
-paper for the Goodfellow textbook); none of the 13 must-not-accept cases resolves to a Work
-(0 fakes verified or matched).
+changed), from a replay of the committed fixtures: 36 of 58 accept cases resolve to `truth`; 5
+more resolve to a listed `alt_truth`; 17 do not resolve to the paper (8 unverified, 4
+ambiguous, 3 contradicted, and 2 that resolve to a wrong Work: a different `Deep learning`
+record with no authors for e3-same-title-01, and the Nature paper for the Goodfellow textbook
+in e3-same-title-03); none of the 12 must-not-accept cases resolves to a Work (0 fakes verified
+or matched). One case is not stable: e3-venue-01 (`Deep learning`, LeCun et al., wrong venue)
+resolves to the right Work in some replays and to the authorless `Deep learning` record
+W4244888682 in others (35 correct and 3 wrong Work in those, as an independent replay
+found). The verifier's choice among equally good stored candidates is not deterministic; the
+rules were not touched. Treat e3-venue-01 as a coin flip when comparing runs.
 
 ## Rebuilding
 
 ```
 scripts/build-claim-fixtures   # the base set, unchanged
-cargo run --example build_claim_fixtures -- --set holdout --part e3|e1|all [--rerecord]
+cargo run --example build_claim_fixtures -- --set holdout --part e3|e1|all [--rerecord] [--allow-shrink]
     [--max-searches N] [--seed N] [--real N] [--fake N] [--near N] [--max-per-paper N]
     [--doi-percent N] [--exclude cases.json] [--spec spec.json] [--replan] [--out DIR]
 ```

@@ -4,9 +4,9 @@
       "claim": {
         "arxiv": null,
         "authors": [
-          "Vaswani",
-          "Shazeer",
-          "Parmar"
+          "Hallgren",
+          "Okonkwo",
+          "Petrenko"
         ],
         "doi": null,
         "raw": null,
@@ -17,27 +17,7 @@
       "expected": "must_not_accept",
       "id": "e3-same-title-08",
       "kind": "same_title_wrong_paper",
-      "note": "shorthand for Attention Is All You Need; the real title is longer, and the papers titled exactly Attention have other authors",
-      "truth": null
-    },
-    {
-      "claim": {
-        "arxiv": null,
-        "authors": [
-          "Srivastava",
-          "Hinton",
-          "Krizhevsky"
-        ],
-        "doi": null,
-        "raw": null,
-        "title": "Dropout",
-        "venue": "JMLR",
-        "year": 2014
-      },
-      "expected": "must_not_accept",
-      "id": "e3-same-title-09",
-      "kind": "same_title_wrong_paper",
-      "note": "shorthand for the JMLR paper; no paper titled exactly Dropout has these authors",
+      "note": "a generic title with authors who wrote no paper titled exactly Attention; the Vaswani paper is not the intended one here (revised after review: the old authors made it arguably the intended paper)",
       "truth": null
     },
     {
@@ -424,6 +404,29 @@
       "truth": "w4237392177",
       "truth_title": "Dropout",
       "truth_year": 1969
+    },
+    {
+      "alt_truth": [],
+      "claim": {
+        "arxiv": null,
+        "authors": [
+          "Srivastava",
+          "Hinton",
+          "Krizhevsky"
+        ],
+        "doi": null,
+        "raw": null,
+        "title": "Dropout",
+        "venue": "JMLR",
+        "year": 2014
+      },
+      "expected": "accept",
+      "id": "e3-same-title-09",
+      "kind": "same_title",
+      "note": "shorthand for the JMLR paper (title cut at the colon, right authors and year); relabelled accept after review, it was must_not_accept",
+      "truth": "w2095705004",
+      "truth_title": "Dropout: a simple way to prevent neural networks from overfitting",
+      "truth_year": 2014
     },
     {
       "alt_truth": [],

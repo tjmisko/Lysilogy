@@ -82,6 +82,7 @@ enum Part {
 
 struct Args {
     rerecord: bool,
+    allow_shrink: bool,
     out: PathBuf,
     dev_url: String,
     test_url: String,
@@ -109,6 +110,7 @@ fn parse_args() -> Result<Args, Failure> {
     let home = std::env::var("HOME")?;
     let mut args = Args {
         rerecord: false,
+        allow_shrink: false,
         out: PathBuf::from("tests/fixtures/claims"),
         dev_url: std::env::var("LYSILOGY_DATABASE_URL").unwrap_or_else(|_| {
             format!(
@@ -143,6 +145,7 @@ fn parse_args() -> Result<Args, Failure> {
     while let Some(flag) = iter.next() {
         match flag.as_str() {
             "--rerecord" => args.rerecord = true,
+            "--allow-shrink" => args.allow_shrink = true,
             "--out" => {
                 args.out = PathBuf::from(iter.next().ok_or("--out needs a directory")?);
                 out_given = true;
@@ -1770,12 +1773,27 @@ async fn record_plan(args: &Args, plan: &Plan, scratch_file: &Path) -> Result<Re
     })
 }
 
+/// The committed set's `(recorded, planned)` counts from its `status`, if it has one.
+fn committed_recording(cases_path: &Path) -> Option<(usize, usize)> {
+    let value: Value = serde_json::from_slice(&std::fs::read(cases_path).ok()?).ok()?;
+    let status = value.get("status")?;
+    let count = |key: &str| {
+        status
+            .get(key)
+            .and_then(Value::as_u64)
+            .and_then(|n| usize::try_from(n).ok())
+    };
+    Some((count("recorded")?, count("planned")?))
+}
+
 async fn run_part(args: &Args, part: Part) -> Result<(), Failure> {
     let label = if part == Part::E1 { "e1" } else { "e3" };
     let directory = args.out.join(label);
     let cases_path = directory.join("cases.json");
     let responses_path = directory.join("responses.json");
-    if (cases_path.exists() || responses_path.exists()) && !args.rerecord {
+    let committed_status = committed_recording(&cases_path);
+    let resumable = committed_status.is_some_and(|(recorded, planned)| recorded < planned);
+    if (cases_path.exists() || responses_path.exists()) && !args.rerecord && !resumable {
         return Err(format!(
             "{} already holds fixtures; pass --rerecord to replace them",
             directory.display()
@@ -1809,6 +1827,18 @@ async fn run_part(args: &Args, part: Part) -> Result<(), Failure> {
     );
     if recorded.done.is_empty() {
         return Err("nothing was recorded".into());
+    }
+    if let Some((committed, _)) = committed_status
+        && recorded.done.len() < committed
+        && !args.allow_shrink
+    {
+        return Err(format!(
+            "this run recorded {} cases but {} already holds {committed}; refusing to shrink it \
+             (restore the scratch responses file, or pass --allow-shrink)",
+            recorded.done.len(),
+            directory.display()
+        )
+        .into());
     }
 
     // Prove the recording is complete: replay the recorded cases, in set order, in a fresh
