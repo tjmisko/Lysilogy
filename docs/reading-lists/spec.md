@@ -389,6 +389,11 @@ fires at most once per page per visit. `work_inspected` fires when a Work panel 
 in memory and in `sessionStorage` (wrapped in try/catch). The reading position is upserted
 (debounced 2 s) on scroll or page turn.
 
+**Work backfill (server).** On ingest, an event that names a paper but no Work gets the
+paper's linked Work before it is stored, and the paper's earlier events without a Work get it
+too. Earlier rows are filled after the D17 check, so a qualifying visit stored before the
+paper was linked never counts as an earlier nudge.
+
 **Derived (server, pure in `src/history.rs`).** Per-paper summary (first/last seen, visits,
 total dwell, sections visited with dwell), "inspected but never opened" Works, and
 "opened but barely read" papers (total dwell < 2 min).

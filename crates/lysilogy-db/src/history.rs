@@ -373,6 +373,32 @@ impl HistoryRepository {
         Ok(outcome)
     }
 
+    /// Give a paper's stored events that have no Work this Work, for events recorded before
+    /// the client knew it (or before the paper was linked). Returns the rows changed.
+    pub async fn attach_work_to_paper(
+        &self,
+        workspace: WorkspaceId,
+        paper_id: &str,
+        work: WorkId,
+    ) -> Result<u64> {
+        let changed = sqlx::query(
+            "with target as ( \
+                 select coalesce( \
+                     (select new_work_id from graph.work_redirect where old_work_id = $3), \
+                     (select id from graph.work where id = $3)) as id) \
+             update reader.history_event e set work_id = target.id from target \
+             where target.id is not null and e.workspace_id = $1 and e.paper_id = $2 \
+               and e.work_id is null",
+        )
+        .bind(workspace.as_uuid())
+        .bind(paper_id)
+        .bind(work.as_uuid())
+        .execute(&self.pool)
+        .await?
+        .rows_affected();
+        Ok(changed)
+    }
+
     /// Newest-first timeline for a workspace.
     pub async fn recent(
         &self,
@@ -974,6 +1000,82 @@ mod tests {
             .await
             .expect("empty");
         assert_eq!(empty, BatchOutcome::default());
+    }
+
+    #[tokio::test]
+    async fn should_attach_work_only_to_that_papers_workless_events_when_backfilling() {
+        let _guard = test_support::lock().await;
+        let Some(fixture) = fixture().await else {
+            return;
+        };
+        let work = test_support::new_work(&fixture.pool).await;
+        let kept = test_support::new_work(&fixture.pool).await;
+        let session = Uuid::new_v4();
+        let mut already = paper_event(session, 2, "page_reached", "paper-a", None);
+        already.work_id = Some(kept);
+        let events = [
+            paper_event(session, 0, "paper_opened", "paper-a", None),
+            paper_event(session, 1, "paper_left", "paper-a", Some(5_000)),
+            already,
+            paper_event(session, 3, "paper_opened", "paper-b", None),
+        ];
+        fixture
+            .repo
+            .insert_batch(fixture.workspace, &events)
+            .await
+            .expect("insert");
+        let other_workspace = test_support::new_workspace(&fixture.pool).await;
+        fixture
+            .repo
+            .insert_batch(
+                other_workspace,
+                &[paper_event(
+                    Uuid::new_v4(),
+                    0,
+                    "paper_opened",
+                    "paper-a",
+                    None,
+                )],
+            )
+            .await
+            .expect("insert other");
+
+        let changed = fixture
+            .repo
+            .attach_work_to_paper(fixture.workspace, "paper-a", work)
+            .await
+            .expect("attach");
+        assert_eq!(changed, 2, "only the two workless paper-a events");
+        let missing = fixture
+            .repo
+            .attach_work_to_paper(fixture.workspace, "paper-b", WorkId::new())
+            .await
+            .expect("attach missing");
+        assert_eq!(missing, 0, "a Work that does not exist changes nothing");
+
+        let rows = fixture
+            .repo
+            .recent(fixture.workspace, &HistoryQuery::default())
+            .await
+            .expect("recent");
+        let work_of = |seq: i32| {
+            rows.iter()
+                .find(|row| row.client_seq == seq)
+                .and_then(|row| row.work_id)
+        };
+        assert_eq!(work_of(0), Some(work));
+        assert_eq!(work_of(1), Some(work));
+        assert_eq!(work_of(2), Some(kept), "a known Work is not overwritten");
+        assert_eq!(work_of(3), None, "another paper is untouched");
+        let other_rows = fixture
+            .repo
+            .recent(other_workspace, &HistoryQuery::default())
+            .await
+            .expect("recent other");
+        assert_eq!(
+            other_rows[0].work_id, None,
+            "another workspace is untouched"
+        );
     }
 
     #[tokio::test]

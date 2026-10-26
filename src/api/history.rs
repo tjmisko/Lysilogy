@@ -4,6 +4,9 @@
 //! Check order everywhere: path IDs, body or query, graph availability, existence. The
 //! router is exposed as [`history_routes`] and mounted by `build_router`.
 
+use std::collections::HashMap;
+use std::str::FromStr;
+
 use axum::{
     Json, Router,
     body::Bytes,
@@ -20,7 +23,8 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use super::{AppState, graph_error, graph_or_unavailable};
-use crate::history::{HistoryService, HistoryServiceError, parse_cursor};
+use crate::domain::PaperId;
+use crate::history::{HistoryService, HistoryServiceError, papers_without_work, parse_cursor};
 
 type Failure = Box<Response>;
 
@@ -187,8 +191,9 @@ async fn ingest_events_inner(state: &AppState, body: &Bytes) -> Result<Response,
         .map(|(index, event)| event_from_body(index, event))
         .collect::<Result<Vec<_>, _>>()?;
     let service = service_of(state).await?;
+    let links = paper_work_links(state, &papers_without_work(&events)).await;
     let outcome = service
-        .ingest(&events)
+        .ingest_linked(events, &links)
         .await
         .map_err(|error| service_failure(&error))?;
     Ok(respond(
@@ -199,6 +204,52 @@ async fn ingest_events_inner(state: &AppState, body: &Bytes) -> Result<Response,
             "nudged": outcome.nudged,
         }),
     ))
+}
+
+/// The linked Work of each catalog paper, skipping papers that are unknown, unlinked or
+/// fail to look up: events then keep what the client sent.
+async fn paper_work_links(state: &AppState, papers: &[String]) -> HashMap<String, WorkId> {
+    let mut links = HashMap::new();
+    let Ok(graph) = graph_or_unavailable(state) else {
+        return links;
+    };
+    for paper in papers {
+        let Ok(paper_id) = PaperId::from_str(paper) else {
+            continue;
+        };
+        let Some(relative_path) = state
+            .catalog
+            .read()
+            .await
+            .get(&paper_id)
+            .map(|entry| entry.overview.relative_path.clone())
+        else {
+            continue;
+        };
+        let linked = async {
+            let workspace = graph.documents.ensure_default_workspace().await?;
+            let Some(document) = graph
+                .documents
+                .find_by_path(workspace, &relative_path)
+                .await?
+            else {
+                return Ok(None);
+            };
+            graph.documents.work_link(document.id).await
+        }
+        .await;
+        match linked {
+            Ok(Some(link)) => {
+                links.insert(paper.clone(), link.work_id);
+            }
+            Ok(None) => {}
+            Err(error) => {
+                let error: lysilogy_db::DbError = error;
+                tracing::warn!(%error, %paper, "could not look up a paper's Work for history");
+            }
+        }
+    }
+    links
 }
 
 // ---- GET /api/history -------------------------------------------------------------------
@@ -357,7 +408,9 @@ async fn put_position_inner(state: &AppState, id: &str, body: &Bytes) -> Result<
 mod tests {
     use axum::{body::Body, http::Request};
     use http_body_util::BodyExt;
-    use lysilogy_core::{IdentifierScheme, ReadingStatus};
+    use lysilogy_core::{
+        DocumentFormat, IdentifierScheme, ReadingStatus, ScannedFile, WorkLinkMethod,
+    };
     use lysilogy_db::reading_state::ReadingStateRepository;
     use serde_json::json;
     use tower::ServiceExt;
@@ -449,6 +502,93 @@ mod tests {
                 "client_seq": seq,
             })
         }
+    }
+
+    #[tokio::test]
+    async fn should_store_the_papers_linked_work_when_events_arrive_without_one() {
+        let Some(graph) = test_graph().await else {
+            return;
+        };
+        let library = tempfile::tempdir().expect("library");
+        let data = tempfile::tempdir().expect("data");
+        let file_name = format!("Autor - 2013 - History Backfill {}.pdf", marker());
+        std::fs::write(library.path().join(&file_name), b"placeholder").expect("write");
+        let state = AppState::new(library.path(), data.path())
+            .await
+            .expect("state")
+            .with_graph(graph.clone());
+        let paper = PaperId::from_relative_path(std::path::Path::new(&file_name)).to_string();
+        let session = Uuid::new_v4();
+        let event = |seq: i32, kind: &str| {
+            json!({
+                "occurred_at": Utc::now().to_rfc3339(),
+                "session_id": session,
+                "kind": kind,
+                "paper_id": paper,
+                "client_seq": seq,
+            })
+        };
+
+        // Unlinked: the event is stored without a Work.
+        let (status, _) = post_json(
+            &state,
+            "/api/history/events",
+            &json!({ "events": [event(0, "paper_opened")] }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::ACCEPTED);
+
+        // Once linked, new events get the Work and the earlier one is backfilled.
+        let work = new_work(
+            &graph,
+            IdentifierScheme::Doi,
+            &format!("10.9999/history-backfill-{}", marker()),
+        )
+        .await;
+        let workspace = graph
+            .documents
+            .ensure_default_workspace()
+            .await
+            .expect("workspace");
+        let file = ScannedFile {
+            relative_path: file_name.clone(),
+            sha256: format!("sha-{file_name}"),
+            bytes: 11,
+            format: DocumentFormat::Pdf,
+        };
+        graph
+            .documents
+            .apply_partial_scan(workspace, &[file])
+            .await
+            .expect("scan");
+        let document = graph
+            .documents
+            .find_by_path(workspace, &file_name)
+            .await
+            .expect("find")
+            .expect("document");
+        graph
+            .documents
+            .set_work_link(document.id, work, WorkLinkMethod::Manual, None, "test")
+            .await
+            .expect("link");
+        let mut left = event(1, "paper_left");
+        left["dwell_ms"] = json!(crate::history::NUDGE_DWELL_MS);
+        let (status, body) =
+            post_json(&state, "/api/history/events", &json!({ "events": [left] })).await;
+        assert_eq!(status, StatusCode::ACCEPTED, "{body}");
+        assert_eq!(body["nudged"], json!([work.to_string()]), "{body}");
+
+        let rows = lysilogy_db::history::HistoryRepository::new(graph.works.pool().clone())
+            .recent(workspace, &HistoryQuery::default())
+            .await
+            .expect("recent");
+        let mine: Vec<_> = rows
+            .iter()
+            .filter(|row| row.session_id == session)
+            .collect();
+        assert_eq!(mine.len(), 2);
+        assert!(mine.iter().all(|row| row.work_id == Some(work)), "{mine:?}");
     }
 
     #[tokio::test]

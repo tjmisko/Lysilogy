@@ -9,6 +9,7 @@
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
     fmt::Write as _,
+    hash::BuildHasher,
 };
 
 use chrono::{DateTime, Duration, NaiveDate, SecondsFormat, TimeZone, Utc};
@@ -104,7 +105,8 @@ fn invalid(code: &'static str, message: &str) -> HistoryServiceError {
 /// The Works whose `paper_left` events in a batch reach the nudge threshold (D17),
 /// resolved by the caller through redirects. Sorted and distinct.
 ///
-/// A `paper_left` event must carry `work_id` to nudge; the client knows the paper's Work.
+/// A `paper_left` event must carry `work_id` to nudge; the client sends the paper's Work
+/// when it knows it, and [`backfill_work_ids`] fills it from the paper's link otherwise.
 #[must_use]
 pub fn nudge_candidates(events: &[NewEvent]) -> Vec<WorkId> {
     let mut works: Vec<WorkId> = events
@@ -116,6 +118,36 @@ pub fn nudge_candidates(events: &[NewEvent]) -> Vec<WorkId> {
     works.sort();
     works.dedup();
     works
+}
+
+/// The papers named by events that carry no Work. Sorted and distinct.
+#[must_use]
+pub fn papers_without_work(events: &[NewEvent]) -> Vec<String> {
+    let mut papers: Vec<String> = events
+        .iter()
+        .filter(|event| event.work_id.is_none())
+        .filter_map(|event| event.paper_id.clone())
+        .collect();
+    papers.sort();
+    papers.dedup();
+    papers
+}
+
+/// Give each event that names a paper but no Work the paper's linked Work from `links`.
+/// An event that already carries a Work keeps it. Returns the events changed.
+pub fn backfill_work_ids<S: BuildHasher>(
+    events: &mut [NewEvent],
+    links: &HashMap<String, WorkId, S>,
+) -> usize {
+    let mut changed = 0;
+    for event in events.iter_mut().filter(|event| event.work_id.is_none()) {
+        let Some(work) = event.paper_id.as_ref().and_then(|paper| links.get(paper)) else {
+            continue;
+        };
+        event.work_id = Some(*work);
+        changed += 1;
+    }
+    changed
 }
 
 /// Papers opened but with total dwell under [`BARELY_READ_MS`], in the input's order.
@@ -587,6 +619,32 @@ impl HistoryService {
         })
     }
 
+    /// Store a batch after giving workless paper events their paper's linked Work, then
+    /// give the paper's earlier workless events that Work too. Earlier rows are backfilled
+    /// after the nudge check, so a qualifying visit stored without its Work does not count
+    /// as an earlier nudge. A failed backfill of earlier rows is logged, not returned.
+    ///
+    /// # Errors
+    /// As [`HistoryService::ingest`].
+    pub async fn ingest_linked(
+        &self,
+        mut events: Vec<NewEvent>,
+        links: &HashMap<String, WorkId>,
+    ) -> Result<IngestOutcome, HistoryServiceError> {
+        backfill_work_ids(&mut events, links);
+        let outcome = self.ingest(&events).await?;
+        for (paper, work) in links {
+            if let Err(error) = self
+                .history
+                .attach_work_to_paper(self.workspace, paper, *work)
+                .await
+            {
+                tracing::warn!(%error, %paper, "could not backfill the Work of earlier history events");
+            }
+        }
+        Ok(outcome)
+    }
+
     /// The newest events, grouped by session.
     ///
     /// # Errors
@@ -1040,6 +1098,52 @@ mod tests {
             client_seq: 0,
             work_title: None,
         }
+    }
+
+    fn on_paper(paper: Option<&str>, work_id: Option<WorkId>) -> NewEvent {
+        NewEvent {
+            paper_id: paper.map(str::to_owned),
+            ..new_event("page_reached", None, work_id)
+        }
+    }
+
+    #[test]
+    fn should_list_each_workless_paper_once_when_collecting_papers_to_look_up() {
+        let events = [
+            on_paper(Some("b"), None),
+            on_paper(Some("a"), None),
+            on_paper(Some("b"), None),
+            on_paper(Some("c"), Some(work(1))),
+            on_paper(None, None),
+        ];
+        assert_eq!(papers_without_work(&events), vec!["a", "b"]);
+        assert!(papers_without_work(&[]).is_empty());
+    }
+
+    #[test]
+    fn should_fill_only_workless_events_of_linked_papers_when_backfilling() {
+        let mut events = [
+            on_paper(Some("a"), None),
+            on_paper(Some("a"), Some(work(9))),
+            on_paper(Some("b"), None),
+            on_paper(None, None),
+        ];
+        let links = HashMap::from([("a".to_owned(), work(1))]);
+        assert_eq!(backfill_work_ids(&mut events, &links), 1);
+        let works: Vec<Option<WorkId>> = events.iter().map(|event| event.work_id).collect();
+        assert_eq!(works, vec![Some(work(1)), Some(work(9)), None, None]);
+        assert_eq!(backfill_work_ids(&mut events, &HashMap::new()), 0);
+    }
+
+    #[test]
+    fn should_nudge_a_backfilled_paper_left_when_the_client_sent_no_work() {
+        let mut events = [new_event("paper_left", Some(NUDGE_DWELL_MS), None)];
+        assert!(nudge_candidates(&events).is_empty());
+        backfill_work_ids(
+            &mut events,
+            &HashMap::from([("paper-a".to_owned(), work(4))]),
+        );
+        assert_eq!(nudge_candidates(&events), vec![work(4)]);
     }
 
     #[test]
@@ -1791,6 +1895,49 @@ mod tests {
             .find(|entry| entry.work_id == read)
             .expect("a Work marked read belongs in the profile");
         assert_eq!(entry.status, ReadingStatus::Read);
+    }
+
+    #[tokio::test]
+    async fn should_nudge_and_backfill_earlier_rows_when_ingesting_with_a_paper_link() {
+        let Some(f) = Fixture::new().await else {
+            return;
+        };
+        let work = f.work("linked-later").await;
+        let session = Uuid::new_v4();
+        // Before the paper was linked: a qualifying visit is stored without a Work.
+        let mut early = f.event(session, 0, "paper_left");
+        early.dwell_ms = Some(NUDGE_DWELL_MS);
+        let outcome = f.service.ingest(&[early]).await.expect("ingest");
+        assert!(outcome.nudged.is_empty());
+
+        let links = HashMap::from([(format!("paper-{}", f.marker), work)]);
+        let mut late = f.event(session, 1, "paper_left");
+        late.dwell_ms = Some(NUDGE_DWELL_MS);
+        let outcome = f
+            .service
+            .ingest_linked(vec![late], &links)
+            .await
+            .expect("ingest linked");
+        assert_eq!(
+            outcome.nudged,
+            vec![work],
+            "the earlier workless visit never nudged, so this one does"
+        );
+        let rows = f
+            .service
+            .history
+            .recent(f.service.workspace, &HistoryQuery::default())
+            .await
+            .expect("recent");
+        let mine: Vec<&HistoryEvent> = rows
+            .iter()
+            .filter(|row| row.session_id == session)
+            .collect();
+        assert_eq!(mine.len(), 2);
+        assert!(
+            mine.iter().all(|row| row.work_id == Some(work)),
+            "both rows carry the Work: {mine:?}"
+        );
     }
 
     #[tokio::test]
