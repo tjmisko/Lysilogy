@@ -118,3 +118,10 @@ test('should declare view keys one to seven on the list page when History takes 
   for (const digit of ['1', '2', '3', '4', '5', '6', '7']) assert.ok(keys('list-page').has(digit), digit);
   for (const digit of ['1', '2', '3', '4', '5']) assert.ok(keys('history').has(digit), digit);
 });
+
+test('should bind L to the Graph view on the list page when digit four also selects it', () => {
+  const page = KEYMAP.find((entry) => entry.id === 'list-page');
+  assert.ok(page.bindings.some((entry) => entry.keys.includes('L')));
+  assert.ok(page.bindings.some((entry) => entry.keys.includes('4')));
+  assert.deepEqual(findCollisions().filter((entry) => entry.keys === 'L'), []);
+});

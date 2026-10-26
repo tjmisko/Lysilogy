@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   SORT_CYCLE, UNFILED_KEY, acquire, filterRows, foldClose, foldCloseAll, foldOpen, foldOpenAll, foldToggle,
-  groupByTopic, itemRows, nextSort, nextUp, nextView, parseView, progressStrip, pruneFolds, review, reviewItems,
+  graphModel, graphPlacements, groupByTopic, itemRows, nextSort, nextUp, nextView, parseView, progressStrip, pruneFolds, review, reviewItems,
   sequenceRows, statusGlyph, timeline, titleKey, topicLayers, countsLabel,
 } from '../src/lib/listViews.ts';
 
@@ -396,4 +396,74 @@ test('should survive subtopic cycles when counting progress', () => {
     edges: [edge('a', 'b', 'subtopic'), edge('b', 'a', 'subtopic'), edge('b', 'w', 'covers')],
   });
   assert.deepEqual(progressStrip(d).topics.map((t) => t.counts.unread), [1, 1]);
+});
+
+const layerIds = (model) => model.layers.map((layer) => ids(layer));
+
+test('should layer by longest prerequisite path when building the graph', () => {
+  counter = 0;
+  const d = detail([work('a', 'A', 2000), work('b', 'B', 2001), work('c', 'C', 2002), work('d', 'D', 2003)],
+    { edges: [edge('a', 'b'), edge('b', 'c'), edge('a', 'c')] });
+  assert.deepEqual(layerIds(graphModel(d)), [['a', 'd'], ['b'], ['c']]);
+});
+
+test('should put cited works before citing works when building the graph', () => {
+  counter = 0;
+  const d = detail([work('a', 'A', 2000), work('b', 'B', 2001), work('c', 'C', 2002)], { citations: [['w-c', 'w-b'], ['w-b', 'w-a']] });
+  const model = graphModel(d);
+  assert.deepEqual(layerIds(model), [['a'], ['b'], ['c']]);
+  assert.deepEqual(model.links, [{ from: 'a', to: 'b', kind: 'citation' }, { from: 'b', to: 'c', kind: 'citation' }]);
+});
+
+test('should keep one link when a prerequisite and a citation join the same pair', () => {
+  counter = 0;
+  const d = detail([work('a', 'A', 2000), work('b', 'B', 2001)], { edges: [edge('a', 'b')], citations: [['w-b', 'w-a']] });
+  assert.deepEqual(graphModel(d).links, [{ from: 'a', to: 'b', kind: 'prerequisite' }]);
+});
+
+test('should break a citation cycle deterministically when building the graph', () => {
+  counter = 0;
+  const d = detail([work('a', 'A', 2000), work('b', 'B', 2001)], { citations: [['w-a', 'w-b'], ['w-b', 'w-a']] });
+  const model = graphModel(d);
+  assert.deepEqual(layerIds(model), [['a'], ['b']]);
+  assert.equal(model.links.length, 2);
+  assert.deepEqual(graphModel(d), model);
+});
+
+test('should let a prerequisite win when it conflicts with a citation in the graph', () => {
+  counter = 0;
+  const d = detail([work('a', 'A', 2000), work('b', 'B', 2001)], { edges: [edge('b', 'a')], citations: [['w-b', 'w-a']] });
+  assert.deepEqual(layerIds(graphModel(d)), [['b'], ['a']]);
+});
+
+test('should expand a topic prerequisite to its works and list topics when building the graph', () => {
+  counter = 0;
+  const d = detail([topic('t', 'Basics'), work('a', 'A', 2000), work('b', 'B', 2001)],
+    { edges: [edge('t', 'a', 'covers'), edge('t', 'b')] });
+  const model = graphModel(d);
+  assert.deepEqual(model.links, [{ from: 'a', to: 'b', kind: 'prerequisite' }]);
+  assert.deepEqual(model.topics, [{ id: 't', label: 'Basics', rowIds: ['a'] }]);
+});
+
+test('should place claims in the first layer and ignore proposed edges when building the graph', () => {
+  counter = 0;
+  const d = detail([claim('q', 'A claim', 'unverified'), work('a', 'A', 2000), work('b', 'B', 2001)],
+    { edges: [edge('a', 'b', 'prerequisite', { review: 'proposed' })] });
+  assert.deepEqual(layerIds(graphModel(d)), [['q', 'a', 'b']]);
+});
+
+test('should return no layers when the list is empty in the graph', () => {
+  assert.deepEqual(graphModel(detail([])), { layers: [], links: [], topics: [] });
+  assert.deepEqual(graphPlacements(graphModel(detail([]))).placements, []);
+});
+
+test('should place layers left to right and rows top down when laying out the graph', () => {
+  counter = 0;
+  const d = detail([work('a', 'A', 2000), work('b', 'B', 2001), work('c', 'C', 2002)], { edges: [edge('a', 'b')] });
+  const { placements, width, height } = graphPlacements(graphModel(d));
+  const at = Object.fromEntries(placements.map((place) => [place.id, place]));
+  assert.ok(at.b.x > at.a.x);
+  assert.equal(at.a.x, at.c.x);
+  assert.ok(at.c.y > at.a.y);
+  assert.ok(width > at.b.x && height > at.c.y);
 });

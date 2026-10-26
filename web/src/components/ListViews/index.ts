@@ -4,7 +4,7 @@ import { viewOrder, type ListViewState } from "../../lib/listViewModel";
 import { LIST_VIEWS, type ListViewId } from "../../lib/listViews";
 import type { ListDetail } from "../../types";
 import { Acquire } from "./Acquire";
-import { GraphDeferred } from "./GraphDeferred";
+import { Graph } from "./Graph";
 import { NextUp } from "./NextUp";
 import type { ListViewProps } from "./props";
 import { Review } from "./Review";
@@ -26,7 +26,7 @@ const COMPONENTS: Readonly<Record<ListViewId, ComponentType<ListViewProps>>> = {
   1: Sequence,
   2: Topics,
   3: Timeline,
-  4: GraphDeferred,
+  4: Graph,
   5: NextUp,
   6: Acquire,
   7: Review,

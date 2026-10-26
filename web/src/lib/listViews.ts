@@ -506,6 +506,148 @@ export function timeline(detail: ListDetail): Timeline {
   return { buckets, undated, links };
 }
 
+// ---- Graph ---------------------------------------------------------------------------------
+
+export type GraphLink = { from: string; to: string; kind: "prerequisite" | "citation" };
+
+export type GraphTopic = { id: string; label: string; rowIds: string[] };
+
+export type GraphModel = {
+  /** Layers left to right; each holds node ids in manual order. */
+  layers: ItemRow[][];
+  /** Prerequisite edges between members and derived citation edges, `from` read before `to`. */
+  links: GraphLink[];
+  /** Topics with the members they cover, for the faint group labels. */
+  topics: GraphTopic[];
+};
+
+/** Members a node stands for: itself when a Work or claim, else every member under a topic. */
+function memberIds(start: string, memberSet: ReadonlySet<string>, below: ReadonlyMap<string, string[]>): string[] {
+  const found = new Set<string>();
+  const seen = new Set<string>();
+  const stack = [start];
+  for (let current = stack.pop(); current !== undefined; current = stack.pop()) {
+    if (seen.has(current)) continue;
+    seen.add(current);
+    if (memberSet.has(current)) found.add(current);
+    else stack.push(...(below.get(current) ?? []));
+  }
+  return [...found];
+}
+
+/**
+ * The layered DAG of view 4. A member's layer is the longest path to it over prerequisite edges
+ * and derived citation edges (cited before citing). Prerequisites are acyclic by construction;
+ * a citation edge that would close a cycle is left out of the layering, citations taken in id
+ * order so the result is stable. Claims have no citations and sit by their prerequisites.
+ */
+export function graphModel(detail: ListDetail): GraphModel {
+  const rows = itemRows(detail);
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const memberSet = new Set(byId.keys());
+  const below = new Map<string, string[]>();
+  for (const edge of acceptedEdges(detail)) {
+    if (edge.kind !== "covers" && edge.kind !== "subtopic") continue;
+    below.set(edge.from, [...(below.get(edge.from) ?? []), edge.to]);
+  }
+  const seen = new Set<string>();
+  const links: GraphLink[] = [];
+  const add = (from: string, to: string, kind: GraphLink["kind"]): void => {
+    const key = `${from}\u0000${to}`;
+    if (from === to || seen.has(key)) return;
+    seen.add(key);
+    links.push({ from, to, kind });
+  };
+  for (const edge of acceptedEdges(detail)) {
+    if (edge.kind !== "prerequisite") continue;
+    const after = memberIds(edge.to, memberSet, below);
+    for (const first of memberIds(edge.from, memberSet, below)) for (const second of after) add(first, second, "prerequisite");
+  }
+  const nodeOf = new Map<string, string>();
+  for (const row of rows) if (row.workId !== null && !nodeOf.has(row.workId)) nodeOf.set(row.workId, row.id);
+  const successors = new Map<string, Set<string>>();
+  const connect = (from: string, to: string): void => {
+    successors.set(from, (successors.get(from) ?? new Set<string>()).add(to));
+  };
+  for (const link of links) connect(link.from, link.to);
+  const reaches = (start: string, goal: string): boolean => {
+    const visited = new Set<string>();
+    const stack = [start];
+    for (let current = stack.pop(); current !== undefined; current = stack.pop()) {
+      if (current === goal) return true;
+      if (visited.has(current)) continue;
+      visited.add(current);
+      stack.push(...(successors.get(current) ?? []));
+    }
+    return false;
+  };
+  const derived: GraphLink[] = [];
+  for (const [citing, cited] of detail.citations) {
+    const to = nodeOf.get(citing);
+    const from = nodeOf.get(cited);
+    if (from === undefined || to === undefined || from === to) continue;
+    derived.push({ from, to, kind: "citation" });
+  }
+  derived.sort((a, b) => compareText(a.from, b.from) || compareText(a.to, b.to));
+  const ordering: GraphLink[] = [...links];
+  for (const link of derived) {
+    const key = `${link.from}\u0000${link.to}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    links.push(link);
+    if (reaches(link.to, link.from)) continue;
+    connect(link.from, link.to);
+    ordering.push(link);
+  }
+  const before = new Map<string, string[]>();
+  for (const link of ordering) before.set(link.to, [...(before.get(link.to) ?? []), link.from]);
+  const layerOf = new Map<string, number>();
+  const layerFor = (id: string): number => {
+    const known = layerOf.get(id);
+    if (known !== undefined) return known;
+    layerOf.set(id, 0);
+    const depth = Math.max(-1, ...(before.get(id) ?? []).map(layerFor)) + 1;
+    layerOf.set(id, depth);
+    return depth;
+  };
+  const layers: ItemRow[][] = [];
+  for (const row of rows) {
+    const at = layerFor(row.id);
+    while (layers.length <= at) layers.push([]);
+    layers[at]?.push(row);
+  }
+  const topics = detail.nodes
+    .filter((node) => node.kind === "topic" && accepted(node))
+    .sort(byPosition)
+    .map((topic) => ({
+      id: topic.id,
+      label: topic.label ?? UNTITLED,
+      rowIds: memberIds(topic.id, memberSet, below).sort((a, b) => (byId.get(a)?.ordinal ?? 0) - (byId.get(b)?.ordinal ?? 0)),
+    }))
+    .filter((topic) => topic.rowIds.length > 0);
+  return { layers, links, topics };
+}
+
+export const GRAPH_NODE = { width: 220, height: 46, gapX: 96, gapY: 16, margin: 20 } as const;
+
+export type GraphPlacement = { id: string; x: number; y: number };
+
+/** Top-left corners of every node, layers left to right and rows top down; and the canvas size. */
+export function graphPlacements(model: GraphModel): { placements: GraphPlacement[]; width: number; height: number } {
+  const { width, height, gapX, gapY, margin } = GRAPH_NODE;
+  const placements = model.layers.flatMap((layer, column) => layer.map((row, index) => ({
+    id: row.id,
+    x: margin + column * (width + gapX),
+    y: margin + index * (height + gapY),
+  })));
+  const tallest = Math.max(0, ...model.layers.map((layer) => layer.length));
+  return {
+    placements,
+    width: margin * 2 + Math.max(1, model.layers.length) * width + Math.max(0, model.layers.length - 1) * gapX,
+    height: margin * 2 + Math.max(1, tallest) * height + Math.max(0, tallest - 1) * gapY,
+  };
+}
+
 // ---- Next up -------------------------------------------------------------------------------
 
 export type NextUpItem = {

@@ -461,6 +461,7 @@ export function ListPage({ listId, view, keyboardEnabled, reloadToken, onView, o
       }
       switch (key) {
         case "v": consume(); onView(nextView(view)); return;
+        case "L": consume(); onView(4); return;
         case "j":
         case "ArrowDown": move(1); return;
         case "k":

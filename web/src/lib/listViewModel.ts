@@ -4,6 +4,7 @@
 import type { ListDetail } from "../types";
 import {
   acquire,
+  graphModel,
   groupByTopic,
   nextUp,
   review,
@@ -136,7 +137,7 @@ export function viewOrder(view: ListViewId, detail: ListDetail, state: ListViewS
       const { buckets, undated } = timeline(detail);
       return [...buckets.flatMap((bucket) => bucket.rows.map((row) => row.id)), ...undated.map((row) => row.id)];
     }
-    case 4: return [];
+    case 4: return graphModel(detail).layers.flatMap((layer) => layer.map((row) => row.id));
     case 5: return nextUp(detail).items.map((item) => item.row.id);
     case 6: return acquire(detail).rows.map((entry) => entry.row.id);
     case 7: return reviewItems(review(detail)).flatMap((item) => (item.kind === "edge" ? [] : [item.node.id]));

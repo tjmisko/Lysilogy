@@ -256,8 +256,6 @@ try {
   assert.deepEqual(await titles(), ['Attention Is All You Need', 'Deep RL from human preferences', 'InstructGPT', 'a paper on reward hacking']);
   await press('v'); assert.match(page.url(), /view=2/u);
   await press('v'); assert.match(page.url(), /view=3/u);
-  await press('4'); await page.waitForSelector('[data-empty="graph"]');
-  assert.match(await page.locator('[data-empty="graph"]').innerText(), /not in this build/iu);
   await press('2'); await page.waitForSelector('.list-col');
   await press('h', 'l', 'ArrowLeft', 'ArrowRight');
   await press('z', 'o', 'z', 'c', 'z', 'a', 'z', 'R', 'z', 'M');
@@ -272,6 +270,12 @@ try {
   const fetched = since(fetchMark).filter((entry) => /^POST \/api\/works\/[^/]+\/fetch/u.test(entry.call));
   assert.ok(fetched.length > 0, `Acquire f / F sent no fetch: ${requests.slice(fetchMark).join('\n')}`);
   await press('7'); await page.waitForSelector('[data-node-id], .list-row');
+  await press('4'); await page.waitForSelector('.list-graph .list-graph-node');
+  assert.ok(await page.locator('.list-graph-node').count() >= 4, 'graph draws every member');
+  await press('h', 'l', 'j', 'k');
+  await press('3'); await page.waitForSelector('.list-col');
+  await press('L'); await page.waitForSelector('.list-graph .list-graph-node');
+  assert.match(page.url(), /view=4/u);
   await press('1'); await page.waitForSelector('.list-sequence .list-row');
 
   // ---- Sequence: movement, status, sort, filter, group, fold -------------------------------

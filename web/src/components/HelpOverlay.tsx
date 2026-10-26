@@ -107,6 +107,7 @@ const GROUPS = [
     title: "Application",
     commands: [
       ["g l", "Open the lists index (type both within a moment)"],
+      ["L · 4 (list page)", "Graph view: layered prerequisite and citation DAG; h / l between layers, j / k within one"],
       ["g r", "Open the reading history"],
       ["Y", "Add the paper, selected card or graph work to a list (picker)"],
       ["M", "Lists this paper or work is on: j/k, Enter open, x remove, u undo"],

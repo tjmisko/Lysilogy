@@ -1,0 +1,18 @@
+/* View 4: the layered reading graph. Edge styling follows LiteratureGraph: solid for ordering, dashed for citations. */
+
+.list-graph { overflow: auto; padding-bottom: 8px; }
+.list-graph svg { display: block; }
+.list-graph-card { fill: var(--bg-raised); stroke: var(--line); stroke-width: 1; }
+.list-graph-node { cursor: default; }
+.list-graph-node:hover .list-graph-card { stroke: var(--line-bright); }
+.list-graph-node.is-linked .list-graph-card { stroke: var(--signal); }
+.list-graph-node.is-selected .list-graph-card { stroke: var(--signal); stroke-width: 2.5; }
+.list-graph-glyph { fill: var(--ink-soft); font-size: 13px; }
+.list-graph-title { fill: var(--ink); font: 12px Georgia, "Times New Roman", serif; }
+.list-graph-node[data-status="read"] .list-graph-title { fill: var(--ink-faint); }
+.list-graph-topics { fill: var(--ink-faint); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.list-graph-edge { fill: none; stroke: var(--ink-faint); stroke-width: 1.5; }
+.list-graph-edge.is-citation { stroke-dasharray: 4 3; stroke-width: 1; }
+.list-graph-edge.is-linked { stroke: var(--signal); }
+.list-graph-arrowhead { fill: var(--ink-faint); }
+.list-graph-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 8px 0 0; color: var(--ink-faint); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
