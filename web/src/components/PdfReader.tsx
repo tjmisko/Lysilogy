@@ -489,7 +489,6 @@ export function PdfReader({
       if (event.defaultPrevented || handleNotesPaneKey(event)) { clearPendingG(); return; }
       if (window.document.querySelector(".section-figure-view") !== null || event.target instanceof Element && event.target.closest(".notes-panel") !== null) { clearPendingG(); return; }
       const target = event.target;
-      if (target instanceof Element && target.closest(".library-rail") !== null) { clearPendingG(); return; }
       if (event.isComposing || event.metaKey || event.altKey || target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
         || target instanceof HTMLSelectElement || target instanceof HTMLElement && target.isContentEditable) { clearPendingG(); return; }
       if (event.repeat && ["g", "H", "W", "w"].includes(event.key) && !event.ctrlKey && !sourceTools.cursorMode && !sourceTools.visualMode) {

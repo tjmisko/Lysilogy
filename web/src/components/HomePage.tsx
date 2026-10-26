@@ -26,6 +26,20 @@ type HomePageProps = {
 };
 
 type Filter = "all" | "mapped" | "unmapped";
+type Layout = "gallery" | "two-column" | "list" | "details";
+const layouts: { value: Layout; label: string; icon: string }[] = [
+  { value: "gallery", label: "Gallery", icon: "▦" },
+  { value: "two-column", label: "Two columns", icon: "☷ ☷" },
+  { value: "list", label: "List", icon: "☷" },
+  { value: "details", label: "Details", icon: "▤" },
+];
+const layoutKey = "lysilogy.home.layout";
+function storedLayout(): Layout {
+  try {
+    const value = window.localStorage.getItem(layoutKey);
+    return layouts.find((layout) => layout.value === value)?.value ?? "gallery";
+  } catch { return "gallery"; }
+}
 const collator = new Intl.Collator(undefined, { sensitivity: "base" });
 const accents = ["#dec282", "#aaa0d8", "#8dc1af", "#d49e87", "#9cb4d4", "#c2bf94"];
 
@@ -71,6 +85,7 @@ export function HomePage({ papers, query, onQuery, activeId, onActive, onSelect,
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState("title");
   const [columns, setColumns] = useState<number | null>(storedColumns);
+  const [layout, setLayout] = useState<Layout>(storedLayout);
   const searchRef = useRef<HTMLInputElement>(null);
   const gridRef = useRef<HTMLUListElement>(null);
   const mapped = papers.filter((paper) => paper.status.state === "ready").length;
@@ -124,7 +139,7 @@ export function HomePage({ papers, query, onQuery, activeId, onActive, onSelect,
         onToggleInk();
         return;
       }
-      if (["+", "=", "-", "_"].includes(event.key)) {
+      if (layout === "gallery" && ["+", "=", "-", "_"].includes(event.key)) {
         event.preventDefault();
         const rendered = gridRef.current === null ? 0 : getComputedStyle(gridRef.current).gridTemplateColumns.split(" ").length;
         const delta = event.key === "+" || event.key === "=" ? -1 : 1;
@@ -168,7 +183,7 @@ export function HomePage({ papers, query, onQuery, activeId, onActive, onSelect,
     };
     window.addEventListener("keydown", navigate);
     return () => window.removeEventListener("keydown", navigate);
-  }, [keyboardEnabled, onSelect, onToggleInk, selectedId, visible]);
+  }, [keyboardEnabled, layout, onSelect, onToggleInk, selectedId, visible]);
 
   return <section className={`home-page${darkInk ? " dark-ink" : ""}`}>
     <div className="home-controls">
@@ -187,20 +202,38 @@ export function HomePage({ papers, query, onQuery, activeId, onActive, onSelect,
         : <><strong>{visible.length}</strong> of <strong>{papers.length}</strong> papers</>}</p>
       <AddMenu onImportUrl={onImport} onUpload={onUpload} directories={directories} onAddDirectory={onAddDirectory} onRemoveDirectory={onRemoveDirectory} />
     </div>
+    <div className="home-view-bar">
+      <p>{layout === "gallery" ? "A shelf of ideas" : layout === "details" ? "A closer look at your reading" : "Your library, at a glance"}</p>
+      <div className="home-layouts" role="group" aria-label="Paper layout">
+        {layouts.map(({ value, label, icon }) => <button type="button" key={value} aria-pressed={layout === value}
+          onClick={() => {
+            setLayout(value);
+            try { window.localStorage.setItem(layoutKey, value); } catch { /* keep the session preference */ }
+          }}><span aria-hidden="true">{icon}</span>{label}</button>)}
+      </div>
+    </div>
 
-    {visible.length > 0 ? <ul className="paper-grid" ref={gridRef} aria-label="Papers"
-      style={columns === null ? undefined : { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+    {visible.length > 0 ? <ul className="paper-grid" data-layout={layout} ref={gridRef} aria-label="Papers"
+      style={layout !== "gallery" || columns === null ? undefined : { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
       {visible.map((paper) => <li key={paper.id} style={{ "--paper-accent": paperAccent(paper.id) } as CSSProperties}>
         <button type="button" className={`paper-card ${paper.id === selectedId ? "is-active" : ""} ${paper.status.state === "ready" ? "is-mapped" : ""}`}
           data-paper-id={paper.id} tabIndex={paper.id === selectedId ? 0 : -1}
           aria-labelledby={`card-title-${paper.id}`} onFocus={() => onActive(paper.id)} onClick={() => onSelect(paper.id)}>
-          <PaperPreview url={api.source(paper.id)} title={paper.metadata.title} />
+          {(layout === "gallery" || layout === "details") && <PaperPreview url={api.source(paper.id)} title={paper.metadata.title} />}
           <span className="paper-card-caption">
           <span className="paper-card-top" title={`${paper.metadata.authors.join(", ")} — ${paperStatus(paper)}`}>
             <span className="paper-card-authors">{authorSurnames(paper.metadata.authors) || "Unknown"}</span>
             <span className="paper-card-year">{paper.metadata.year ?? "n.d."}</span>
           </span>
           <TitleLines id={`card-title-${paper.id}`} title={paper.metadata.title} />
+          {layout !== "gallery" && <span className="paper-card-meta">
+            <span className={`status-pip status-${paper.status.state}`} aria-hidden="true" />
+            {paperStatus(paper)}{paper.metadata.page_count != null && <> · {paper.metadata.page_count} pages</>}
+          </span>}
+          {layout === "details" && <span className="paper-card-description">
+            <span className="paper-card-description-label">{paper.author_abstract?.trim() ? "Abstract" : paper.one_line_summary?.trim() ? "Summary" : "No abstract available"}</span>
+            <span>{paper.author_abstract?.trim() || paper.one_line_summary?.trim() || "Open this paper to start reading. Its abstract will appear here once available."}</span>
+          </span>}
           </span>
         </button>
       </li>)}

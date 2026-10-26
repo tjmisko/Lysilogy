@@ -390,15 +390,14 @@ try {
   assert((await page.locator(".reading-context").count()) === 1, "reading context is missing");
   assert((await page.locator(".context-source").count()) === 2, "exact context sources are missing");
   assert((await page.locator(".context-source-check").count()) === 2, "link-check timestamps are missing");
-  await page.getByRole("button", { name: "+ URL" }).click();
-  await page.locator("#remote-pdf-url").fill("http://127.0.0.1/paper.pdf");
-  await page.locator(".library-import button[type=submit]").click();
-  await page.locator("#remote-pdf-error").waitFor();
-  assert(
-    (await page.locator("#remote-pdf-error").textContent())?.includes("public addresses"),
-    "remote import errors were not shown beside the URL form",
-  );
-  await page.getByRole("button", { name: "+ URL" }).click();
+  await page.keyboard.press(":");
+  await page.locator(".command-menu input").fill("import");
+  await page.keyboard.press("Enter");
+  await page.getByLabel("PDF URL", { exact: true }).fill("http://127.0.0.1/paper.pdf");
+  await page.getByRole("button", { name: "Import PDF", exact: true }).click();
+  await page.locator(".import-pdf-dialog [role=alert]").waitFor();
+  assert((await page.locator(".import-pdf-dialog [role=alert]").textContent())?.includes("public addresses"), "remote import errors appear beside the URL form");
+  await page.keyboard.press("Escape");
   await page.getByRole("alert").getByRole("button").click();
   assert(
     (await page.locator(".context-verification-scope").textContent())?.includes("not that the source semantically proves"),
@@ -483,18 +482,13 @@ try {
   await page.keyboard.press("Escape");
   await page.screenshot({ path: screenshot, fullPage: true });
 
-  assert((await page.locator(".paper-list-item").count()) === 2, "library fixture did not load");
-  await page.locator(".library-counts button[aria-pressed]").click();
-  assert((await page.locator(".paper-list-item").count()) === 1, "mapped-only filter did not narrow the library");
-  await page.locator(".library-counts button[aria-pressed]").click();
-  await page.keyboard.press("f");
-  assert((await page.locator(".paper-list-item").count()) === 1, "mapped-only keyboard filter failed");
-  await page.keyboard.press("f");
-
   await page.keyboard.press("F1");
-  await page.locator(".library-rail:not(.is-open)").waitFor();
+  await page.locator(".paper-switcher").waitFor();
+  assert((await page.locator(".switcher-results > button").count()) === 2, "library fixture did not load");
+  await page.getByRole("button", { name: "Mapped only", exact: true }).click();
+  assert((await page.locator(".switcher-results > button").count()) === 1, "mapped-only filter did not narrow the finder");
   await page.keyboard.press("F1");
-  await page.locator(".library-rail.is-open").waitFor();
+  await page.locator(".paper-switcher").waitFor({ state: "detached" });
 
   await page.keyboard.press("F10");
   await page.locator(".paper-switcher").waitFor();
@@ -567,17 +561,6 @@ try {
   await page.keyboard.press("Tab");
   await page.locator(".help-card").waitFor({ state: "detached" });
   assert(await activePhase() === "Abstract", "Tab did not change phase while the help overlay was open");
-  await page.keyboard.press("/");
-  await page.waitForFunction(() => document.activeElement?.matches(".library-rail .search-box input") === true);
-  await page.keyboard.press("Tab");
-  await page.locator(".source-map").waitFor();
-  assert(await activePhase() === "Overview", "Tab did not change phase from inside the library filter");
-  assert(
-    await page.evaluate(() => document.activeElement?.matches(".library-rail .search-box input") === true),
-    "Tab tabbed out of the library filter instead of changing the reading phase",
-  );
-  await page.keyboard.press("Escape");
-
   // The switcher defines its own Tab, and still keeps it from the browser.
   await page.keyboard.press("F10");
   await page.locator(".paper-switcher").waitFor();
@@ -721,15 +704,15 @@ try {
   await page.locator(".abstract-view").waitFor();
   await page.screenshot({ path: screenshotVariant("abstract-mobile"), fullPage: true });
   await page.keyboard.press("b");
-  await page.locator(".library-rail.is-open").waitFor();
-  await page.keyboard.press("j");
+  await page.locator(".paper-switcher").waitFor();
+  await page.keyboard.press("ArrowDown");
   assert(
-    await page.locator(".paper-list-item").nth(1).evaluate((item) => item === document.activeElement),
-    "mobile library did not enter keyboard navigation mode",
+    await page.locator(".switcher-results > button").nth(1).evaluate((item) => item.classList.contains("is-active")),
+    "mobile finder did not move its selection",
   );
   await delay(30);
   await page.keyboard.press("Enter");
-  await page.locator(".library-rail:not(.is-open)").waitFor();
+  await page.locator(".paper-switcher").waitFor({ state: "detached" });
 
   await page.keyboard.press("?");
   await page.locator(".help-card").waitFor();

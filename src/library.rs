@@ -175,6 +175,9 @@ async fn scan_root(
             status,
             analyzed_at: analysis.as_ref().map(|value| value.generated_at),
             one_line_summary: analysis.as_ref().map(|value| value.thesis.clone()),
+            author_abstract: analysis
+                .as_ref()
+                .and_then(|value| value.author_abstract.clone()),
         };
         entries.insert(
             id,
@@ -267,6 +270,36 @@ fn merge_metadata(target: &mut PaperMetadata, extracted: &PaperMetadata) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn exposes_saved_abstracts_in_library_overviews_without_extracting_pdfs() {
+        let library = tempfile::tempdir().unwrap();
+        let data = tempfile::tempdir().unwrap();
+        let name = "Author - 2026 - Paper.pdf";
+        std::fs::write(library.path().join(name), b"not parsed during discovery").unwrap();
+        let store = ArtifactStore::new(data.path());
+        store.initialize().await.unwrap();
+        let id = PaperId::from_relative_path(Path::new(name));
+        let analysis = serde_json::from_value(serde_json::json!({
+            "schema_version": 4,
+            "provider": "codex",
+            "generated_at": "2026-10-26T00:00:00Z",
+            "thesis": "A short generated summary.",
+            "outsider_brief": "",
+            "author_abstract": "The full authored abstract, preserved separately from the summary."
+        }))
+        .unwrap();
+        store.save_analysis(&id, &analysis).await.unwrap();
+        let catalog = LibraryCatalog::scan(library.path(), &store).await.unwrap();
+        let papers = catalog.overviews();
+        assert_eq!(papers.len(), 1);
+        let overview = serde_json::to_value(&papers[0]).unwrap();
+        assert_eq!(overview["one_line_summary"], "A short generated summary.");
+        assert_eq!(
+            overview["author_abstract"],
+            "The full authored abstract, preserved separately from the summary."
+        );
+    }
 
     #[test]
     fn parses_conventional_vault_filename() {

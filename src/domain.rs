@@ -67,6 +67,8 @@ pub struct PaperOverview {
     pub status: ProcessingStatus,
     pub analyzed_at: Option<DateTime<Utc>>,
     pub one_line_summary: Option<String>,
+    #[serde(default)]
+    pub author_abstract: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

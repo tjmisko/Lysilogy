@@ -29,6 +29,7 @@ export type PaperOverview = {
   status: ProcessingStatus;
   analyzed_at: string | null;
   one_line_summary: string | null;
+  author_abstract?: string | null;
 };
 
 export type LibraryDirectory = {

@@ -717,6 +717,12 @@ impl AppState {
                 } else {
                     self.store.save_analysis_projection(id, &analysis).await?;
                 }
+                if let Some(entry) = self.catalog.write().await.get_mut(id) {
+                    entry
+                        .overview
+                        .author_abstract
+                        .clone_from(&analysis.author_abstract);
+                }
             }
             self.jobs.task_completed(id, "persist").await?;
             self.jobs.complete(id, false).await?;
@@ -875,6 +881,7 @@ impl AppState {
                 entry.overview.metadata = paper.metadata;
                 entry.overview.analyzed_at = Some(analysis.generated_at);
                 entry.overview.one_line_summary = Some(analysis.thesis);
+                entry.overview.author_abstract = analysis.author_abstract;
             }
         }
         Ok(())
@@ -1731,6 +1738,7 @@ impl AppState {
                 entry.overview.metadata = paper.metadata;
                 entry.overview.analyzed_at = Some(analysis.generated_at);
                 entry.overview.one_line_summary = Some(analysis.thesis);
+                entry.overview.author_abstract = analysis.author_abstract;
             }
         }
         Ok(())

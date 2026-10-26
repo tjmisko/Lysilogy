@@ -35,10 +35,12 @@ function searchableText(paper: PaperOverview): string {
 export function PaperSwitcher({ papers, selectedId, onClose, onSelect }: PaperSwitcherProps) {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
+  const [mappedOnly, setMappedOnly] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const candidates = useMemo(() => {
     const matches = papers.flatMap<Candidate>((paper) => {
+      if (mappedOnly && paper.status.state !== "ready") return [];
       const score = fuzzyScore(query, searchableText(paper));
       return score === null ? [] : [{ paper, score }];
     });
@@ -47,7 +49,7 @@ export function PaperSwitcher({ papers, selectedId, onClose, onSelect }: PaperSw
       const readyDifference = Number(right.paper.status.state === "ready") - Number(left.paper.status.state === "ready");
       return readyDifference || left.paper.metadata.title.localeCompare(right.paper.metadata.title);
     });
-  }, [papers, query]);
+  }, [mappedOnly, papers, query]);
   const lastIndex = Math.max(0, candidates.length - 1);
   const activeIndex = Math.min(active, lastIndex);
 
@@ -65,6 +67,7 @@ export function PaperSwitcher({ papers, selectedId, onClose, onSelect }: PaperSw
       if (candidate !== undefined) onSelect(candidate.paper.id);
     };
     const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented) return;
       const typing = document.activeElement === inputRef.current;
       const backward = event.key === "ArrowUp"
         || (!typing && ["h", "k"].includes(event.key))
@@ -79,6 +82,7 @@ export function PaperSwitcher({ papers, selectedId, onClose, onSelect }: PaperSw
         event.preventDefault();
         setActive((index) => Math.min(lastIndex, index + 1));
       } else if (event.key === "Enter") {
+        if (event.target instanceof Element && event.target.closest(".switcher-filter") !== null) return;
         event.preventDefault();
         choose();
       } else if (event.key === "Escape") {
@@ -119,6 +123,10 @@ export function PaperSwitcher({ papers, selectedId, onClose, onSelect }: PaperSw
             aria-label="Fuzzy-find an article"
           />
         </label>
+        <div className="switcher-filter">
+          <button type="button" aria-pressed={mappedOnly} onClick={() => { setMappedOnly((value) => !value); setActive(0); }}>Mapped only</button>
+          <span>{candidates.length} {candidates.length === 1 ? "paper" : "papers"}</span>
+        </div>
         <div className="switcher-results" role="listbox">
           {candidates.map(({ paper }, index) => (
             <button

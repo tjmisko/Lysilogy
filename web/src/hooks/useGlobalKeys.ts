@@ -14,7 +14,7 @@ type GlobalKeyOptions = {
   onHelp: () => void;
   onLiterature: () => void;
   onSearch: () => void;
-  onToggleLibrary: () => void;
+  onOpenPicker: () => void;
   onToggleView: () => void;
   onToggleMarkdown: () => void;
   onToggleSpread: () => void;
@@ -175,7 +175,7 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
           break;
         case "b":
           event.preventDefault();
-          current.onToggleLibrary();
+          current.onOpenPicker();
           break;
         case "p":
           event.preventDefault();

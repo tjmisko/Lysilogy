@@ -12,7 +12,7 @@ const GROUPS = [
       ["Ctrl-d / Ctrl-u", "Half-screen down / up; turn PDF page at the scrolling edge"],
       ["PageDown / PageUp", "Next / previous PDF page in paged mode; scroll in continuous and text views"],
       ["/", "Regex search in the paper; filter library or Glossary there"],
-      ["b · j/k · ↵", "Open, move through, and choose from the mobile library"],
+      ["b · ↑/↓ · ↵", "Find and open a paper"],
     ],
   },
   {
@@ -104,10 +104,10 @@ const GROUPS = [
   {
     title: "Application",
     commands: [
-      ["b", "Toggle the library"],
-      ["F1", "Toggle the library outside the notes buffer"],
+      ["b", "Open the paper finder"],
+      ["F1", "Find a paper outside the notes buffer"],
       ["F10", "Fuzzy-find and switch articles"],
-      ["f in library", "Filter to mapped papers while the library has focus"],
+      ["Home layouts", "Gallery, two-column list, list, or details with abstracts"],
       [":analyze", "Analyze with the selected provider"],
       [":supercut", "Create a source-verified cut with Lysilogos"],
       [":references", "Save citations, find papers, and check claims"],

@@ -49,6 +49,11 @@ try {
   await ready(1);
   await page.locator('.pdf-reader').focus();
   const fitsHeight = async () => {
+    // Fit changes render asynchronously; wait for the new geometry to settle.
+    await page.waitForFunction(() => {
+      const host = document.querySelector('.pdf-viewport');
+      return host !== null && host.scrollHeight === host.clientHeight;
+    });
     const overflow = await page.locator('.pdf-viewport').evaluate(node => node.scrollHeight - node.clientHeight);
     assert.equal(overflow, 0, 'height-fit pages leave no vertical scroll sliver');
   };

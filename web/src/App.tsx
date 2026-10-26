@@ -15,7 +15,7 @@ import { ExperimentPanel } from "./components/ExperimentPanel";
 import { GlossaryView } from "./components/GlossPanel";
 import { HelpOverlay } from "./components/HelpOverlay";
 import { HomePage } from "./components/HomePage";
-import { LibraryRail } from "./components/LibraryRail";
+import { ImportPdfDialog } from "./components/ImportPdfDialog";
 import { MarkdownReader } from "./components/MarkdownReader";
 import { PaperSwitcher } from "./components/PaperSwitcher";
 import { PdfReader } from "./components/PdfReader";
@@ -89,16 +89,15 @@ export function App() {
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
   const [paperView, setPaperView] = useState<PaperView | null>(null);
   const [pageSnapshots, setPageSnapshots] = useState<PageSnapshot[]>([]);
-  const focusRestore = useRef<{ library: boolean; scroll: number } | null>(null);
+  const focusRestore = useRef<{ scroll: number } | null>(null);
   const [activeSection, setActiveSection] = useState(0);
   const [refreshingComponent, setRefreshingComponent] = useState<"abstract" | "context" | "structure" | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
   const [preferredView, setView] = useState<ViewMode>(initialView);
   const view: ViewMode = paperView?.analysis == null && preferredView !== "sources" ? "text" : preferredView;
   const [textMode, setTextMode] = useState<TextMode>("pdf");
-  const [compactLayout, setCompactLayout] = useState(() => window.innerWidth < 1180);
-  const [libraryOpen, setLibraryOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
   const [experimentOpen, setExperimentOpen] = useState(false);
@@ -108,7 +107,6 @@ export function App() {
   const [referenceSeed, setReferenceSeed] = useState<{ text: string; page: number } | null>(null);
   const [focusQueueFeedback, setFocusQueueFeedback] = useState(false);
   const [queue, setQueue] = useState<ProcessingQueue>({ jobs: [] });
-  const [libraryQuery, setLibraryQuery] = useState("");
   const [homeQuery, setHomeQuery] = useState("");
   const [homeActiveId, setHomeActiveId] = useState<string | null>(null);
   const [provider, setProvider] = useState<AnalysisProvider>("openrouter");
@@ -127,22 +125,15 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [sidebarPaperIds, setSidebarPaperIds] = useState<string[]>([]);
-  const searchRef = useRef<HTMLInputElement>(null);
   const mainStageRef = useRef<HTMLElement>(null);
   const closeReaderTools = useCallback(() => setToolsTab(null), []);
   const home = selectedId === null;
   const [notesOpen, setNotesOpen] = useState(false);
-  const notesRailRestore = useRef<boolean | null>(null);
   const openNotes = useCallback(() => {
-    notesRailRestore.current = libraryOpen;
-    setLibraryOpen(false);
     setNotesOpen(true);
-  }, [libraryOpen]);
+  }, []);
   const closeNotes = useCallback(() => {
     setNotesOpen(false);
-    if (notesRailRestore.current !== null) setLibraryOpen(notesRailRestore.current);
-    notesRailRestore.current = null;
     requestAnimationFrame(focusReaderPane);
   }, []);
   const [toolbarPinned, setToolbarPinned] = useState(false);
@@ -211,7 +202,6 @@ export function App() {
         if (!nextLibrary.papers.some((paper) => paper.id === requested)) {
           selectedIdRef.current = null;
           setSelectedId(null);
-          setLibraryOpen(false);
           window.history.replaceState(null, "", "#home");
           setError("This paper is no longer in the library.");
           return;
@@ -235,38 +225,32 @@ export function App() {
 
   useEffect(() => {
     const onFunctionKey = (event: KeyboardEvent): void => {
-      if (event.defaultPrevented) return;
+      if (event.defaultPrevented || document.querySelector(".import-pdf-dialog") !== null) return;
       if (event.key.length === 1 && document.querySelector('.pdf-reader[data-link-hints="true"]') !== null) return;
       if (event.target instanceof Element && event.target.closest(".notes-panel") !== null) return;
       if (event.key === "F1") {
         event.preventDefault();
-        // F1 explicitly changes the rail preference instead of restoring it on exit.
         focusRestore.current = null;
-        notesRailRestore.current = null;
         setPanel(null);
-        setSwitcherOpen(false);
+        setSwitcherOpen((open) => !open);
         setCommandOpen(false);
         setQueueOpen(false);
-        setLibraryOpen((open) => !open);
       } else if (event.key === "F10") {
         event.preventDefault();
         setPanel(null);
         setCommandOpen(false);
         setQueueOpen(false);
-        if (compactLayout) setLibraryOpen(false);
         setSwitcherOpen((open) => !open);
       } else if (event.key === ":" && !isEditableTarget(event.target)) {
         event.preventDefault();
         setPanel(null);
         setSwitcherOpen(false);
         setQueueOpen(false);
-        if (compactLayout) setLibraryOpen(false);
         setCommandOpen(true);
       } else if (event.key === "Q" && !isEditableTarget(event.target)) {
         event.preventDefault();
         setSwitcherOpen(false);
         setCommandOpen(false);
-        if (compactLayout) setLibraryOpen(false);
         setFocusQueueFeedback(false);
         setQueueOpen((open) => !open);
         void refreshQueue();
@@ -274,7 +258,7 @@ export function App() {
     };
     window.addEventListener("keydown", onFunctionKey, true);
     return () => window.removeEventListener("keydown", onFunctionKey, true);
-  }, [compactLayout, refreshQueue]);
+  }, [refreshQueue]);
 
   useEffect(() => {
     if (!notesOpen) return;
@@ -282,16 +266,6 @@ export function App() {
     window.addEventListener("keydown", onPaneKey, true);
     return () => window.removeEventListener("keydown", onPaneKey, true);
   }, [notesOpen]);
-
-  useEffect(() => {
-    const query = window.matchMedia("(max-width: 1179px)");
-    const updateLayout = (event: MediaQueryListEvent | MediaQueryList): void => {
-      setCompactLayout(event.matches);
-      if (event.matches) setLibraryOpen(false);
-    };
-    query.addEventListener("change", updateLayout);
-    return () => query.removeEventListener("change", updateLayout);
-  }, []);
 
   const processing =
     (paperView !== null && PROCESSING_STATES.has(paperView.paper.status.state)) ||
@@ -324,7 +298,6 @@ export function App() {
     function navigateToPaper(id: string, updateHistory = true): void {
       if (id !== selectedIdRef.current && requestNotesClose(() => navigateToPaper(id, updateHistory))) return;
       if (id === selectedIdRef.current) {
-        setLibraryOpen(false);
         return;
       }
       if (updateHistory) window.history.pushState(null, "", `#paper=${encodeURIComponent(id)}`);
@@ -350,7 +323,6 @@ export function App() {
       setSelectedId(id);
       setPaperView(null);
       setError(null);
-      setLibraryOpen(false);
       void loadPaper(id).catch((reason: unknown) => {
         if (selectedIdRef.current === id) setError(reason instanceof Error ? reason.message : "Could not load paper");
       });
@@ -373,7 +345,6 @@ export function App() {
     setPanel(null);
     setClarifySeed("");
     setSourceQuestion(null);
-    setLibraryOpen(false);
     setSwitcherOpen(false);
     setCommandOpen(false);
     setQueueOpen(false);
@@ -454,16 +425,15 @@ export function App() {
     if (target === undefined) return;
     if (view === "overview") {
       const alreadyFocused = panel === "digest";
-      if (!alreadyFocused) focusRestore.current = { library: libraryOpen, scroll: mainStageRef.current?.scrollTop ?? 0 };
+      if (!alreadyFocused) focusRestore.current = { scroll: mainStageRef.current?.scrollTop ?? 0 };
       const count = paperMap?.layout.pages.length ?? Math.max(1, target.pages.end);
       setPageSnapshots(capturePages(sectionPages(target, count), alreadyFocused));
-      setLibraryOpen(false);
     }
     if (index !== undefined) setActiveSection(index);
     setMarkMode(false);
     setClarifySeed("");
     setPanel("digest");
-  }, [activeSection, libraryOpen, panel, paperMap, sections, view]);
+  }, [activeSection, panel, paperMap, sections, view]);
 
   const closeSection = useCallback((): void => {
     const target = sections[activeSection];
@@ -472,7 +442,6 @@ export function App() {
     setPanel(null);
     const restore = focusRestore.current;
     focusRestore.current = null;
-    if (restore !== null) setLibraryOpen(restore.library);
     window.requestAnimationFrame(() => {
       if (restore !== null && mainStageRef.current !== null) mainStageRef.current.scrollTop = restore.scroll;
       const button = Array.from(document.querySelectorAll<HTMLButtonElement>(".section-boxes button"))
@@ -495,7 +464,6 @@ export function App() {
 
   const openPage = useCallback((page: number): void => {
     focusRestore.current = null;
-    setLibraryOpen(false);
     setPdfPage(page);
     setPanel(null);
     setTextMode("pdf");
@@ -519,14 +487,12 @@ export function App() {
   const movePaper = useCallback(
     (delta: number): void => {
       if (library === null || selectedId === null) return;
-      const paperIds = sidebarPaperIds.length > 0
-        ? sidebarPaperIds
-        : library.papers.map((paper) => paper.id);
+      const paperIds = [...library.papers].sort((a, b) => a.metadata.title.localeCompare(b.metadata.title)).map((paper) => paper.id);
       const index = paperIds.indexOf(selectedId);
       const nextId = paperIds[Math.max(0, Math.min(paperIds.length - 1, index + delta))];
       if (nextId !== undefined && index >= 0) selectPaper(nextId);
     },
-    [library, selectPaper, selectedId, sidebarPaperIds],
+    [library, selectPaper, selectedId],
   );
 
   const previous = useCallback((): void => {
@@ -590,6 +556,16 @@ export function App() {
     void refreshQueue();
   }, [provider, refreshQueue, refreshingComponent, selectedId]);
 
+  const scan = useCallback((): void => {
+    setNotice("Scanning the local vault…");
+    void api
+      .scan()
+      .then(setLibrary)
+      .catch((reason: unknown) =>
+        setError(reason instanceof Error ? reason.message : "Vault scan failed"),
+      );
+  }, []);
+
   const executeCommand = useCallback((rawCommand: string): void => {
     const [name = "", argument, ...extra] = rawCommand.trim().toLocaleLowerCase().split(/\s+/u);
     setCommandOpen(false);
@@ -637,8 +613,14 @@ export function App() {
         setReferenceSeed(null);
         setToolsTab(name);
         break;
+      case "import":
+        setImportOpen(true);
+        break;
+      case "rescan":
+        scan();
+        break;
       case "library":
-        setLibraryOpen((open) => !open);
+        setSwitcherOpen((open) => !open);
         break;
       case "switch":
         setSwitcherOpen(true);
@@ -681,24 +663,22 @@ export function App() {
       default:
         setError(`Unknown command :${name}`);
     }
-  }, [analyze, openGlossary, openHome, provider, refreshComponent, refreshQueue, selectedId]);
+  }, [analyze, openGlossary, openHome, provider, refreshComponent, refreshQueue, scan, selectedId]);
 
   useTabPhase({
     nativeTab: home,
     // The switcher and the command menu read Tab themselves; everywhere else
     // Tab steps through the reading phases of the current paper.
-    overlayHandlesTab: home || switcherOpen || commandOpen || queueOpen || sourceQuestion !== null || experimentOpen || toolsTab !== null || paperView?.analysis == null || (panel === "digest" && view === "overview"),
+    overlayHandlesTab: home || importOpen || switcherOpen || commandOpen || queueOpen || sourceQuestion !== null || experimentOpen || toolsTab !== null || paperView?.analysis == null || (panel === "digest" && view === "overview"),
     onCycle: (delta) => {
       setQueueOpen(false);
-      if (compactLayout) setLibraryOpen(false);
       cycleView(delta);
     },
   });
 
   useGlobalKeys({
     enabled:
-      !home && panel === null && sourceQuestion === null && view !== "glossary" && view !== "sources" && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null &&
-      !(compactLayout && libraryOpen),
+      !home && panel === null && sourceQuestion === null && view !== "glossary" && view !== "sources" && !importOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null,
     activeIndex: activeSection,
     itemCount: sections.length,
     view,
@@ -717,7 +697,7 @@ export function App() {
       setTextMode("pdf");
       setView("text");
     },
-    onToggleLibrary: () => setLibraryOpen((open) => !open),
+    onOpenPicker: () => setSwitcherOpen((open) => !open),
     onToggleView: () => {
       if (view === "text" && textMode === "pdf") {
         setView("overview");
@@ -736,7 +716,6 @@ export function App() {
     },
     onToggleSpread: () => setPdfSpread((spread) => !spread),
     onEscape: () => {
-      setLibraryOpen(false);
       if (view !== "overview") setView("overview");
     },
     onPrevious: previous,
@@ -865,23 +844,12 @@ export function App() {
     [sections],
   );
 
-  const scan = useCallback((): void => {
-    setNotice("Scanning the local vault…");
-    void api
-      .scan()
-      .then(setLibrary)
-      .catch((reason: unknown) =>
-        setError(reason instanceof Error ? reason.message : "Vault scan failed"),
-      );
-  }, []);
-
   const importRemotePdf = useCallback(async (url: string): Promise<void> => {
     setError(null);
     setNotice("Importing remote PDF into the vault…");
     try {
       const imported = await api.importPdf(url);
       setLibrary(imported.library);
-      setLibraryQuery("");
       selectPaper(imported.paper.id);
       setTextMode("pdf");
       setView("text");
@@ -943,18 +911,10 @@ export function App() {
     ?? null;
   const sectionFocused = panel === "digest" && view === "overview" && selectedSection !== null && analysis !== null && currentPaper !== null;
   const readingPdf = !home && paperView !== null && (sectionFocused || (view === "text" && textMode === "pdf"));
-  useEffect(() => {
-    if (sectionFocused || focusRestore.current === null) return;
-    // Tabs, the article switcher, and other overlays can also leave the focused reader.
-    const restore = focusRestore.current;
-    focusRestore.current = null;
-    window.queueMicrotask(() => setLibraryOpen(readingPdf ? false : restore.library));
-  }, [readingPdf, sectionFocused]);
 
   useLayoutEffect(() => {
     if (!readingPdf) return;
-    // Apply defaults on reader entry, while allowing manual sidebar/zoom changes inside it.
-    setLibraryOpen(false);
+    // Start each reading context at its fitted size.
     setPdfZoom(1);
   }, [readingPdf, sectionFocused, selectedId]);
   const toolbarVisible = !readingPdf || toolbarPinned || toolbarPeek;
@@ -987,11 +947,12 @@ export function App() {
   }, [view, textMode, panel]);
   useEffect(() => {
     const onReaderKey = (event: KeyboardEvent) => {
+      if (document.querySelector(".import-pdf-dialog") !== null) return;
       if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
       const target = event.target instanceof Element ? event.target : null;
       if (target?.closest(".notes-panel") != null) return;
       if (document.querySelector('.pdf-reader[data-link-hints="true"]') !== null) return;
-      if (event.key === "/" && !isEditableTarget(event.target) && !home && !readingPdf && panel === null && !commandOpen && !switcherOpen && !queueOpen && !experimentOpen && toolsTab === null && !(compactLayout && libraryOpen) && target?.closest(".library-rail") == null) {
+      if (event.key === "/" && !isEditableTarget(event.target) && !home && !readingPdf && panel === null && !commandOpen && !switcherOpen && !queueOpen && !experimentOpen && toolsTab === null) {
         event.preventDefault(); event.stopImmediatePropagation(); pendingSourceSearch.current = true; setTextMode("pdf"); setView("text"); return;
       }
       if (!isEditableTarget(event.target) && event.key === "T" && readingPdf) {
@@ -1039,7 +1000,6 @@ export function App() {
         else if (notesOpen) close = () => { requestNotesClose(); };
         else if (sectionFocused) close = closeSection;
         else if (panel !== null) close = () => setPanel(null);
-        else if (libraryOpen) close = () => setLibraryOpen(false);
         else if (!home && analysis !== null && view !== "overview") close = () => setView("overview");
         else if (!home) close = () => openHome();
       }
@@ -1047,30 +1007,14 @@ export function App() {
     };
     window.addEventListener("keydown", onReaderKey, true);
     return () => window.removeEventListener("keydown", onReaderKey, true);
-  }, [analysis, closeSection, commandOpen, compactLayout, experimentOpen, home, libraryOpen, markMode, notesOpen, openHome, openNotes, panel,
+  }, [analysis, closeSection, commandOpen, experimentOpen, home, markMode, notesOpen, openHome, openNotes, panel,
     queueOpen, readingPdf, requestNotesClose, sectionFocused, selectedId, sourceQuestion, switcherOpen, toolsTab, view]);
 
   return (
-    <div className={`app-shell ${home ? "is-home" : ""} ${notesOpen ? "has-notes" : ""} ${readingPdf ? "is-reading" : ""} ${sectionFocused ? "has-section-focus" : ""} ${libraryOpen ? "has-library" : ""}`} style={{ "--topbar-height": `${topbarHeight}px` } as CSSProperties}>
+    <div className={`app-shell ${home ? "is-home" : ""} ${notesOpen ? "has-notes" : ""} ${readingPdf ? "is-reading" : ""} ${sectionFocused ? "has-section-focus" : ""}`} style={{ "--topbar-height": `${topbarHeight}px` } as CSSProperties}>
+      {importOpen && <ImportPdfDialog onClose={() => setImportOpen(false)} onImport={importRemotePdf} />}
       {readingPdf && <button className="reader-reveal" type="button" aria-label="Show reader controls (T)" onFocus={() => setToolbarPeek(true)} onClick={() => { setToolbarPinned((value) => !value); setToolbarPeek(false); }} />}
-      <LibraryRail
-        open={libraryOpen}
-        keyboardMode={(compactLayout || home) && libraryOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && panel === null && sourceQuestion === null}
-        name={library?.name ?? "Articles"}
-        papers={library?.papers ?? []}
-        selectedId={selectedId}
-        query={libraryQuery}
-        searchRef={searchRef}
-        onQuery={setLibraryQuery}
-        onSelect={selectPaper}
-        onClose={() => setLibraryOpen(false)}
-        onScan={scan}
-        onHome={() => openHome()}
-        onImport={importRemotePdf}
-        onVisiblePapersChange={setSidebarPaperIds}
-      />
-
-      <div className={`workspace ${libraryOpen ? "rail-visible" : ""}`}>
+      <div className="workspace">
         <header className="topbar" ref={topbarRef} hidden={!toolbarVisible}
           onFocusCapture={() => setToolbarPeek(true)} onBlurCapture={(event) => {
             const next = event.relatedTarget;
@@ -1078,9 +1022,9 @@ export function App() {
           }}>
           <nav className="workspace-navigation" aria-label="Library navigation">
             <button type="button" aria-label="Lysilogy home" title="Home" onClick={() => openHome()}>⌂</button>
-            <button type="button" aria-label="Toggle library (F1)" title="Library (F1)" onClick={() => setLibraryOpen((value) => !value)}>☰</button>
+            <button type="button" aria-label="Find a paper (F1)" title="Find a paper (F1 / F10)" onClick={() => setSwitcherOpen(true)}>⌕</button>
           </nav>
-          {home ? <span aria-hidden="true" /> : <div className="view-switch" role="group" aria-label="Reader view">
+          {home ? <span className="home-topbar-label">{library?.name ?? "Library"}</span> : <div className="view-switch" role="group" aria-label="Reader view">
             {analysis === null ? <>
               <button type="button" className={textMode === "pdf" ? "is-active" : ""} onClick={() => setTextMode("pdf")}>PDF</button>
               <button type="button" className={textMode === "markdown" ? "is-active" : ""} onClick={() => setTextMode("markdown")}>Text</button>
@@ -1182,8 +1126,8 @@ export function App() {
           {!loading && home && <HomePage papers={library?.papers ?? []}
             darkInk={darkInk} onToggleInk={() => setDarkInk((value) => !value)}
             query={homeQuery} onQuery={setHomeQuery} onSelect={selectPaper} activeId={homeActiveId} onActive={setHomeActiveId}
-            keyboardEnabled={!libraryOpen && !switcherOpen && !commandOpen && !queueOpen && panel === null && !experimentOpen && toolsTab === null}
-            onImport={() => setLibraryOpen(true)} onUpload={uploadPdf} directories={library?.directories ?? []}
+            keyboardEnabled={!importOpen && !switcherOpen && !commandOpen && !queueOpen && panel === null && !experimentOpen && toolsTab === null}
+            onImport={() => setImportOpen(true)} onUpload={uploadPdf} directories={library?.directories ?? []}
             onAddDirectory={addLibraryDirectory} onRemoveDirectory={removeLibraryDirectory} />}
           {!loading && !home && paperView === null && <div className="center-state"><span className="loader large" /><p>Opening paper…</p></div>}
           {!home && currentPaper !== null && paperView !== null && (
@@ -1254,7 +1198,7 @@ export function App() {
                       zoom={pdfZoom}
                       darkInk={darkInk}
                       spread={pdfSpread}
-                      keyboardEnabled={panel === null && sourceQuestion === null && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && !(compactLayout && libraryOpen)}
+                      keyboardEnabled={panel === null && sourceQuestion === null && !importOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null}
                       onZoom={(delta) => setPdfZoom((value) => Math.max(.5, Math.min(2.5, value + delta)))}
                       onPage={setPdfPage}
                       onPageCount={setPdfPages}
@@ -1281,7 +1225,7 @@ export function App() {
         <SectionFocus key={`${currentPaper.id}:${selectedSection.id}`} url={api.source(currentPaper.id)} title={currentPaper.metadata.title}
           toolbarVisible={toolbarVisible}
           analysis={analysis} section={selectedSection} index={activeSection} paperMap={paperMap} darkInk={darkInk}
-          keyboardEnabled={!switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && sourceQuestion === null}
+          keyboardEnabled={!importOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && sourceQuestion === null}
           snapshots={pageSnapshots} onToggleInk={() => setDarkInk((value) => !value)} onSection={openSection} onClose={closeSection}
           onFullPaper={openPage} onClarify={clarifySentence}
           onSaveReference={(text, page) => { setReferenceSeed({ text, page }); setToolsTab("references"); }}

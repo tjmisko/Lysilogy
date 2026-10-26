@@ -173,7 +173,7 @@ try {
   await page.locator('.pdf-reader').waitFor();
   await page.waitForFunction(()=>document.querySelector('.pdf-canvas')?.dataset.rendered==='true');
   const expectReaderDefaults=async()=>{
-    assert.equal(await page.locator('.app-shell.has-library').count(),0,'PDF entry keeps the library closed');
+    assert.equal(await page.locator('.library-rail').count(),0,'the sidebar is removed');
     assert.equal(await page.locator('.pdf-reader').getAttribute('data-fit'),'height');
     await page.waitForFunction(()=>{
       const canvas=document.querySelector('.pdf-canvas');
@@ -184,7 +184,7 @@ try {
   await expectReaderDefaults();
   await checkPdfFits(page);
   await page.keyboard.press('F1');
-  await page.locator('.app-shell.has-library').waitFor();
+  await page.locator('.paper-switcher').waitFor();
   await page.keyboard.press('F1');
   await page.setViewportSize({width:900,height:800});
   await page.setViewportSize({width:1280,height:800});
@@ -300,7 +300,8 @@ try {
   await page.keyboard.press('H');
   await page.getByRole('button',{name:'Overview',exact:true}).click();
   await page.keyboard.press('F1');
-  await page.locator('.app-shell.has-library').waitFor();
+  await page.locator('.paper-switcher').waitFor();
+  await page.keyboard.press('Escape');
   await page.locator('.section-boxes button[data-section-id="regressional"]').first().click();
   await page.locator('.section-focus').waitFor();
   await expectReaderDefaults();
