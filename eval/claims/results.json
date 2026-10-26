@@ -1,0 +1,4715 @@
+{
+  "ablation_definitions": {
+    "duplicate_collapsing": "every OpenAlex record of a paper is kept instead of merging duplicates",
+    "identifier_checks": "an identifier's record verifies whatever its year and authors (title must still agree)",
+    "split_title_retry": "no retry of an empty title search on the two halves of the title",
+    "surname_check": "author surnames are never compared in decide_claim",
+    "year_window": "years must be equal instead of within one (every year comparison in decide_claim)"
+  },
+  "method": "offline replay of recorded provider responses; graph and response cache emptied before every claim, so the local-match shortcut finds nothing and provider_calls_per_claim is a cold-cache count; wilson95 is the 95% Wilson score interval; rule_of_three_upper is the 95% upper bound on a rate seen zero times",
+  "notes": [
+    "E1 is partial (status.complete is false): its numbers are informational and the E1 pass-bar lines are not_evaluable until the set is recorded.",
+    "E2 has no verifier verdicts yet because eval/claims/e2/responses.json does not exist (OpenAlex free budget exhausted); labels are reconciled and spot_check.json is written, and the E2 metrics, per-model breakdown and ablations appear here once responses.json exists and this example is rerun.",
+    "No E2 claim is labelled does_not_exist, so the E2 false-accept bar is vacuous; exists_wrong_details claims (conflations, wrong authors or identifiers) are reported separately as accepted to the right Work, the wrong Work, or not accepted.",
+    "Claims whose replay needs a response the recording lacks (it was recorded with other Works in the graph, so the local-match shortcut answered) are excluded as unreplayable and listed; ablation deltas compare only claims replayable in both arms.",
+    "Empty-graph scores differ from the committed README baseline (recorded with an accumulating graph), by design.",
+    "default_repeat_changed_outcomes lists claims whose outcome changed between two identical default runs (nondeterminism)."
+  ],
+  "pass_bar": [
+    {
+      "note": "the set was not scored",
+      "observed": null,
+      "requirement": "0 false accepts on E2",
+      "status": "not_evaluable"
+    },
+    {
+      "note": "the set is partial; this is the count so far, not a result",
+      "observed": {
+        "k": 0,
+        "n": 6,
+        "rate": 0.0,
+        "rule_of_three_upper": 0.5,
+        "wilson95": [
+          0.0,
+          0.390343
+        ]
+      },
+      "requirement": "0 false accepts on E1",
+      "status": "not_evaluable"
+    },
+    {
+      "note": "the set was not scored",
+      "observed": null,
+      "requirement": "E2 real recall >= 85%",
+      "status": "not_evaluable"
+    },
+    {
+      "note": "the set is partial; this is the rate so far, not a result",
+      "observed": {
+        "k": 46,
+        "n": 47,
+        "rate": 0.978723,
+        "rule_of_three_upper": null,
+        "wilson95": [
+          0.888868,
+          0.996234
+        ]
+      },
+      "requirement": "E1 real recall >= 90%",
+      "status": "not_evaluable"
+    }
+  ],
+  "sets": {
+    "e1": {
+      "complete": false,
+      "headline": "PARTIAL: informational only, not a result",
+      "scored": {
+        "ablations": {
+          "duplicate_collapsing": {
+            "changed_outcomes": [],
+            "claims_compared": 53,
+            "default_metrics_on_compared_claims": {
+              "ambiguity_burden": {
+                "k": 2,
+                "n": 53,
+                "rate": 0.037736,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.01041,
+                  0.127545
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 0,
+                "n": 47,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.06383,
+                "wilson95": [
+                  0.0,
+                  0.07556
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 6,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.5,
+                "wilson95": [
+                  0.0,
+                  0.390343
+                ]
+              },
+              "n": 53,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 2,
+                "contradicted": 3,
+                "unverified": 2,
+                "verified": 46
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 53,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.056604,
+                "wilson95": [
+                  0.0,
+                  0.067584
+                ]
+              },
+              "provider_calls_per_claim": 2.0,
+              "real_recall": {
+                "k": 46,
+                "n": 47,
+                "rate": 0.978723,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.888868,
+                  0.996234
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 46,
+                "n": 47,
+                "rate": 0.978723,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.888868,
+                  0.996234
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 0.169811,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 0,
+                "n": 47,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.06383,
+                "wilson95": [
+                  0.0,
+                  0.07556
+                ]
+              }
+            },
+            "delta_vs_default": {
+              "ambiguous": 0,
+              "exists_wrong_details_accepted": 0,
+              "false_accepts": 0,
+              "near_miss_correct": 0,
+              "pending": 0,
+              "provider_calls": 0,
+              "real_correct": 0,
+              "real_recall_rate": 0.0,
+              "title_searches": 0,
+              "wrong_work": 0
+            },
+            "metrics": {
+              "ambiguity_burden": {
+                "k": 2,
+                "n": 53,
+                "rate": 0.037736,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.01041,
+                  0.127545
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 0,
+                "n": 47,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.06383,
+                "wilson95": [
+                  0.0,
+                  0.07556
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 6,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.5,
+                "wilson95": [
+                  0.0,
+                  0.390343
+                ]
+              },
+              "n": 53,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 2,
+                "contradicted": 3,
+                "unverified": 2,
+                "verified": 46
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 53,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.056604,
+                "wilson95": [
+                  0.0,
+                  0.067584
+                ]
+              },
+              "provider_calls_per_claim": 2.0,
+              "real_recall": {
+                "k": 46,
+                "n": 47,
+                "rate": 0.978723,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.888868,
+                  0.996234
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 46,
+                "n": 47,
+                "rate": 0.978723,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.888868,
+                  0.996234
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 0.169811,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 0,
+                "n": 47,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.06383,
+                "wilson95": [
+                  0.0,
+                  0.07556
+                ]
+              }
+            },
+            "unreplayable_in_either_arm": 0
+          },
+          "identifier_checks": {
+            "changed_outcomes": [],
+            "claims_compared": 52,
+            "default_metrics_on_compared_claims": {
+              "ambiguity_burden": {
+                "k": 2,
+                "n": 52,
+                "rate": 0.038462,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.010611,
+                  0.129814
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 0,
+                "n": 46,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.065217,
+                "wilson95": [
+                  0.0,
+                  0.077076
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 6,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.5,
+                "wilson95": [
+                  0.0,
+                  0.390343
+                ]
+              },
+              "n": 52,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 2,
+                "contradicted": 2,
+                "unverified": 2,
+                "verified": 46
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 52,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.057692,
+                "wilson95": [
+                  0.0,
+                  0.068795
+                ]
+              },
+              "provider_calls_per_claim": 2.0,
+              "real_recall": {
+                "k": 46,
+                "n": 46,
+                "rate": 1.0,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.922924,
+                  1.0
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 46,
+                "n": 46,
+                "rate": 1.0,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.922924,
+                  1.0
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 0.153846,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 0,
+                "n": 46,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.065217,
+                "wilson95": [
+                  0.0,
+                  0.077076
+                ]
+              }
+            },
+            "delta_vs_default": {
+              "ambiguous": 0,
+              "exists_wrong_details_accepted": 0,
+              "false_accepts": 0,
+              "near_miss_correct": 0,
+              "pending": 0,
+              "provider_calls": 0,
+              "real_correct": 0,
+              "real_recall_rate": 0.0,
+              "title_searches": 0,
+              "wrong_work": 0
+            },
+            "metrics": {
+              "ambiguity_burden": {
+                "k": 2,
+                "n": 52,
+                "rate": 0.038462,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.010611,
+                  0.129814
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 0,
+                "n": 46,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.065217,
+                "wilson95": [
+                  0.0,
+                  0.077076
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 6,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.5,
+                "wilson95": [
+                  0.0,
+                  0.390343
+                ]
+              },
+              "n": 52,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 2,
+                "contradicted": 2,
+                "unverified": 2,
+                "verified": 46
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 52,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.057692,
+                "wilson95": [
+                  0.0,
+                  0.068795
+                ]
+              },
+              "provider_calls_per_claim": 2.0,
+              "real_recall": {
+                "k": 46,
+                "n": 46,
+                "rate": 1.0,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.922924,
+                  1.0
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 46,
+                "n": 46,
+                "rate": 1.0,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.922924,
+                  1.0
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 0.153846,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 0,
+                "n": 46,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.065217,
+                "wilson95": [
+                  0.0,
+                  0.077076
+                ]
+              }
+            },
+            "unreplayable_in_either_arm": 1
+          },
+          "split_title_retry": {
+            "changed_outcomes": [],
+            "claims_compared": 53,
+            "default_metrics_on_compared_claims": {
+              "ambiguity_burden": {
+                "k": 2,
+                "n": 53,
+                "rate": 0.037736,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.01041,
+                  0.127545
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 0,
+                "n": 47,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.06383,
+                "wilson95": [
+                  0.0,
+                  0.07556
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 6,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.5,
+                "wilson95": [
+                  0.0,
+                  0.390343
+                ]
+              },
+              "n": 53,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 2,
+                "contradicted": 3,
+                "unverified": 2,
+                "verified": 46
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 53,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.056604,
+                "wilson95": [
+                  0.0,
+                  0.067584
+                ]
+              },
+              "provider_calls_per_claim": 2.0,
+              "real_recall": {
+                "k": 46,
+                "n": 47,
+                "rate": 0.978723,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.888868,
+                  0.996234
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 46,
+                "n": 47,
+                "rate": 0.978723,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.888868,
+                  0.996234
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 0.169811,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 0,
+                "n": 47,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.06383,
+                "wilson95": [
+                  0.0,
+                  0.07556
+                ]
+              }
+            },
+            "delta_vs_default": {
+              "ambiguous": 0,
+              "exists_wrong_details_accepted": 0,
+              "false_accepts": 0,
+              "near_miss_correct": 0,
+              "pending": 0,
+              "provider_calls": 0,
+              "real_correct": 0,
+              "real_recall_rate": 0.0,
+              "title_searches": 0,
+              "wrong_work": 0
+            },
+            "metrics": {
+              "ambiguity_burden": {
+                "k": 2,
+                "n": 53,
+                "rate": 0.037736,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.01041,
+                  0.127545
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 0,
+                "n": 47,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.06383,
+                "wilson95": [
+                  0.0,
+                  0.07556
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 6,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.5,
+                "wilson95": [
+                  0.0,
+                  0.390343
+                ]
+              },
+              "n": 53,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 2,
+                "contradicted": 3,
+                "unverified": 2,
+                "verified": 46
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 53,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.056604,
+                "wilson95": [
+                  0.0,
+                  0.067584
+                ]
+              },
+              "provider_calls_per_claim": 2.0,
+              "real_recall": {
+                "k": 46,
+                "n": 47,
+                "rate": 0.978723,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.888868,
+                  0.996234
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 46,
+                "n": 47,
+                "rate": 0.978723,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.888868,
+                  0.996234
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 0.169811,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 0,
+                "n": 47,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.06383,
+                "wilson95": [
+                  0.0,
+                  0.07556
+                ]
+              }
+            },
+            "unreplayable_in_either_arm": 0
+          },
+          "surname_check": {
+            "changed_outcomes": [
+              {
+                "ablated": "verified W2125750403",
+                "class": "MustNot",
+                "default": "unverified",
+                "id": "e1-fake-authors-swapped-000"
+              },
+              {
+                "ablated": "verified W2896252141",
+                "class": "MustNot",
+                "default": "unverified",
+                "id": "e1-fake-authors-swapped-001"
+              }
+            ],
+            "claims_compared": 52,
+            "default_metrics_on_compared_claims": {
+              "ambiguity_burden": {
+                "k": 2,
+                "n": 52,
+                "rate": 0.038462,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.010611,
+                  0.129814
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 0,
+                "n": 46,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.065217,
+                "wilson95": [
+                  0.0,
+                  0.077076
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 6,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.5,
+                "wilson95": [
+                  0.0,
+                  0.390343
+                ]
+              },
+              "n": 52,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 2,
+                "contradicted": 2,
+                "unverified": 2,
+                "verified": 46
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 52,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.057692,
+                "wilson95": [
+                  0.0,
+                  0.068795
+                ]
+              },
+              "provider_calls_per_claim": 2.0,
+              "real_recall": {
+                "k": 46,
+                "n": 46,
+                "rate": 1.0,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.922924,
+                  1.0
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 46,
+                "n": 46,
+                "rate": 1.0,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.922924,
+                  1.0
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 0.153846,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 0,
+                "n": 46,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.065217,
+                "wilson95": [
+                  0.0,
+                  0.077076
+                ]
+              }
+            },
+            "delta_vs_default": {
+              "ambiguous": 0,
+              "exists_wrong_details_accepted": 0,
+              "false_accepts": 2,
+              "near_miss_correct": 0,
+              "pending": 0,
+              "provider_calls": 2,
+              "real_correct": 0,
+              "real_recall_rate": 0.0,
+              "title_searches": 0,
+              "wrong_work": 0
+            },
+            "metrics": {
+              "ambiguity_burden": {
+                "k": 2,
+                "n": 52,
+                "rate": 0.038462,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.010611,
+                  0.129814
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 0,
+                "n": 46,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.065217,
+                "wilson95": [
+                  0.0,
+                  0.077076
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 2,
+                "n": 6,
+                "rate": 0.333333,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.096769,
+                  0.700012
+                ]
+              },
+              "n": 52,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 2,
+                "contradicted": 2,
+                "verified": 48
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 52,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.057692,
+                "wilson95": [
+                  0.0,
+                  0.068795
+                ]
+              },
+              "provider_calls_per_claim": 2.038462,
+              "real_recall": {
+                "k": 46,
+                "n": 46,
+                "rate": 1.0,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.922924,
+                  1.0
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 46,
+                "n": 46,
+                "rate": 1.0,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.922924,
+                  1.0
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 0.153846,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 0,
+                "n": 46,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.065217,
+                "wilson95": [
+                  0.0,
+                  0.077076
+                ]
+              }
+            },
+            "unreplayable_in_either_arm": 1
+          },
+          "year_window": {
+            "changed_outcomes": [],
+            "claims_compared": 53,
+            "default_metrics_on_compared_claims": {
+              "ambiguity_burden": {
+                "k": 2,
+                "n": 53,
+                "rate": 0.037736,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.01041,
+                  0.127545
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 0,
+                "n": 47,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.06383,
+                "wilson95": [
+                  0.0,
+                  0.07556
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 6,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.5,
+                "wilson95": [
+                  0.0,
+                  0.390343
+                ]
+              },
+              "n": 53,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 2,
+                "contradicted": 3,
+                "unverified": 2,
+                "verified": 46
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 53,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.056604,
+                "wilson95": [
+                  0.0,
+                  0.067584
+                ]
+              },
+              "provider_calls_per_claim": 2.0,
+              "real_recall": {
+                "k": 46,
+                "n": 47,
+                "rate": 0.978723,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.888868,
+                  0.996234
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 46,
+                "n": 47,
+                "rate": 0.978723,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.888868,
+                  0.996234
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 0.169811,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 0,
+                "n": 47,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.06383,
+                "wilson95": [
+                  0.0,
+                  0.07556
+                ]
+              }
+            },
+            "delta_vs_default": {
+              "ambiguous": 0,
+              "exists_wrong_details_accepted": 0,
+              "false_accepts": 0,
+              "near_miss_correct": 0,
+              "pending": 0,
+              "provider_calls": 0,
+              "real_correct": 0,
+              "real_recall_rate": 0.0,
+              "title_searches": 0,
+              "wrong_work": 0
+            },
+            "metrics": {
+              "ambiguity_burden": {
+                "k": 2,
+                "n": 53,
+                "rate": 0.037736,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.01041,
+                  0.127545
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 0,
+                "n": 47,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.06383,
+                "wilson95": [
+                  0.0,
+                  0.07556
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 6,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.5,
+                "wilson95": [
+                  0.0,
+                  0.390343
+                ]
+              },
+              "n": 53,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 2,
+                "contradicted": 3,
+                "unverified": 2,
+                "verified": 46
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 53,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.056604,
+                "wilson95": [
+                  0.0,
+                  0.067584
+                ]
+              },
+              "provider_calls_per_claim": 2.0,
+              "real_recall": {
+                "k": 46,
+                "n": 47,
+                "rate": 0.978723,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.888868,
+                  0.996234
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 46,
+                "n": 47,
+                "rate": 0.978723,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.888868,
+                  0.996234
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 0.169811,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 0,
+                "n": 47,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.06383,
+                "wilson95": [
+                  0.0,
+                  0.07556
+                ]
+              }
+            },
+            "unreplayable_in_either_arm": 0
+          }
+        },
+        "by_group": {
+          "authors_swapped": {
+            "ambiguity_burden": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "n": 2,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "unverified": 2
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "provider_calls_per_claim": 1.0,
+            "real_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 1.0,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            }
+          },
+          "doi": {
+            "ambiguity_burden": {
+              "k": 0,
+              "n": 45,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.066667,
+              "wilson95": [
+                0.0,
+                0.078654
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 0,
+              "n": 45,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.066667,
+              "wilson95": [
+                0.0,
+                0.078654
+              ]
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "n": 45,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "contradicted": 1,
+              "verified": 44
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 45,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.066667,
+              "wilson95": [
+                0.0,
+                0.078654
+              ]
+            },
+            "provider_calls_per_claim": 2.0,
+            "real_recall": {
+              "k": 44,
+              "n": 45,
+              "rate": 0.977778,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.884331,
+                0.996067
+              ]
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 44,
+              "n": 45,
+              "rate": 0.977778,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.884331,
+                0.996067
+              ]
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 0.022222,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 45,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.066667,
+              "wilson95": [
+                0.0,
+                0.078654
+              ]
+            }
+          },
+          "fabricated_doi": {
+            "ambiguity_burden": {
+              "k": 2,
+              "n": 2,
+              "rate": 1.0,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.342372,
+                1.0
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "n": 2,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "ambiguous": 2
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "provider_calls_per_claim": 3.0,
+            "real_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 1.0,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            }
+          },
+          "real_doi_wrong_title": {
+            "ambiguity_burden": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "n": 2,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "contradicted": 2
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "provider_calls_per_claim": 2.0,
+            "real_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 1.0,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            }
+          },
+          "title": {
+            "ambiguity_burden": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "n": 2,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "verified": 2
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "provider_calls_per_claim": 2.0,
+            "real_recall": {
+              "k": 2,
+              "n": 2,
+              "rate": 1.0,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.342372,
+                1.0
+              ]
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 2,
+              "n": 2,
+              "rate": 1.0,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.342372,
+                1.0
+              ]
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 1.0,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            }
+          }
+        },
+        "default_repeat_changed_outcomes": [],
+        "excluded": {
+          "n": 0,
+          "outcomes": {}
+        },
+        "metrics": {
+          "ambiguity_burden": {
+            "k": 2,
+            "n": 53,
+            "rate": 0.037736,
+            "rule_of_three_upper": null,
+            "wilson95": [
+              0.01041,
+              0.127545
+            ]
+          },
+          "ambiguity_burden_among_real_claims": {
+            "k": 0,
+            "n": 47,
+            "rate": 0.0,
+            "rule_of_three_upper": 0.06383,
+            "wilson95": [
+              0.0,
+              0.07556
+            ]
+          },
+          "exists_wrong_details_accepted_to_right_work": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "rule_of_three_upper": null,
+            "wilson95": null
+          },
+          "exists_wrong_details_accepted_to_wrong_work": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "rule_of_three_upper": null,
+            "wilson95": null
+          },
+          "exists_wrong_details_unadjudicated": 0,
+          "false_accept": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "rule_of_three_upper": 0.5,
+            "wilson95": [
+              0.0,
+              0.390343
+            ]
+          },
+          "n": 53,
+          "near_miss_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "rule_of_three_upper": null,
+            "wilson95": null
+          },
+          "outcomes": {
+            "ambiguous": 2,
+            "contradicted": 3,
+            "unverified": 2,
+            "verified": 46
+          },
+          "pending_rate": {
+            "k": 0,
+            "n": 53,
+            "rate": 0.0,
+            "rule_of_three_upper": 0.056604,
+            "wilson95": [
+              0.0,
+              0.067584
+            ]
+          },
+          "provider_calls_per_claim": 2.0,
+          "real_recall": {
+            "k": 46,
+            "n": 47,
+            "rate": 0.978723,
+            "rule_of_three_upper": null,
+            "wilson95": [
+              0.888868,
+              0.996234
+            ]
+          },
+          "real_recall_counting_unadjudicated_as_correct": {
+            "k": 46,
+            "n": 47,
+            "rate": 0.978723,
+            "rule_of_three_upper": null,
+            "wilson95": [
+              0.888868,
+              0.996234
+            ]
+          },
+          "real_unadjudicated": 0,
+          "title_searches_per_claim": 0.169811,
+          "unreplayable_excluded": 0,
+          "wrong_work": {
+            "k": 0,
+            "n": 47,
+            "rate": 0.0,
+            "rule_of_three_upper": 0.06383,
+            "wilson95": [
+              0.0,
+              0.07556
+            ]
+          }
+        },
+        "unrecorded_urls": [],
+        "unreplayable_claims": []
+      },
+      "status": {
+        "complete": false,
+        "planned": 350,
+        "recorded": 53
+      }
+    },
+    "e2": {
+      "agreed": 270,
+      "blocked_reason": "eval/claims/e2/responses.json does not exist: the E2 provider responses could not be recorded because the OpenAlex free daily budget was exhausted. Run `cargo run --example e2_verify -- --dir eval/claims/e2` once the budget resets or with LYSILOGY_OPENALEX_API_KEY set, then rerun this example.",
+      "claims": 272,
+      "claims_by_model_and_class": {
+        "deepseek:Excluded": 1,
+        "deepseek:Flawed": 12,
+        "deepseek:Real": 108,
+        "fable:Excluded": 1,
+        "fable:Flawed": 2,
+        "fable:Real": 148
+      },
+      "spot_check": 2,
+      "status": "blocked",
+      "unlabelled": 0
+    },
+    "e3": {
+      "complete": true,
+      "headline": "final",
+      "scored": {
+        "ablations": {
+          "duplicate_collapsing": {
+            "changed_outcomes": [
+              {
+                "ablated": "ambiguous",
+                "class": "Real",
+                "default": "verified W2919115771",
+                "id": "e3-same-title-03"
+              },
+              {
+                "ablated": "ambiguous",
+                "class": "Real",
+                "default": "verified W2194775991",
+                "id": "e3-preprint-02"
+              },
+              {
+                "ablated": "ambiguous",
+                "class": "Real",
+                "default": "verified W4238404964",
+                "id": "e3-chapter-00"
+              },
+              {
+                "ablated": "ambiguous",
+                "class": "Real",
+                "default": "verified W2159136592",
+                "id": "e3-nonascii-00"
+              },
+              {
+                "ablated": "ambiguous",
+                "class": "Real",
+                "default": "verified W2159136592",
+                "id": "e3-nonascii-01"
+              },
+              {
+                "ablated": "ambiguous",
+                "class": "Real",
+                "default": "verified W2194775991",
+                "id": "e3-venue-00"
+              },
+              {
+                "ablated": "ambiguous",
+                "class": "Real",
+                "default": "verified W2041404167",
+                "id": "e3-old-00"
+              },
+              {
+                "ablated": "ambiguous",
+                "class": "Real",
+                "default": "verified W2097679827",
+                "id": "e3-retracted-01"
+              }
+            ],
+            "claims_compared": 68,
+            "default_metrics_on_compared_claims": {
+              "ambiguity_burden": {
+                "k": 5,
+                "n": 68,
+                "rate": 0.073529,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.031814,
+                  0.160854
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 5,
+                "n": 56,
+                "rate": 0.089286,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.038742,
+                  0.192562
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 12,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.25,
+                "wilson95": [
+                  0.0,
+                  0.242501
+                ]
+              },
+              "n": 68,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 5,
+                "contradicted": 3,
+                "unverified": 20,
+                "verified": 40
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 68,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.044118,
+                "wilson95": [
+                  0.0,
+                  0.053473
+                ]
+              },
+              "provider_calls_per_claim": 2.029412,
+              "real_recall": {
+                "k": 38,
+                "n": 56,
+                "rate": 0.678571,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.548224,
+                  0.785992
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 38,
+                "n": 56,
+                "rate": 0.678571,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.548224,
+                  0.785992
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 1.279412,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 2,
+                "n": 56,
+                "rate": 0.035714,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.009849,
+                  0.12119
+                ]
+              }
+            },
+            "delta_vs_default": {
+              "ambiguous": 8,
+              "exists_wrong_details_accepted": 0,
+              "false_accepts": 0,
+              "near_miss_correct": 0,
+              "pending": 0,
+              "provider_calls": -8,
+              "real_correct": -7,
+              "real_recall_rate": -0.125,
+              "title_searches": 0,
+              "wrong_work": -1
+            },
+            "metrics": {
+              "ambiguity_burden": {
+                "k": 13,
+                "n": 68,
+                "rate": 0.191176,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.115272,
+                  0.300109
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 13,
+                "n": 56,
+                "rate": 0.232143,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.140992,
+                  0.357684
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 12,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.25,
+                "wilson95": [
+                  0.0,
+                  0.242501
+                ]
+              },
+              "n": 68,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 13,
+                "contradicted": 3,
+                "unverified": 20,
+                "verified": 32
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 68,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.044118,
+                "wilson95": [
+                  0.0,
+                  0.053473
+                ]
+              },
+              "provider_calls_per_claim": 1.911765,
+              "real_recall": {
+                "k": 31,
+                "n": 56,
+                "rate": 0.553571,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.42413,
+                  0.676135
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 31,
+                "n": 56,
+                "rate": 0.553571,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.42413,
+                  0.676135
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 1.279412,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 1,
+                "n": 56,
+                "rate": 0.017857,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.003159,
+                  0.094459
+                ]
+              }
+            },
+            "unreplayable_in_either_arm": 2
+          },
+          "identifier_checks": {
+            "changed_outcomes": [],
+            "claims_compared": 66,
+            "default_metrics_on_compared_claims": {
+              "ambiguity_burden": {
+                "k": 5,
+                "n": 66,
+                "rate": 0.075758,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.032792,
+                  0.165394
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 5,
+                "n": 54,
+                "rate": 0.092593,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.040201,
+                  0.199101
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 12,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.25,
+                "wilson95": [
+                  0.0,
+                  0.242501
+                ]
+              },
+              "n": 66,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 5,
+                "contradicted": 1,
+                "unverified": 20,
+                "verified": 40
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 66,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.045455,
+                "wilson95": [
+                  0.0,
+                  0.055004
+                ]
+              },
+              "provider_calls_per_claim": 2.030303,
+              "real_recall": {
+                "k": 38,
+                "n": 54,
+                "rate": 0.703704,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.571722,
+                  0.808627
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 38,
+                "n": 54,
+                "rate": 0.703704,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.571722,
+                  0.808627
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 1.287879,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 2,
+                "n": 54,
+                "rate": 0.037037,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.010216,
+                  0.125354
+                ]
+              }
+            },
+            "delta_vs_default": {
+              "ambiguous": 0,
+              "exists_wrong_details_accepted": 0,
+              "false_accepts": 0,
+              "near_miss_correct": 0,
+              "pending": 0,
+              "provider_calls": 0,
+              "real_correct": 0,
+              "real_recall_rate": 0.0,
+              "title_searches": 0,
+              "wrong_work": 0
+            },
+            "metrics": {
+              "ambiguity_burden": {
+                "k": 5,
+                "n": 66,
+                "rate": 0.075758,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.032792,
+                  0.165394
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 5,
+                "n": 54,
+                "rate": 0.092593,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.040201,
+                  0.199101
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 12,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.25,
+                "wilson95": [
+                  0.0,
+                  0.242501
+                ]
+              },
+              "n": 66,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 5,
+                "contradicted": 1,
+                "unverified": 20,
+                "verified": 40
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 66,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.045455,
+                "wilson95": [
+                  0.0,
+                  0.055004
+                ]
+              },
+              "provider_calls_per_claim": 2.030303,
+              "real_recall": {
+                "k": 38,
+                "n": 54,
+                "rate": 0.703704,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.571722,
+                  0.808627
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 38,
+                "n": 54,
+                "rate": 0.703704,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.571722,
+                  0.808627
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 1.287879,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 2,
+                "n": 54,
+                "rate": 0.037037,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.010216,
+                  0.125354
+                ]
+              }
+            },
+            "unreplayable_in_either_arm": 4
+          },
+          "split_title_retry": {
+            "changed_outcomes": [
+              {
+                "ablated": "unverified",
+                "class": "Real",
+                "default": "verified W4256369010",
+                "id": "e3-nonascii-02"
+              },
+              {
+                "ablated": "unverified",
+                "class": "Real",
+                "default": "verified W4256369010",
+                "id": "e3-nonascii-03"
+              },
+              {
+                "ablated": "unverified",
+                "class": "Real",
+                "default": "verified W2753738274",
+                "id": "e3-math-00"
+              },
+              {
+                "ablated": "unverified",
+                "class": "Real",
+                "default": "verified W2048251016",
+                "id": "e3-old-06"
+              }
+            ],
+            "claims_compared": 68,
+            "default_metrics_on_compared_claims": {
+              "ambiguity_burden": {
+                "k": 5,
+                "n": 68,
+                "rate": 0.073529,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.031814,
+                  0.160854
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 5,
+                "n": 56,
+                "rate": 0.089286,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.038742,
+                  0.192562
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 12,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.25,
+                "wilson95": [
+                  0.0,
+                  0.242501
+                ]
+              },
+              "n": 68,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 5,
+                "contradicted": 3,
+                "unverified": 20,
+                "verified": 40
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 68,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.044118,
+                "wilson95": [
+                  0.0,
+                  0.053473
+                ]
+              },
+              "provider_calls_per_claim": 2.029412,
+              "real_recall": {
+                "k": 38,
+                "n": 56,
+                "rate": 0.678571,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.548224,
+                  0.785992
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 38,
+                "n": 56,
+                "rate": 0.678571,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.548224,
+                  0.785992
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 1.279412,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 2,
+                "n": 56,
+                "rate": 0.035714,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.009849,
+                  0.12119
+                ]
+              }
+            },
+            "delta_vs_default": {
+              "ambiguous": 0,
+              "exists_wrong_details_accepted": 0,
+              "false_accepts": 0,
+              "near_miss_correct": 0,
+              "pending": 0,
+              "provider_calls": -31,
+              "real_correct": -4,
+              "real_recall_rate": -0.071429,
+              "title_searches": -27,
+              "wrong_work": 0
+            },
+            "metrics": {
+              "ambiguity_burden": {
+                "k": 5,
+                "n": 68,
+                "rate": 0.073529,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.031814,
+                  0.160854
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 5,
+                "n": 56,
+                "rate": 0.089286,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.038742,
+                  0.192562
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 12,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.25,
+                "wilson95": [
+                  0.0,
+                  0.242501
+                ]
+              },
+              "n": 68,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 5,
+                "contradicted": 3,
+                "unverified": 24,
+                "verified": 36
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 68,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.044118,
+                "wilson95": [
+                  0.0,
+                  0.053473
+                ]
+              },
+              "provider_calls_per_claim": 1.573529,
+              "real_recall": {
+                "k": 34,
+                "n": 56,
+                "rate": 0.607143,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.476332,
+                  0.724198
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 34,
+                "n": 56,
+                "rate": 0.607143,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.476332,
+                  0.724198
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 0.882353,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 2,
+                "n": 56,
+                "rate": 0.035714,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.009849,
+                  0.12119
+                ]
+              }
+            },
+            "unreplayable_in_either_arm": 2
+          },
+          "surname_check": {
+            "changed_outcomes": [
+              {
+                "ablated": "ambiguous",
+                "class": "Real",
+                "default": "verified W4244888682",
+                "id": "e3-same-title-01"
+              },
+              {
+                "ablated": "ambiguous",
+                "class": "Real",
+                "default": "verified W2919115771",
+                "id": "e3-same-title-03"
+              },
+              {
+                "ablated": "ambiguous",
+                "class": "Real",
+                "default": "verified W1509562192",
+                "id": "e3-book-01"
+              },
+              {
+                "ablated": "verified W2194775991",
+                "class": "Real",
+                "default": "unverified",
+                "id": "e3-etal-00"
+              },
+              {
+                "ablated": "ambiguous",
+                "class": "Real",
+                "default": "verified W2126466006",
+                "id": "e3-old-04"
+              }
+            ],
+            "claims_compared": 63,
+            "default_metrics_on_compared_claims": {
+              "ambiguity_burden": {
+                "k": 4,
+                "n": 63,
+                "rate": 0.063492,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.024965,
+                  0.152194
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 4,
+                "n": 52,
+                "rate": 0.076923,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.030319,
+                  0.181738
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 11,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.272727,
+                "wilson95": [
+                  0.0,
+                  0.25884
+                ]
+              },
+              "n": 63,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 4,
+                "contradicted": 3,
+                "unverified": 16,
+                "verified": 40
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 63,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.047619,
+                "wilson95": [
+                  0.0,
+                  0.057473
+                ]
+              },
+              "provider_calls_per_claim": 2.111111,
+              "real_recall": {
+                "k": 38,
+                "n": 52,
+                "rate": 0.730769,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.597475,
+                  0.832312
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 38,
+                "n": 52,
+                "rate": 0.730769,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.597475,
+                  0.832312
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 1.301587,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 2,
+                "n": 52,
+                "rate": 0.038462,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.010611,
+                  0.129814
+                ]
+              }
+            },
+            "delta_vs_default": {
+              "ambiguous": 4,
+              "exists_wrong_details_accepted": 0,
+              "false_accepts": 0,
+              "near_miss_correct": 0,
+              "pending": 0,
+              "provider_calls": -3,
+              "real_correct": -1,
+              "real_recall_rate": -0.019231,
+              "title_searches": 0,
+              "wrong_work": -2
+            },
+            "metrics": {
+              "ambiguity_burden": {
+                "k": 8,
+                "n": 63,
+                "rate": 0.126984,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.065772,
+                  0.231073
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 8,
+                "n": 52,
+                "rate": 0.153846,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.080076,
+                  0.275243
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 11,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.272727,
+                "wilson95": [
+                  0.0,
+                  0.25884
+                ]
+              },
+              "n": 63,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 8,
+                "contradicted": 3,
+                "unverified": 15,
+                "verified": 37
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 63,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.047619,
+                "wilson95": [
+                  0.0,
+                  0.057473
+                ]
+              },
+              "provider_calls_per_claim": 2.063492,
+              "real_recall": {
+                "k": 37,
+                "n": 52,
+                "rate": 0.711538,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.57727,
+                  0.816702
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 37,
+                "n": 52,
+                "rate": 0.711538,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.57727,
+                  0.816702
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 1.301587,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 0,
+                "n": 52,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.057692,
+                "wilson95": [
+                  0.0,
+                  0.068795
+                ]
+              }
+            },
+            "unreplayable_in_either_arm": 7
+          },
+          "year_window": {
+            "changed_outcomes": [
+              {
+                "ablated": "verified W2919115771",
+                "class": "Real",
+                "default": "ambiguous",
+                "id": "e3-same-title-00"
+              },
+              {
+                "ablated": "unverified",
+                "class": "Real",
+                "default": "verified W2919115771",
+                "id": "e3-same-title-03"
+              },
+              {
+                "ablated": "unverified",
+                "class": "Real",
+                "default": "verified W4388152645",
+                "id": "e3-same-title-04"
+              },
+              {
+                "ablated": "unverified",
+                "class": "Real",
+                "default": "verified W2963341956",
+                "id": "e3-preprint-00"
+              },
+              {
+                "ablated": "unverified",
+                "class": "Real",
+                "default": "verified W2194775991",
+                "id": "e3-preprint-02"
+              },
+              {
+                "ablated": "unverified",
+                "class": "Real",
+                "default": "verified W2950220847",
+                "id": "e3-preprint-06"
+              },
+              {
+                "ablated": "verified W2919115771",
+                "class": "Real",
+                "default": "ambiguous",
+                "id": "e3-venue-01"
+              },
+              {
+                "ablated": "unverified",
+                "class": "Real",
+                "default": "verified W2126160338",
+                "id": "e3-old-01"
+              }
+            ],
+            "claims_compared": 67,
+            "default_metrics_on_compared_claims": {
+              "ambiguity_burden": {
+                "k": 4,
+                "n": 67,
+                "rate": 0.059701,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.023459,
+                  0.143697
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 4,
+                "n": 55,
+                "rate": 0.072727,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.028644,
+                  0.172602
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 12,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.25,
+                "wilson95": [
+                  0.0,
+                  0.242501
+                ]
+              },
+              "n": 67,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 4,
+                "contradicted": 3,
+                "unverified": 20,
+                "verified": 40
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 67,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.044776,
+                "wilson95": [
+                  0.0,
+                  0.054228
+                ]
+              },
+              "provider_calls_per_claim": 2.044776,
+              "real_recall": {
+                "k": 38,
+                "n": 55,
+                "rate": 0.690909,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.559712,
+                  0.797179
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 38,
+                "n": 55,
+                "rate": 0.690909,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.559712,
+                  0.797179
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 1.283582,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 2,
+                "n": 55,
+                "rate": 0.036364,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.010029,
+                  0.123237
+                ]
+              }
+            },
+            "delta_vs_default": {
+              "ambiguous": -2,
+              "exists_wrong_details_accepted": 0,
+              "false_accepts": 0,
+              "near_miss_correct": 0,
+              "pending": 0,
+              "provider_calls": -4,
+              "real_correct": -3,
+              "real_recall_rate": -0.054545,
+              "title_searches": 0,
+              "wrong_work": -1
+            },
+            "metrics": {
+              "ambiguity_burden": {
+                "k": 2,
+                "n": 67,
+                "rate": 0.029851,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.008225,
+                  0.102468
+                ]
+              },
+              "ambiguity_burden_among_real_claims": {
+                "k": 2,
+                "n": 55,
+                "rate": 0.036364,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.010029,
+                  0.123237
+                ]
+              },
+              "exists_wrong_details_accepted_to_right_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_accepted_to_wrong_work": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "exists_wrong_details_unadjudicated": 0,
+              "false_accept": {
+                "k": 0,
+                "n": 12,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.25,
+                "wilson95": [
+                  0.0,
+                  0.242501
+                ]
+              },
+              "n": 67,
+              "near_miss_recall": {
+                "k": 0,
+                "n": 0,
+                "rate": null,
+                "rule_of_three_upper": null,
+                "wilson95": null
+              },
+              "outcomes": {
+                "ambiguous": 2,
+                "contradicted": 3,
+                "unverified": 26,
+                "verified": 36
+              },
+              "pending_rate": {
+                "k": 0,
+                "n": 67,
+                "rate": 0.0,
+                "rule_of_three_upper": 0.044776,
+                "wilson95": [
+                  0.0,
+                  0.054228
+                ]
+              },
+              "provider_calls_per_claim": 1.985075,
+              "real_recall": {
+                "k": 35,
+                "n": 55,
+                "rate": 0.636364,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.504225,
+                  0.750697
+                ]
+              },
+              "real_recall_counting_unadjudicated_as_correct": {
+                "k": 35,
+                "n": 55,
+                "rate": 0.636364,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.504225,
+                  0.750697
+                ]
+              },
+              "real_unadjudicated": 0,
+              "title_searches_per_claim": 1.283582,
+              "unreplayable_excluded": 0,
+              "wrong_work": {
+                "k": 1,
+                "n": 55,
+                "rate": 0.018182,
+                "rule_of_three_upper": null,
+                "wilson95": [
+                  0.003217,
+                  0.09606
+                ]
+              }
+            },
+            "unreplayable_in_either_arm": 3
+          }
+        },
+        "by_group": {
+          "book": {
+            "ambiguity_burden": {
+              "k": 1,
+              "n": 5,
+              "rate": 0.2,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.036223,
+                0.624472
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 1,
+              "n": 5,
+              "rate": 0.2,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.036223,
+                0.624472
+              ]
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "n": 5,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "ambiguous": 1,
+              "contradicted": 1,
+              "unverified": 1,
+              "verified": 2
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 5,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.6,
+              "wilson95": [
+                0.0,
+                0.434491
+              ]
+            },
+            "provider_calls_per_claim": 1.6,
+            "real_recall": {
+              "k": 2,
+              "n": 5,
+              "rate": 0.4,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.117618,
+                0.76928
+              ]
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 2,
+              "n": 5,
+              "rate": 0.4,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.117618,
+                0.76928
+              ]
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 0.8,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 5,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.6,
+              "wilson95": [
+                0.0,
+                0.434491
+              ]
+            }
+          },
+          "chapter": {
+            "ambiguity_burden": {
+              "k": 0,
+              "n": 4,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.75,
+              "wilson95": [
+                0.0,
+                0.4899
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 0,
+              "n": 4,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.75,
+              "wilson95": [
+                0.0,
+                0.4899
+              ]
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "n": 4,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "unverified": 1,
+              "verified": 3
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 4,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.75,
+              "wilson95": [
+                0.0,
+                0.4899
+              ]
+            },
+            "provider_calls_per_claim": 1.75,
+            "real_recall": {
+              "k": 3,
+              "n": 4,
+              "rate": 0.75,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.300636,
+                0.954414
+              ]
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 3,
+              "n": 4,
+              "rate": 0.75,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.300636,
+                0.954414
+              ]
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 0.75,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 4,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.75,
+              "wilson95": [
+                0.0,
+                0.4899
+              ]
+            }
+          },
+          "et_al_authors": {
+            "ambiguity_burden": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "n": 2,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "unverified": 1,
+              "verified": 1
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "provider_calls_per_claim": 1.5,
+            "real_recall": {
+              "k": 1,
+              "n": 2,
+              "rate": 0.5,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.094529,
+                0.905471
+              ]
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 1,
+              "n": 2,
+              "rate": 0.5,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.094529,
+                0.905471
+              ]
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 1.0,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            }
+          },
+          "initials_authors": {
+            "ambiguity_burden": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "n": 2,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "verified": 2
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            },
+            "provider_calls_per_claim": 2.0,
+            "real_recall": {
+              "k": 2,
+              "n": 2,
+              "rate": 1.0,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.342372,
+                1.0
+              ]
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 2,
+              "n": 2,
+              "rate": 1.0,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.342372,
+                1.0
+              ]
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 1.0,
+            "unreplayable_excluded": 1,
+            "wrong_work": {
+              "k": 0,
+              "n": 2,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.657628
+              ]
+            }
+          },
+          "invented_plausible": {
+            "ambiguity_burden": {
+              "k": 0,
+              "n": 10,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.3,
+              "wilson95": [
+                0.0,
+                0.27754
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 10,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.3,
+              "wilson95": [
+                0.0,
+                0.27754
+              ]
+            },
+            "n": 10,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "unverified": 10
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 10,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.3,
+              "wilson95": [
+                0.0,
+                0.27754
+              ]
+            },
+            "provider_calls_per_claim": 3.0,
+            "real_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 3.0,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            }
+          },
+          "math_unicode_title": {
+            "ambiguity_burden": {
+              "k": 0,
+              "n": 3,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.561506
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 0,
+              "n": 3,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.561506
+              ]
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "n": 3,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "verified": 3
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 3,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.561506
+              ]
+            },
+            "provider_calls_per_claim": 2.666667,
+            "real_recall": {
+              "k": 3,
+              "n": 3,
+              "rate": 1.0,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.438494,
+                1.0
+              ]
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 3,
+              "n": 3,
+              "rate": 1.0,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.438494,
+                1.0
+              ]
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 1.333333,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 3,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.561506
+              ]
+            }
+          },
+          "non_ascii": {
+            "ambiguity_burden": {
+              "k": 0,
+              "n": 5,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.6,
+              "wilson95": [
+                0.0,
+                0.434491
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 0,
+              "n": 5,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.6,
+              "wilson95": [
+                0.0,
+                0.434491
+              ]
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "n": 5,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "verified": 5
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 5,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.6,
+              "wilson95": [
+                0.0,
+                0.434491
+              ]
+            },
+            "provider_calls_per_claim": 2.8,
+            "real_recall": {
+              "k": 5,
+              "n": 5,
+              "rate": 1.0,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.565509,
+                1.0
+              ]
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 5,
+              "n": 5,
+              "rate": 1.0,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.565509,
+                1.0
+              ]
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 1.6,
+            "unreplayable_excluded": 1,
+            "wrong_work": {
+              "k": 0,
+              "n": 5,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.6,
+              "wilson95": [
+                0.0,
+                0.434491
+              ]
+            }
+          },
+          "pre_1970": {
+            "ambiguity_burden": {
+              "k": 0,
+              "n": 7,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.428571,
+              "wilson95": [
+                0.0,
+                0.354339
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 0,
+              "n": 7,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.428571,
+              "wilson95": [
+                0.0,
+                0.354339
+              ]
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "n": 7,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "verified": 7
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 7,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.428571,
+              "wilson95": [
+                0.0,
+                0.354339
+              ]
+            },
+            "provider_calls_per_claim": 2.142857,
+            "real_recall": {
+              "k": 7,
+              "n": 7,
+              "rate": 1.0,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.645661,
+                1.0
+              ]
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 7,
+              "n": 7,
+              "rate": 1.0,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.645661,
+                1.0
+              ]
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 1.0,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 7,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.428571,
+              "wilson95": [
+                0.0,
+                0.354339
+              ]
+            }
+          },
+          "preprint_vs_published": {
+            "ambiguity_burden": {
+              "k": 0,
+              "n": 9,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.333333,
+              "wilson95": [
+                0.0,
+                0.299153
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 0,
+              "n": 9,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.333333,
+              "wilson95": [
+                0.0,
+                0.299153
+              ]
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "n": 9,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "contradicted": 2,
+              "unverified": 1,
+              "verified": 6
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 9,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.333333,
+              "wilson95": [
+                0.0,
+                0.299153
+              ]
+            },
+            "provider_calls_per_claim": 1.888889,
+            "real_recall": {
+              "k": 6,
+              "n": 9,
+              "rate": 0.666667,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.354197,
+                0.879418
+              ]
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 6,
+              "n": 9,
+              "rate": 0.666667,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.354197,
+                0.879418
+              ]
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 0.888889,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 9,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.333333,
+              "wilson95": [
+                0.0,
+                0.299153
+              ]
+            }
+          },
+          "retracted": {
+            "ambiguity_burden": {
+              "k": 2,
+              "n": 4,
+              "rate": 0.5,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.150036,
+                0.849964
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 2,
+              "n": 4,
+              "rate": 0.5,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.150036,
+                0.849964
+              ]
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "n": 4,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "ambiguous": 2,
+              "verified": 2
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 4,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.75,
+              "wilson95": [
+                0.0,
+                0.4899
+              ]
+            },
+            "provider_calls_per_claim": 1.5,
+            "real_recall": {
+              "k": 2,
+              "n": 4,
+              "rate": 0.5,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.150036,
+                0.849964
+              ]
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 2,
+              "n": 4,
+              "rate": 0.5,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.150036,
+                0.849964
+              ]
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 0.75,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 4,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.75,
+              "wilson95": [
+                0.0,
+                0.4899
+              ]
+            }
+          },
+          "same_title": {
+            "ambiguity_burden": {
+              "k": 1,
+              "n": 9,
+              "rate": 0.111111,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.01989,
+                0.435006
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 1,
+              "n": 9,
+              "rate": 0.111111,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.01989,
+                0.435006
+              ]
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "n": 9,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "ambiguous": 1,
+              "unverified": 4,
+              "verified": 4
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 9,
+              "rate": 0.0,
+              "rule_of_three_upper": 0.333333,
+              "wilson95": [
+                0.0,
+                0.299153
+              ]
+            },
+            "provider_calls_per_claim": 1.444444,
+            "real_recall": {
+              "k": 2,
+              "n": 9,
+              "rate": 0.222222,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.063224,
+                0.547417
+              ]
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 2,
+              "n": 9,
+              "rate": 0.222222,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.063224,
+                0.547417
+              ]
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 1.0,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 2,
+              "n": 9,
+              "rate": 0.222222,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.063224,
+                0.547417
+              ]
+            }
+          },
+          "same_title_wrong_paper": {
+            "ambiguity_burden": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.793457
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.793457
+              ]
+            },
+            "n": 1,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "unverified": 1
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.793457
+              ]
+            },
+            "provider_calls_per_claim": 1.0,
+            "real_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 1.0,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            }
+          },
+          "same_title_wrong_year": {
+            "ambiguity_burden": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.793457
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.793457
+              ]
+            },
+            "n": 1,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "unverified": 1
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 1,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.793457
+              ]
+            },
+            "provider_calls_per_claim": 1.0,
+            "real_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 1.0,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            }
+          },
+          "thesis": {
+            "ambiguity_burden": {
+              "k": 0,
+              "n": 3,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.561506
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 0,
+              "n": 3,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.561506
+              ]
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "n": 3,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "verified": 3
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 3,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.561506
+              ]
+            },
+            "provider_calls_per_claim": 2.0,
+            "real_recall": {
+              "k": 3,
+              "n": 3,
+              "rate": 1.0,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.438494,
+                1.0
+              ]
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 3,
+              "n": 3,
+              "rate": 1.0,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.438494,
+                1.0
+              ]
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 0.666667,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 3,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.561506
+              ]
+            }
+          },
+          "wrong_venue": {
+            "ambiguity_burden": {
+              "k": 1,
+              "n": 3,
+              "rate": 0.333333,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.06149,
+                0.792345
+              ]
+            },
+            "ambiguity_burden_among_real_claims": {
+              "k": 1,
+              "n": 3,
+              "rate": 0.333333,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.06149,
+                0.792345
+              ]
+            },
+            "exists_wrong_details_accepted_to_right_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_accepted_to_wrong_work": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "exists_wrong_details_unadjudicated": 0,
+            "false_accept": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "n": 3,
+            "near_miss_recall": {
+              "k": 0,
+              "n": 0,
+              "rate": null,
+              "rule_of_three_upper": null,
+              "wilson95": null
+            },
+            "outcomes": {
+              "ambiguous": 1,
+              "verified": 2
+            },
+            "pending_rate": {
+              "k": 0,
+              "n": 3,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.561506
+              ]
+            },
+            "provider_calls_per_claim": 1.666667,
+            "real_recall": {
+              "k": 2,
+              "n": 3,
+              "rate": 0.666667,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.207655,
+                0.93851
+              ]
+            },
+            "real_recall_counting_unadjudicated_as_correct": {
+              "k": 2,
+              "n": 3,
+              "rate": 0.666667,
+              "rule_of_three_upper": null,
+              "wilson95": [
+                0.207655,
+                0.93851
+              ]
+            },
+            "real_unadjudicated": 0,
+            "title_searches_per_claim": 1.0,
+            "unreplayable_excluded": 0,
+            "wrong_work": {
+              "k": 0,
+              "n": 3,
+              "rate": 0.0,
+              "rule_of_three_upper": 1.0,
+              "wilson95": [
+                0.0,
+                0.561506
+              ]
+            }
+          }
+        },
+        "default_repeat_changed_outcomes": [],
+        "excluded": {
+          "n": 0,
+          "outcomes": {}
+        },
+        "metrics": {
+          "ambiguity_burden": {
+            "k": 5,
+            "n": 68,
+            "rate": 0.073529,
+            "rule_of_three_upper": null,
+            "wilson95": [
+              0.031814,
+              0.160854
+            ]
+          },
+          "ambiguity_burden_among_real_claims": {
+            "k": 5,
+            "n": 56,
+            "rate": 0.089286,
+            "rule_of_three_upper": null,
+            "wilson95": [
+              0.038742,
+              0.192562
+            ]
+          },
+          "exists_wrong_details_accepted_to_right_work": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "rule_of_three_upper": null,
+            "wilson95": null
+          },
+          "exists_wrong_details_accepted_to_wrong_work": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "rule_of_three_upper": null,
+            "wilson95": null
+          },
+          "exists_wrong_details_unadjudicated": 0,
+          "false_accept": {
+            "k": 0,
+            "n": 12,
+            "rate": 0.0,
+            "rule_of_three_upper": 0.25,
+            "wilson95": [
+              0.0,
+              0.242501
+            ]
+          },
+          "n": 68,
+          "near_miss_recall": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "rule_of_three_upper": null,
+            "wilson95": null
+          },
+          "outcomes": {
+            "ambiguous": 5,
+            "contradicted": 3,
+            "unverified": 20,
+            "verified": 40
+          },
+          "pending_rate": {
+            "k": 0,
+            "n": 68,
+            "rate": 0.0,
+            "rule_of_three_upper": 0.044118,
+            "wilson95": [
+              0.0,
+              0.053473
+            ]
+          },
+          "provider_calls_per_claim": 2.029412,
+          "real_recall": {
+            "k": 38,
+            "n": 56,
+            "rate": 0.678571,
+            "rule_of_three_upper": null,
+            "wilson95": [
+              0.548224,
+              0.785992
+            ]
+          },
+          "real_recall_counting_unadjudicated_as_correct": {
+            "k": 38,
+            "n": 56,
+            "rate": 0.678571,
+            "rule_of_three_upper": null,
+            "wilson95": [
+              0.548224,
+              0.785992
+            ]
+          },
+          "real_unadjudicated": 0,
+          "title_searches_per_claim": 1.279412,
+          "unreplayable_excluded": 2,
+          "wrong_work": {
+            "k": 2,
+            "n": 56,
+            "rate": 0.035714,
+            "rule_of_three_upper": null,
+            "wilson95": [
+              0.009849,
+              0.12119
+            ]
+          }
+        },
+        "unrecorded_urls": [
+          "https://api.openalex.org/works?filter=title.search:3d%20u%20net%20learning%20dense%20volumetric%20segmentation%20from%20sparse%20annotation,publication_year:2015-2017&per_page=10&select=id,doi,display_name,publication_year,referenced_works_count,authorships",
+          "https://api.openalex.org/works?filter=title.search:adam%20a%20method%20for%20stochastic%20optimization,publication_year:2014-2016&per_page=10&select=id,doi,display_name,publication_year,referenced_works_count,authorships"
+        ],
+        "unreplayable_claims": [
+          "e3-initials-02",
+          "e3-nonascii-05"
+        ]
+      },
+      "status": {
+        "complete": true,
+        "planned": 70,
+        "recorded": 70
+      }
+    }
+  },
+  "verifier_reference": "decide_claim and verify_claim frozen at 0913e7f; the only change since is the Ablation switch, whose default reproduces the shipped behaviour"
+}

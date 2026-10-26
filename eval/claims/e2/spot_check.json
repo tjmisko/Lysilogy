@@ -1,0 +1,83 @@
+[
+  {
+    "claim": {
+      "arxiv": "2003.02617",
+      "authors": [
+        "Hao-Shu Fang",
+        "Chenxi Wang",
+        "Minghao Gou",
+        "Cewu Lu"
+      ],
+      "doi": null,
+      "title": "GraspNet-1Billion: A Large-Scale Benchmark for General Object Grasping",
+      "venue": "CVPR",
+      "year": 2020
+    },
+    "claim_id": "ds-04-15",
+    "evidence_A": "https://api.openalex.org/works/doi:10.1109/cvpr42600.2020.01146 ; https://arxiv.org/abs/2003.02617 . Paper exists at CVPR 2020 with the stated title and authors (Fang, Wang, Gou, Lu), but arXiv 2003.02617 is 'Channel Estimation in C-V2X using Deep Learning', a different paper.",
+    "evidence_B": "https://doi.org/10.1109/cvpr42600.2020.01146 - CVPR 2020 paper by Fang, Wang, Gou, Lu; arXiv 2003.02617.",
+    "label_A": {
+      "claim_id": "ds-04-15",
+      "doi": "10.1109/cvpr42600.2020.01146",
+      "evidence": "https://api.openalex.org/works/doi:10.1109/cvpr42600.2020.01146 ; https://arxiv.org/abs/2003.02617 . Paper exists at CVPR 2020 with the stated title and authors (Fang, Wang, Gou, Lu), but arXiv 2003.02617 is 'Channel Estimation in C-V2X using Deep Learning', a different paper.",
+      "label": "exists_wrong_details",
+      "openalex_id": "W3035198432",
+      "wrong_fields": [
+        "arxiv"
+      ]
+    },
+    "label_B": {
+      "claim_id": "ds-04-15",
+      "doi": "10.1109/cvpr42600.2020.01146",
+      "evidence": "https://doi.org/10.1109/cvpr42600.2020.01146 - CVPR 2020 paper by Fang, Wang, Gou, Lu; arXiv 2003.02617.",
+      "label": "exists",
+      "openalex_id": "W3035198432",
+      "wrong_fields": []
+    },
+    "model": "deepseek",
+    "reason": "label_disagreement",
+    "verifier_verdict": null
+  },
+  {
+    "claim": {
+      "arxiv": "2006.01325",
+      "authors": [
+        "Nisan Stiennon",
+        "Long Ouyang",
+        "Jeff Wu",
+        "Daniel M. Ziegler",
+        "Ryan Lowe",
+        "Chelsea Voss",
+        "Alec Radford",
+        "Dario Amodei",
+        "Paul Christiano"
+      ],
+      "doi": null,
+      "title": "Learning to summarize from human feedback",
+      "venue": "NeurIPS",
+      "year": 2020
+    },
+    "claim_id": "fa-01-03",
+    "evidence_A": "https://arxiv.org/abs/2006.01325 is Stiennon et al. 2020, NeurIPS. OpenAlex resolves the arXiv DOI to W3166135305, but that record's metadata is corrupted (it shows the title of a different paper), so treat the W-id as approximate.",
+    "evidence_B": "https://arxiv.org/abs/2009.01325 https://api.openalex.org/works/doi:10.48550/arxiv.2009.01325 - paper is real (Stiennon et al. 2020, authors match) but its arXiv id is 2009.01325; claimed 2006.01325 is an unrelated group-testing paper.",
+    "label_A": {
+      "claim_id": "fa-01-03",
+      "doi": "10.48550/arXiv.2006.01325",
+      "evidence": "https://arxiv.org/abs/2006.01325 is Stiennon et al. 2020, NeurIPS. OpenAlex resolves the arXiv DOI to W3166135305, but that record's metadata is corrupted (it shows the title of a different paper), so treat the W-id as approximate.",
+      "label": "exists",
+      "openalex_id": "W3166135305"
+    },
+    "label_B": {
+      "claim_id": "fa-01-03",
+      "evidence": "https://arxiv.org/abs/2009.01325 https://api.openalex.org/works/doi:10.48550/arxiv.2009.01325 - paper is real (Stiennon et al. 2020, authors match) but its arXiv id is 2009.01325; claimed 2006.01325 is an unrelated group-testing paper.",
+      "label": "exists_wrong_details",
+      "openalex_id": "W3082115681",
+      "wrong_fields": [
+        "arxiv"
+      ]
+    },
+    "model": "fable",
+    "reason": "label_disagreement",
+    "verifier_verdict": null
+  }
+]
