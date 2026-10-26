@@ -436,6 +436,17 @@ test('should let a prerequisite win when it conflicts with a citation in the gra
   assert.deepEqual(layerIds(graphModel(d)), [['b'], ['a']]);
 });
 
+test('should leave no layer empty when a topic-expanded prerequisite closes a cycle', () => {
+  counter = 0;
+  const d = detail([topic('T', 'T'), topic('U', 'U'), work('a', 'A', 2000), work('b', 'B', 2001)],
+    { edges: [edge('a', 'T'), edge('b', 'U'), edge('T', 'b', 'covers'), edge('U', 'a', 'covers')] });
+  const model = graphModel(d);
+  assert.ok(model.layers.every((layer) => layer.length > 0));
+  assert.deepEqual(layerIds(model), [['a'], ['b']]);
+  assert.equal(model.links.length, 2);
+  assert.deepEqual(graphModel(d), model);
+});
+
 test('should expand a topic prerequisite to its works and list topics when building the graph', () => {
   counter = 0;
   const d = detail([topic('t', 'Basics'), work('a', 'A', 2000), work('b', 'B', 2001)],

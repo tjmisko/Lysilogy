@@ -464,7 +464,7 @@ test('should keep a work under two topics once when listing the Topics view', ()
 
 test('should order the other views by year, readiness and fetch need when listing ids', () => {
   assert.deepEqual(viewOrder(3, sample(), INITIAL_VIEW_STATE), ['b', 'a', 'c']);
-  assert.deepEqual(viewOrder(4, sample(), INITIAL_VIEW_STATE), []);
+  assert.deepEqual(viewOrder(4, sample(), INITIAL_VIEW_STATE), ['a', 'b', 'c']);
   assert.equal(viewOrder(5, sample(), INITIAL_VIEW_STATE).length, 3);
   assert.equal(viewOrder(6, sample(), INITIAL_VIEW_STATE).length, 3);
   assert.deepEqual(viewOrder(7, sample(), INITIAL_VIEW_STATE), []);

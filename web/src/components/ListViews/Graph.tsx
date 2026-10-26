@@ -32,7 +32,7 @@ export function Graph(props: ListViewProps) {
     return <div className="list-empty" data-empty="graph"><p>Nothing to draw yet. Press <kbd>a</kbd> to add a paper.</p></div>;
   }
 
-  const { width, height } = GRAPH_NODE;
+  const { width, height, gapX } = GRAPH_NODE;
   const node = (row: ItemRow) => {
     const place = at.get(row.id);
     if (place === undefined) return null;
@@ -72,13 +72,23 @@ export function Graph(props: ListViewProps) {
         const x2 = forward ? to.x : to.x + width;
         const y1 = from.y + height / 2;
         const y2 = to.y + height / 2;
+        const span = Math.round((to.x - from.x) / (width + gapX));
+        // Forward links leave the right edge. A backward link (a dropped citation) leaves the left
+        // edge and arcs above the cards, and a link that skips a layer arcs below them, so
+        // neither lies on top of a forward link or runs through the cards between.
         const bend = forward ? (x2 - x1) / 2 : 60;
+        const lift = forward ? (span > 1 ? height : 0) : -height;
+        const arc = forward ? bend : -bend;
+        const arcY = lift === 0 ? null : lift > 0 ? Math.max(y1, y2) + lift : Math.min(y1, y2) + lift;
+        const c1y = arcY ?? y1;
+        const c2y = arcY ?? y2;
+        const d = `M${x1} ${y1} C${x1 + arc} ${c1y} ${x2 - arc} ${c2y} ${x2} ${y2}`;
         const touches = selectedId === link.from || selectedId === link.to;
         return <path
           key={`${link.kind}:${link.from}:${link.to}`}
           className={`list-graph-edge is-${link.kind} ${touches ? "is-linked" : ""}`}
           data-edge-kind={link.kind}
-          d={`M${x1} ${y1} C${x1 + bend} ${y1} ${x2 - bend} ${y2} ${x2} ${y2}`}
+          d={d}
           markerEnd="url(#list-graph-arrow)"
         />;
       })}

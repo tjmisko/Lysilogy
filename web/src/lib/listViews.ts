@@ -537,8 +537,8 @@ function memberIds(start: string, memberSet: ReadonlySet<string>, below: Readonl
 
 /**
  * The layered DAG of view 4. A member's layer is the longest path to it over prerequisite edges
- * and derived citation edges (cited before citing). Prerequisites are acyclic by construction;
- * a citation edge that would close a cycle is left out of the layering, citations taken in id
+ * and derived citation edges (cited before citing). Prerequisite edges expanded through topics can
+ * still close a cycle, so they are taken in id order like citations; an edge that would close a cycle is left out of the layering, citations taken in id
  * order so the result is stable. Claims have no citations and sit by their prerequisites.
  */
 export function graphModel(detail: ListDetail): GraphModel {
@@ -569,7 +569,6 @@ export function graphModel(detail: ListDetail): GraphModel {
   const connect = (from: string, to: string): void => {
     successors.set(from, (successors.get(from) ?? new Set<string>()).add(to));
   };
-  for (const link of links) connect(link.from, link.to);
   const reaches = (start: string, goal: string): boolean => {
     const visited = new Set<string>();
     const stack = [start];
@@ -589,7 +588,13 @@ export function graphModel(detail: ListDetail): GraphModel {
     derived.push({ from, to, kind: "citation" });
   }
   derived.sort((a, b) => compareText(a.from, b.from) || compareText(a.to, b.to));
-  const ordering: GraphLink[] = [...links];
+  const ordering: GraphLink[] = [];
+  const prerequisites = [...links].sort((a, b) => compareText(a.from, b.from) || compareText(a.to, b.to));
+  for (const link of prerequisites) {
+    if (reaches(link.to, link.from)) continue;
+    connect(link.from, link.to);
+    ordering.push(link);
+  }
   for (const link of derived) {
     const key = `${link.from}\u0000${link.to}`;
     if (seen.has(key)) continue;

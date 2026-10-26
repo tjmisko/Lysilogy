@@ -43,6 +43,7 @@ const state = {
     ] }),
   ],
   edges: [],
+  citations: [],
   statuses: {},
   papers: { 'w-a': [{ paper_id: paperId, title: 'Held paper' }] },
   gone: null,
@@ -61,7 +62,7 @@ function detail() {
       item_count: nodes.filter((n) => n.kind === 'work').length, topic_count: nodes.filter((n) => n.kind === 'topic').length,
       claim_count: 1, proposed_count: 1, status_counts: counts,
     },
-    nodes, edges: state.edges, citations: [],
+    nodes, edges: state.edges, citations: state.citations,
     reading_states: Object.fromEntries(Object.entries(state.statuses).map(([id, status]) => [id, { status, changed_at: stamp(0) }])),
     local_papers: state.papers, acquisitions: {}, expansions: {},
   };
@@ -270,12 +271,35 @@ try {
   const fetched = since(fetchMark).filter((entry) => /^POST \/api\/works\/[^/]+\/fetch/u.test(entry.call));
   assert.ok(fetched.length > 0, `Acquire f / F sent no fetch: ${requests.slice(fetchMark).join('\n')}`);
   await press('7'); await page.waitForSelector('[data-node-id], .list-row');
+  state.edges = [{ list_id: listId, from: 'a', to: 'b', kind: 'prerequisite', source: 'user', review: 'accepted', created_at: stamp(0) }];
+  state.citations = [['w-c', 'w-a']];
+  await page.reload();
+  await page.waitForSelector('.list-views button[aria-pressed="true"]');
+  await page.waitForTimeout(1000); // column keys read performance.now() < 800 as a pending prefix
   await press('4'); await page.waitForSelector('.list-graph .list-graph-node');
   assert.ok(await page.locator('.list-graph-node').count() >= 4, 'graph draws every member');
-  await press('h', 'l', 'j', 'k');
+  const columnOf = () => page.$eval('.list-graph-node.is-selected', (entry) => Number(/translate\(([\d.]+)/u.exec(entry.getAttribute('transform') ?? '')?.[1] ?? 0));
+  const columns = await page.$$eval('.list-graph-node', (nodes) => new Set(nodes.map((entry) => /translate\(([\d.]+)/u.exec(entry.getAttribute('transform') ?? '')?.[1])).size);
+  assert.ok(columns > 1, 'graph has more than one layer');
+  await page.waitForSelector('.list-graph-edge.is-prerequisite', { state: 'attached' });
+  await page.waitForSelector('.list-graph-edge.is-citation', { state: 'attached' });
+  await press('j'); await page.waitForSelector('.list-graph-node.is-selected');
+  await press('h', 'h', 'h');
+  const first = await columnOf();
+  await press('l');
+  await page.waitForFunction((x) => {
+    const at = /translate\(([\d.]+)/u.exec(document.querySelector('.list-graph-node.is-selected')?.getAttribute('transform') ?? '');
+    return at !== null && Number(at[1]) > x;
+  }, first, { timeout: 3000 }).catch(() => assert.fail('l moves the selection to a later layer'));
+  await press('j', 'k');
   await press('3'); await page.waitForSelector('.list-col');
   await press('L'); await page.waitForSelector('.list-graph .list-graph-node');
   assert.match(page.url(), /view=4/u);
+  state.edges = [];
+  state.citations = [];
+  await page.reload();
+  await page.waitForSelector('.list-views button[aria-pressed="true"]');
+  await page.waitForTimeout(1000);
   await press('1'); await page.waitForSelector('.list-sequence .list-row');
 
   // ---- Sequence: movement, status, sort, filter, group, fold -------------------------------
