@@ -275,7 +275,6 @@ try {
   state.citations = [['w-c', 'w-a']];
   await page.reload();
   await page.waitForSelector('.list-views button[aria-pressed="true"]');
-  await page.waitForTimeout(1000); // column keys read performance.now() < 800 as a pending prefix
   await press('4'); await page.waitForSelector('.list-graph .list-graph-node');
   assert.ok(await page.locator('.list-graph-node').count() >= 4, 'graph draws every member');
   const columnOf = () => page.$eval('.list-graph-node.is-selected', (entry) => Number(/translate\(([\d.]+)/u.exec(entry.getAttribute('transform') ?? '')?.[1] ?? 0));
@@ -299,7 +298,6 @@ try {
   state.citations = [];
   await page.reload();
   await page.waitForSelector('.list-views button[aria-pressed="true"]');
-  await page.waitForTimeout(1000);
   await press('1'); await page.waitForSelector('.list-sequence .list-row');
 
   // ---- Sequence: movement, status, sort, filter, group, fold -------------------------------

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { timelineColumns, timelineYearMove, topicColumns, topicLayerMove } from '../src/lib/listViewNav.ts';
+import { followsPrefix, timelineColumns, timelineYearMove, topicColumns, topicLayerMove } from '../src/lib/listViewNav.ts';
 import { timeline, topicLayers } from '../src/lib/listViews.ts';
 
 let counter = 0;
@@ -129,4 +129,20 @@ test('should treat years outside 1..2200 as undated when walking h and l', () =>
   assert.deepEqual(columns[0], ['a']);
   assert.deepEqual([...columns[1]].sort(), ['far', 'z']);
   assert.equal(timelineYearMove(columns, 'a', 1) !== null, true);
+});
+
+test('should not treat a key as following a prefix when no prefix key was pressed since load', () => {
+  // performance.now() starts near 0 on a fresh page, inside the 800 ms window of a 0 timestamp.
+  assert.equal(followsPrefix(null, 5, 800), false);
+  assert.equal(followsPrefix(null, 0, 800), false);
+});
+
+test('should treat a key as following a prefix when it arrives inside the window', () => {
+  assert.equal(followsPrefix(1000, 1799, 800), true);
+  assert.equal(followsPrefix(0, 10, 800), true, 'a prefix pressed at time 0 still counts');
+});
+
+test('should release the key when the window has passed', () => {
+  assert.equal(followsPrefix(1000, 1800, 800), false);
+  assert.equal(followsPrefix(1000, 5000, 800), false);
 });

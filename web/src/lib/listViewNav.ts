@@ -81,3 +81,13 @@ export function timelineYearMove(columns: readonly (readonly string[])[], cursor
   }
   return null;
 }
+
+/**
+ * Whether a key arrives inside a sequence window opened by a prefix key (`z`, `d`, `g`) at
+ * `prefixAt`, so the column views leave it to the page. `null` means no prefix is pending; a page
+ * that has just loaded has none, whatever `now` is.
+ */
+export function followsPrefix(prefixAt: number | null, now: number, windowMs: number): boolean {
+  if (prefixAt === null) return false;
+  return now - prefixAt < windowMs;
+}
