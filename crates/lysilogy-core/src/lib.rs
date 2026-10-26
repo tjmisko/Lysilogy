@@ -20,8 +20,8 @@ pub mod title;
 pub mod work;
 
 pub use claim::{
-    CLAIM_CANDIDATES_MAX, Claim, ClaimEvidence, ClaimOutcome, ClaimVerdict, IdentifierLookup,
-    LocalWork, ProviderRecord, TitleSearch, decide_claim,
+    Ablation, CLAIM_CANDIDATES_MAX, Claim, ClaimEvidence, ClaimOutcome, ClaimVerdict,
+    IdentifierLookup, LocalWork, ProviderRecord, TitleSearch, decide_claim, decide_claim_with,
 };
 pub use curation::{CurationError, TAG_PALETTE, TagColor, TagName, parse_mark_note};
 pub use document::{Document, DocumentVersion, ScannedFile};

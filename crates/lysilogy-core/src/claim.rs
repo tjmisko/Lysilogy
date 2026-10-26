@@ -19,6 +19,68 @@ pub const TITLE_PLAUSIBLE_MIN: f64 = 0.8;
 /// A title that is a word-prefix of the other (a dropped subtitle) needs this many words.
 const SUBTITLE_MIN_WORDS: usize = 3;
 
+/// Switches that turn one check of the verifier off, for ablation studies. The default
+/// turns none off and reproduces the shipped behaviour exactly.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[allow(clippy::struct_excessive_bools)] // independent switches, one per check
+pub struct Ablation {
+    /// Do not retry a title search that found nothing on each half of the title.
+    pub split_title_retry: bool,
+    /// Keep every `OpenAlex` record of a paper instead of collapsing duplicates.
+    pub duplicate_collapsing: bool,
+    /// Require equal years instead of years within one, wherever [`decide_claim`] compares years.
+    pub year_window: bool,
+    /// Ignore author surnames wherever [`decide_claim`] compares authors.
+    pub surname_check: bool,
+    /// Accept an identifier's record whatever its year and authors (its title must still agree).
+    pub identifier_checks: bool,
+}
+
+impl Ablation {
+    /// The five single-switch ablations, named.
+    #[must_use]
+    pub fn singles() -> [(&'static str, Self); 5] {
+        let off = Self::default();
+        [
+            (
+                "split_title_retry",
+                Self {
+                    split_title_retry: true,
+                    ..off
+                },
+            ),
+            (
+                "duplicate_collapsing",
+                Self {
+                    duplicate_collapsing: true,
+                    ..off
+                },
+            ),
+            (
+                "year_window",
+                Self {
+                    year_window: true,
+                    ..off
+                },
+            ),
+            (
+                "surname_check",
+                Self {
+                    surname_check: true,
+                    ..off
+                },
+            ),
+            (
+                "identifier_checks",
+                Self {
+                    identifier_checks: true,
+                    ..off
+                },
+            ),
+        ]
+    }
+}
+
 /// What was asserted about a paper. Everything but the title is optional.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Claim {
@@ -139,9 +201,10 @@ const fn verdict(outcome: ClaimOutcome, identifier_dropped: bool) -> ClaimVerdic
     }
 }
 
-const fn years_agree(left: Option<i32>, right: Option<i32>) -> bool {
+const fn years_agree(left: Option<i32>, right: Option<i32>, ablation: Ablation) -> bool {
+    let window = if ablation.year_window { 0 } else { 1 };
     match (left, right) {
-        (Some(a), Some(b)) => a.abs_diff(b) <= 1,
+        (Some(a), Some(b)) => a.abs_diff(b) <= window,
         _ => true,
     }
 }
@@ -176,7 +239,10 @@ fn family_key(author: &str) -> Option<String> {
     (!key.is_empty()).then_some(key)
 }
 
-fn authors_agree(claimed: &[String], found: &[String]) -> bool {
+fn authors_agree(claimed: &[String], found: &[String], ablation: Ablation) -> bool {
+    if ablation.surname_check {
+        return true;
+    }
     let wanted: Vec<String> = claimed.iter().filter_map(|a| family_key(a)).collect();
     let present: Vec<String> = found.iter().filter_map(|a| family_key(a)).collect();
     if wanted.is_empty() || present.is_empty() {
@@ -204,21 +270,26 @@ struct Scored<'a> {
 }
 
 /// Whether the record an identifier resolved to is the claimed paper.
-fn identifier_agrees(claim: &Claim, record: &ProviderRecord) -> bool {
+fn identifier_agrees(claim: &Claim, record: &ProviderRecord, ablation: Ablation) -> bool {
     !titles_disagree(&claim.title, &record.title)
-        && years_agree(claim.year, record.year)
-        && authors_agree(&claim.authors, &record.authors)
+        && (ablation.identifier_checks
+            || (years_agree(claim.year, record.year, ablation)
+                && authors_agree(&claim.authors, &record.authors, ablation)))
 }
 
 /// Rule 3: pick plausible records from a title search.
-fn plausible<'a>(claim: &Claim, records: &'a [ProviderRecord]) -> Vec<Scored<'a>> {
+fn plausible<'a>(
+    claim: &Claim,
+    records: &'a [ProviderRecord],
+    ablation: Ablation,
+) -> Vec<Scored<'a>> {
     let key = title_key(&claim.title);
     let mut seen = std::collections::HashSet::new();
     let mut found: Vec<Scored<'a>> = records
         .iter()
         .filter(|record| seen.insert(record.provider_id.as_str()))
-        .filter(|record| years_agree(claim.year, record.year))
-        .filter(|record| authors_agree(&claim.authors, &record.authors))
+        .filter(|record| years_agree(claim.year, record.year, ablation))
+        .filter(|record| authors_agree(&claim.authors, &record.authors, ablation))
         .filter_map(|record| {
             let record_key = title_key(&record.title);
             let exact = record_key == key;
@@ -275,6 +346,16 @@ fn plausible<'a>(claim: &Claim, records: &'a [ProviderRecord]) -> Vec<Scored<'a>
 ///   title with a made-up DOI is the typical model hallucination.
 #[must_use]
 pub fn decide_claim(claim: &Claim, evidence: &ClaimEvidence) -> ClaimVerdict {
+    decide_claim_with(claim, evidence, Ablation::default())
+}
+
+/// [`decide_claim`] with some checks switched off. `Ablation::default()` is `decide_claim`.
+#[must_use]
+pub fn decide_claim_with(
+    claim: &Claim,
+    evidence: &ClaimEvidence,
+    ablation: Ablation,
+) -> ClaimVerdict {
     let key = title_key(&claim.title);
     let searchable = !claim.title.trim().is_empty() && key != "untitled";
 
@@ -282,7 +363,7 @@ pub fn decide_claim(claim: &Claim, evidence: &ClaimEvidence) -> ClaimVerdict {
     // even when its title is in the graph.
     let identifier_conflict = evidence.identifiers.iter().any(|lookup| match lookup {
         IdentifierLookup::NotFound => true,
-        IdentifierLookup::Resolved(record) => !identifier_agrees(claim, record),
+        IdentifierLookup::Resolved(record) => !identifier_agrees(claim, record, ablation),
         IdentifierLookup::TransportError => false,
     });
 
@@ -292,8 +373,8 @@ pub fn decide_claim(claim: &Claim, evidence: &ClaimEvidence) -> ClaimVerdict {
             .iter()
             .filter(|work| {
                 title_key(&work.title) == key
-                    && years_agree(claim.year, work.year)
-                    && authors_agree(&claim.authors, &work.authors)
+                    && years_agree(claim.year, work.year, ablation)
+                    && authors_agree(&claim.authors, &work.authors, ablation)
             })
             .map(|work| work.work_id)
             .min();
@@ -308,7 +389,7 @@ pub fn decide_claim(claim: &Claim, evidence: &ClaimEvidence) -> ClaimVerdict {
     for lookup in &evidence.identifiers {
         match lookup {
             IdentifierLookup::Resolved(record) => {
-                if identifier_agrees(claim, record) {
+                if identifier_agrees(claim, record, ablation) {
                     return verdict(ClaimOutcome::Verified(record.clone()), false);
                 }
                 contradicted = true;
@@ -322,7 +403,7 @@ pub fn decide_claim(claim: &Claim, evidence: &ClaimEvidence) -> ClaimVerdict {
     match &evidence.title_search {
         TitleSearch::TransportError => transport_failed = true,
         TitleSearch::Results(records) if searchable => {
-            let found = plausible(claim, records);
+            let found = plausible(claim, records, ablation);
             let exact = found.iter().filter(|scored| scored.exact).count();
             if identifier_dropped && !found.is_empty() {
                 return ClaimVerdict {
@@ -438,8 +519,9 @@ mod tests {
             );
             let _ = decide_claim(&asked, &ev);
         }
-        assert!(!years_agree(Some(i32::MIN), Some(i32::MAX)));
-        assert!(!years_agree(Some(i32::MAX), Some(2020)));
+        let on = Ablation::default();
+        assert!(!years_agree(Some(i32::MIN), Some(i32::MAX), on));
+        assert!(!years_agree(Some(i32::MAX), Some(2020), on));
     }
 
     #[test]
@@ -882,6 +964,121 @@ mod tests {
         assert!(matches!(
             decide_claim(&right, &ev).outcome,
             ClaimOutcome::Matched(_)
+        ));
+    }
+    fn ablated(ablation: Ablation, asked: &Claim, ev: &ClaimEvidence) -> ClaimOutcome {
+        decide_claim_with(asked, ev, ablation).outcome
+    }
+
+    #[test]
+    fn should_match_decide_claim_when_no_ablation_is_set() {
+        let mut asked = claim(TITLE);
+        asked.year = Some(2020);
+        asked.authors = vec!["Ada Lovelace".into()];
+        let evidences = [
+            evidence(vec![], vec![], TitleSearch::NotRun),
+            evidence(
+                vec![],
+                vec![],
+                TitleSearch::Results(vec![record("W1", TITLE, Some(2021), &["Ada Lovelace"])]),
+            ),
+            evidence(
+                vec![],
+                vec![IdentifierLookup::Resolved(record(
+                    "W2",
+                    TITLE,
+                    Some(2015),
+                    &["Bob Roe"],
+                ))],
+                TitleSearch::TransportError,
+            ),
+            evidence(
+                vec![],
+                vec![IdentifierLookup::NotFound],
+                TitleSearch::NotRun,
+            ),
+        ];
+        for ev in &evidences {
+            assert_eq!(
+                decide_claim_with(&asked, ev, Ablation::default()),
+                decide_claim(&asked, ev)
+            );
+        }
+    }
+
+    #[test]
+    fn should_reject_a_year_one_off_when_the_year_window_is_ablated() {
+        let mut asked = claim(TITLE);
+        asked.year = Some(2020);
+        let one_off = evidence(
+            vec![],
+            vec![],
+            TitleSearch::Results(vec![record("W1", TITLE, Some(2021), &[])]),
+        );
+        let window_off = Ablation {
+            year_window: true,
+            ..Ablation::default()
+        };
+        assert!(matches!(
+            ablated(Ablation::default(), &asked, &one_off),
+            ClaimOutcome::Verified(_)
+        ));
+        assert_eq!(
+            ablated(window_off, &asked, &one_off),
+            ClaimOutcome::Unverified
+        );
+    }
+
+    #[test]
+    fn should_verify_a_wrong_author_title_hit_when_the_surname_check_is_off() {
+        let mut asked = claim(TITLE);
+        asked.authors = vec!["Ada Lovelace".into()];
+        let ev = evidence(
+            vec![],
+            vec![],
+            TitleSearch::Results(vec![record("W1", TITLE, Some(2020), &["Bob Roe"])]),
+        );
+        let off = Ablation {
+            surname_check: true,
+            ..Ablation::default()
+        };
+        assert_eq!(
+            ablated(Ablation::default(), &asked, &ev),
+            ClaimOutcome::Unverified
+        );
+        assert!(matches!(
+            ablated(off, &asked, &ev),
+            ClaimOutcome::Verified(_)
+        ));
+    }
+
+    #[test]
+    fn should_verify_an_identifier_with_wrong_year_and_authors_when_its_checks_are_off() {
+        let mut asked = claim(TITLE);
+        asked.doi = Some("10.1/x".into());
+        asked.year = Some(2010);
+        asked.authors = vec!["Ada Lovelace".into()];
+        let ev = evidence(
+            vec![],
+            vec![IdentifierLookup::Resolved(record(
+                "W1",
+                TITLE,
+                Some(2020),
+                &["Bob Roe"],
+            ))],
+            TitleSearch::NotRun,
+        );
+        let off = Ablation {
+            identifier_checks: true,
+            ..Ablation::default()
+        };
+        assert!(!matches!(
+            ablated(Ablation::default(), &asked, &ev),
+            ClaimOutcome::Verified(_)
+        ));
+        assert!(matches!(
+            ablated(off, &asked, &ev),
+            ClaimOutcome::Verified(_)
         ));
     }
 }

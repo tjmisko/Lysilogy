@@ -11,9 +11,9 @@ use std::collections::HashSet;
 use lysilogy_core::identifier::normalize;
 use lysilogy_core::names::citation_family;
 use lysilogy_core::{
-    CLAIM_CANDIDATES_MAX, Claim, ClaimEvidence, ClaimOutcome, ClaimState, ClaimVerdict,
+    Ablation, CLAIM_CANDIDATES_MAX, Claim, ClaimEvidence, ClaimOutcome, ClaimState, ClaimVerdict,
     IdentifierLookup, IdentifierScheme, IdentifierStatus, LocalWork, ProviderRecord, TitleSearch,
-    Work, WorkKind, decide_claim, title_key, title_similarity,
+    Work, WorkKind, decide_claim_with, title_key, title_similarity,
 };
 use lysilogy_db::claim::ClaimRepository;
 use lysilogy_db::source_record::SourceRecordRepository;
@@ -139,16 +139,28 @@ fn same_paper(left: &ProviderRecord, right: &ProviderRecord) -> bool {
 pub fn collapse_duplicate_records(
     summaries: &[OpenAlexSummary],
 ) -> Vec<(ProviderRecord, Option<u32>)> {
+    collapse_duplicate_records_with(summaries, Ablation::default())
+}
+
+/// [`collapse_duplicate_records`], or (with `duplicate_collapsing` ablated) every record kept.
+#[must_use]
+pub fn collapse_duplicate_records_with(
+    summaries: &[OpenAlexSummary],
+    ablation: Ablation,
+) -> Vec<(ProviderRecord, Option<u32>)> {
     let mut kept: Vec<(ProviderRecord, Option<u32>)> = Vec::new();
     for summary in summaries {
         let Some(record) = record_from_summary(summary) else {
             continue;
         };
         let referenced = summary.referenced_works_count;
-        let Some(slot) = kept
-            .iter()
-            .position(|(other, _)| same_paper(other, &record))
-        else {
+        let slot = if ablation.duplicate_collapsing {
+            None
+        } else {
+            kept.iter()
+                .position(|(other, _)| same_paper(other, &record))
+        };
+        let Some(slot) = slot else {
             kept.push((record, referenced));
             continue;
         };
@@ -292,9 +304,10 @@ async fn search_once<T: JsonTransport>(
     context: &VerifyContext<'_, T>,
     title: &str,
     year: Option<i32>,
+    ablation: Ablation,
 ) -> Result<std::result::Result<Vec<(ProviderRecord, Option<u32>)>, ()>> {
     match search_title_cached(context.records, context.client, title, year).await {
-        Ok(Some((_, summaries))) => Ok(Ok(collapse_duplicate_records(&summaries))),
+        Ok(Some((_, summaries))) => Ok(Ok(collapse_duplicate_records_with(&summaries, ablation))),
         Err(ProviderError::Db(error)) => Err(error.into()),
         Err(error) if is_transport_error(&error) => Ok(Err(())),
         Ok(None) | Err(_) => Ok(Ok(Vec::new())),
@@ -304,15 +317,17 @@ async fn search_once<T: JsonTransport>(
 async fn search_title<T: JsonTransport>(
     context: &VerifyContext<'_, T>,
     claim: &Claim,
+    ablation: Ablation,
 ) -> Result<TitleSearch> {
-    let Ok(mut found) = search_once(context, &claim.title, claim.year).await? else {
+    let Ok(mut found) = search_once(context, &claim.title, claim.year, ablation).await? else {
         return Ok(TitleSearch::TransportError);
     };
     if found.is_empty()
+        && !ablation.split_title_retry
         && let Some(halves) = title_halves(&claim.title)
     {
         for half in &halves {
-            let Ok(more) = search_once(context, half, claim.year).await? else {
+            let Ok(more) = search_once(context, half, claim.year, ablation).await? else {
                 return Ok(TitleSearch::TransportError);
             };
             found.extend(more);
@@ -358,6 +373,15 @@ pub async fn verdict_for_claim<T: JsonTransport>(
     context: &VerifyContext<'_, T>,
     claim: &Claim,
 ) -> Result<ClaimVerdict> {
+    verdict_for_claim_with(context, claim, Ablation::default()).await
+}
+
+/// [`verdict_for_claim`] with some checks switched off; the default is `verdict_for_claim`.
+pub async fn verdict_for_claim_with<T: JsonTransport>(
+    context: &VerifyContext<'_, T>,
+    claim: &Claim,
+    ablation: Ablation,
+) -> Result<ClaimVerdict> {
     let searchable = {
         let key = title_key(&claim.title);
         !claim.title.trim().is_empty() && key != "untitled"
@@ -373,7 +397,7 @@ pub async fn verdict_for_claim<T: JsonTransport>(
         identifiers,
         title_search: TitleSearch::NotRun,
     };
-    let early = decide_claim(claim, &evidence);
+    let early = decide_claim_with(claim, &evidence, ablation);
     if matches!(
         early.outcome,
         ClaimOutcome::Matched(_) | ClaimOutcome::Verified(_)
@@ -381,8 +405,8 @@ pub async fn verdict_for_claim<T: JsonTransport>(
     {
         return Ok(early);
     }
-    evidence.title_search = search_title(context, claim).await?;
-    Ok(decide_claim(claim, &evidence))
+    evidence.title_search = search_title(context, claim, ablation).await?;
+    Ok(decide_claim_with(claim, &evidence, ablation))
 }
 
 /// A Work already holding an identifier that names this record.
@@ -532,7 +556,16 @@ pub async fn verify_claim<T: JsonTransport>(
     context: &VerifyContext<'_, T>,
     claim: &Claim,
 ) -> Result<ClaimResolution> {
-    let verdict = verdict_for_claim(context, claim).await?;
+    verify_claim_with(context, claim, Ablation::default()).await
+}
+
+/// [`verify_claim`] with some checks switched off; the default is `verify_claim`.
+pub async fn verify_claim_with<T: JsonTransport>(
+    context: &VerifyContext<'_, T>,
+    claim: &Claim,
+    ablation: Ablation,
+) -> Result<ClaimResolution> {
+    let verdict = verdict_for_claim_with(context, claim, ablation).await?;
     let identifier_dropped = verdict.identifier_dropped;
     match verdict.outcome {
         ClaimOutcome::Matched(work_id) => {
