@@ -474,8 +474,12 @@ async fn attach_openalex_id<T: JsonTransport>(
 ///
 /// A Work that already holds the record's DOI (or the arXiv ID it is the DOI of) is
 /// the paper, even when it has no `OpenAlex` ID or a different title yet; it gets the
-/// `OpenAlex` ID instead of a duplicate being created.
-async fn work_for_record<T: JsonTransport>(
+/// `OpenAlex` ID instead of a duplicate being created. Returns whether a Work row was
+/// created. Also resolves a claim to a provider candidate the user picked.
+///
+/// # Errors
+/// A database failure. Provider failures while hydrating are logged, not returned.
+pub async fn work_for_record<T: JsonTransport>(
     context: &VerifyContext<'_, T>,
     claim: &Claim,
     record: &ProviderRecord,

@@ -911,6 +911,8 @@ export type ListNodePatch = {
   summary?: string | null;
   review?: "accepted";
   resolve_to?: string;
+  /** A stored candidate's `provider_id`; the server makes or reuses its Work. */
+  resolve_to_candidate?: string;
 };
 
 /** What deleting a node removed; enough for the client to undo it. */

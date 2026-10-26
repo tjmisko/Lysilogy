@@ -21,7 +21,9 @@ use lysilogy_db::list::{
 };
 use lysilogy_db::reading_state::WorkReadingState;
 use lysilogy_ingest::openalex::search_title_cached;
-use lysilogy_ingest::verify_claim::{ClaimResolution, VerifyContext, verify_claim};
+use lysilogy_ingest::verify_claim::{
+    ClaimResolution, VerifyContext, verify_claim, work_for_record,
+};
 use serde::Serialize;
 use serde_json::{Value, json};
 
@@ -385,6 +387,9 @@ pub struct NodeChange {
     pub accept: bool,
     /// Turn a claim node into a node of this Work.
     pub resolve_to: Option<WorkId>,
+    /// Turn a claim node into a node of the Work for one of its stored provider
+    /// candidates (by `provider_id`), creating that Work when the graph has none.
+    pub resolve_to_candidate: Option<String>,
 }
 
 /// One hit of a Work search.
@@ -852,6 +857,47 @@ impl AppState {
             .map_err(|error| ListServiceError::Graph(Error::from(error)))
     }
 
+    /// The Work for one of a claim node's stored candidates. Only a stored candidate can be
+    /// picked, so a client cannot make arbitrary Works through a claim.
+    async fn candidate_work(
+        &self,
+        graph: &GraphState,
+        list: ListId,
+        node: NodeId,
+        provider_id: &str,
+    ) -> Result<WorkId, ListServiceError> {
+        let stored = graph
+            .lists
+            .node(list, node)
+            .await
+            .map_err(|error| list_failure(&error))?
+            .ok_or(ListServiceError::NotFound("node_not_found"))?;
+        if stored.kind != NodeKind::Claim {
+            return Err(ListServiceError::Conflict(
+                "not_a_claim",
+                "Only claim nodes can be resolved to a Work.".to_owned(),
+            ));
+        }
+        let candidates: Vec<ProviderRecord> =
+            serde_json::from_value(stored.candidates.clone()).unwrap_or_default();
+        let record = candidates
+            .into_iter()
+            .find(|candidate| candidate.provider_id == provider_id)
+            .ok_or(ListServiceError::NotFound("candidate_not_found"))?;
+        let claim: Claim = serde_json::from_value(claim_json_of(&stored)?)
+            .map_err(|_| invalid("invalid_claim", "The stored claim is not valid."))?;
+        let context = VerifyContext {
+            works: &graph.works,
+            claims: &graph.claims,
+            records: &graph.source_records,
+            client: self.literature.client(),
+        };
+        let (work, _created) = work_for_record(&context, &claim, &record)
+            .await
+            .map_err(|error| ListServiceError::Graph(Error::from(error)))?;
+        Ok(work.id)
+    }
+
     async fn prepare_node(
         &self,
         graph: &GraphState,
@@ -958,8 +1004,9 @@ impl AppState {
     /// Change a node, or resolve a claim node to a Work.
     ///
     /// # Errors
-    /// `NotFound("list_not_found" | "node_not_found" | "work_not_found")`; `Conflict` for
-    /// `item_exists` and `not_a_claim`; `Invalid("invalid_node_kind")`.
+    /// `NotFound("list_not_found" | "node_not_found" | "work_not_found" |
+    /// "candidate_not_found")`; `Conflict` for `item_exists` and `not_a_claim`;
+    /// `Invalid("invalid_node_kind" | "invalid_body")`.
     pub async fn update_list_node(
         &self,
         list: ListId,
@@ -969,13 +1016,24 @@ impl AppState {
         let graph = graph_of(self)?;
         let workspace = workspace_of(graph).await?;
         Self::require_list(graph, workspace, list).await?;
-        if change.resolve_to.is_some() && (change.label.is_some() || change.summary.is_some()) {
+        let resolves = change.resolve_to.is_some() || change.resolve_to_candidate.is_some();
+        if change.resolve_to.is_some() && change.resolve_to_candidate.is_some() {
+            return Err(invalid(
+                "invalid_body",
+                "Give resolve_to or resolve_to_candidate, not both.",
+            ));
+        }
+        if resolves && (change.label.is_some() || change.summary.is_some()) {
             return Err(invalid(
                 "invalid_node_kind",
                 "A claim resolves to a Work; label and summary belong to topic nodes.",
             ));
         }
-        if let Some(work) = change.resolve_to {
+        let candidate_work = match change.resolve_to_candidate.as_deref() {
+            Some(provider_id) => Some(self.candidate_work(graph, list, node, provider_id).await?),
+            None => None,
+        };
+        if let Some(work) = change.resolve_to.or(candidate_work) {
             let work = existing_work(graph, work).await?;
             graph
                 .lists

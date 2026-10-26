@@ -370,7 +370,14 @@ try {
   assert.ok(requests.some((entry) => entry === `PATCH /api/lists/${listId}/nodes/p`), requests.join('\n'));
   await page.locator('[data-node-id="k"]').click();
   await press('c'); await press('c'); await press('Escape');
+  const resolveMark = requests.length;
   await press('c'); await press('Enter');
+  // The claim resolves in place to the highlighted candidate, by its provider id.
+  await settle();
+  assert.ok(
+    sent(resolveMark, `PATCH /api/lists/${listId}/nodes/k`, (patch) => patch?.resolve_to_candidate === 'oa-1'),
+    requests.slice(resolveMark).join('\n'),
+  );
   await press('x');
   await press('1');
 

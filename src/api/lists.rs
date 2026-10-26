@@ -506,6 +506,7 @@ struct PatchNodeBody {
     summary: Option<Value>,
     review: Option<String>,
     resolve_to: Option<String>,
+    resolve_to_candidate: Option<String>,
 }
 
 async fn patch_node(
@@ -530,10 +531,18 @@ async fn patch_node_inner(
         && body.summary.is_none()
         && body.review.is_none()
         && body.resolve_to.is_none()
+        && body.resolve_to_candidate.is_none()
     {
         return Err(invalid_body(
-            "at least one of note, label, summary, review, resolve_to is required",
+            "at least one of note, label, summary, review, resolve_to, resolve_to_candidate is required",
         ));
+    }
+    if body
+        .resolve_to_candidate
+        .as_deref()
+        .is_some_and(|provider_id| provider_id.trim().is_empty())
+    {
+        return Err(invalid_body("resolve_to_candidate must not be empty"));
     }
     let accept = match body.review.as_deref() {
         None => false,
@@ -557,6 +566,7 @@ async fn patch_node_inner(
         summary: text_change(body.summary.as_ref(), "invalid_summary", parse_summary)?,
         accept,
         resolve_to: body.resolve_to.as_deref().map(parse_work).transpose()?,
+        resolve_to_candidate: body.resolve_to_candidate,
     };
     graph_or_unavailable(state)?;
     let view = state
@@ -3306,6 +3316,127 @@ mod tests {
         assert_eq!(json["error"], "invalid_node_kind");
         let detail = fixture.detail(&list).await;
         assert_eq!(detail["nodes"][0]["kind"], "claim", "{detail}");
+    }
+
+    /// A claim node holding one provider candidate, with a note and rationale to keep.
+    async fn candidate_claim(
+        fixture: &Fixture,
+        list: ListId,
+        candidate: &Value,
+    ) -> lysilogy_db::list::ListNode {
+        let mut claim = NewNode::claim(
+            json!({"title": candidate["title"], "year": 2021, "authors": ["Ada Lovelace"]}),
+            ClaimState::Ambiguous,
+        );
+        claim.content = lysilogy_db::list::NewNodeContent::Claim {
+            claim: json!({"title": candidate["title"], "year": 2021, "authors": ["Ada Lovelace"]}),
+            state: ClaimState::Ambiguous,
+            candidates: json!([candidate]),
+        };
+        claim.note = Some("why this matters".to_owned());
+        claim.rationale = Some("the model's reason".to_owned());
+        fixture
+            .graph
+            .lists
+            .add_node(list, claim)
+            .await
+            .expect("claim")
+    }
+
+    #[tokio::test]
+    async fn should_resolve_claim_in_place_when_given_a_stored_candidate_not_yet_in_the_graph() {
+        let down = Arc::new(AtomicBool::new(false));
+        let needle = marker();
+        let openalex_id = format!("W7{needle}");
+        let title = format!("Candidate only {needle}");
+        let transport = provider(vec![(needle.clone(), record(&openalex_id, &title))], &down);
+        let Some(fixture) = Fixture::with_transport(transport).await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let list = fixture.create("Resolve candidate").await;
+        let list_id = Fixture::list_id(&list);
+        let candidate = json!({
+            "provider_id": openalex_id, "title": title, "year": 2021,
+            "authors": ["Ada Lovelace"], "doi": null
+        });
+        let claim = candidate_claim(&fixture, list_id, &candidate).await;
+        let node_uri = format!("/api/lists/{list}/nodes/{}", claim.id);
+
+        let (status, json) = call(
+            &fixture.state,
+            "PATCH",
+            &node_uri,
+            &json!({"resolve_to_candidate": "W-not-stored"}),
+        )
+        .await;
+        assert_eq!(status, StatusCode::NOT_FOUND, "{json}");
+        assert_eq!(json["error"], "candidate_not_found");
+
+        let (status, json) = call(
+            &fixture.state,
+            "PATCH",
+            &node_uri,
+            &json!({"resolve_to_candidate": openalex_id, "resolve_to": WorkId::new().to_string()}),
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{json}");
+        assert_eq!(json["error"], "invalid_body");
+
+        let (status, json) = call(
+            &fixture.state,
+            "PATCH",
+            &node_uri,
+            &json!({"resolve_to_candidate": "  "}),
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{json}");
+        assert_eq!(json["error"], "invalid_body");
+
+        let (status, json) = call(
+            &fixture.state,
+            "PATCH",
+            &node_uri,
+            &json!({"resolve_to_candidate": openalex_id}),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{json}");
+        assert_eq!(json["id"], claim.id.to_string(), "resolved in place");
+        assert_eq!(json["kind"], "work");
+        assert_eq!(json["note"], "why this matters");
+        assert_eq!(json["rationale"], "the model's reason");
+        let work = fixture
+            .graph
+            .works
+            .find_by_identifier(IdentifierScheme::Openalex, &openalex_id)
+            .await
+            .expect("lookup")
+            .expect("the candidate became a Work");
+        assert_eq!(json["work_id"], work.id.to_string());
+
+        // A second claim naming the same candidate reuses that Work instead of duplicating it.
+        let other = fixture.create("Resolve candidate again").await;
+        let again = candidate_claim(&fixture, Fixture::list_id(&other), &candidate).await;
+        let (status, json) = call(
+            &fixture.state,
+            "PATCH",
+            &format!("/api/lists/{other}/nodes/{}", again.id),
+            &json!({"resolve_to_candidate": openalex_id}),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{json}");
+        assert_eq!(json["work_id"], work.id.to_string());
+
+        // Resolving the now-Work node again is a conflict, not a second Work.
+        let (status, json) = call(
+            &fixture.state,
+            "PATCH",
+            &node_uri,
+            &json!({"resolve_to_candidate": openalex_id}),
+        )
+        .await;
+        assert_eq!(status, StatusCode::CONFLICT, "{json}");
+        assert_eq!(json["error"], "not_a_claim");
     }
 
     #[tokio::test]

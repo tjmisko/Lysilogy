@@ -32,7 +32,7 @@ export type ListActions = {
   removeEdge: (edge: ListEdgeRef) => Promise<boolean>;
   acceptNode: (nodeId: string) => Promise<void>;
   acceptEdge: (edge: ListEdgeRef) => Promise<void>;
-  resolveClaim: (nodeId: string, workId: string) => Promise<void>;
+  resolveClaimCandidate: (nodeId: string, providerId: string) => Promise<void>;
   verify: () => Promise<VerifyReport | null>;
   reload: () => Promise<void>;
   notify: (text: string) => void;
@@ -268,9 +268,9 @@ export function useListDetail(listId: string | null) {
         if (idRef.current === id) apply(fresh);
       });
     },
-    resolveClaim: async (nodeId, workId) => {
+    resolveClaimCandidate: async (nodeId, providerId) => {
       await run(async (id) => {
-        await api.patchListNode(id, nodeId, { resolve_to: workId });
+        await api.patchListNode(id, nodeId, { resolve_to_candidate: providerId });
         const fresh = await api.readList(id);
         if (idRef.current === id) apply(fresh);
       });

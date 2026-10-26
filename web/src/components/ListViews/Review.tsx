@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { api } from "../../lib/api";
-import { candidateLabel, matchCandidateWork, nextCandidateIndex } from "../../lib/claimCandidates";
+import { candidateLabel, nextCandidateIndex } from "../../lib/claimCandidates";
 import { review } from "../../lib/listViews";
 import { routeReviewKey, type EdgeSelection } from "../../lib/reviewKeys";
 import "./ListViewsReview.css";
@@ -50,18 +49,11 @@ export function Review(props: ListViewProps) {
     resolving.current.add(nodeId);
     setChooser(null);
     try {
-      const { results } = await api.searchWorks(candidate.title, true);
-      const workId = matchCandidateWork(candidate, results);
-      if (workId === null) {
-        // The server cannot yet make a Work from a provider candidate in place. Re-adding the title
-        // as a new claim and deleting this one would lose its rationale, note, links and topics, so
-        // the claim stays untouched until it can be resolved with PATCH resolve_to.
-        actions.notify(`“${candidate.title}” is not a Work in your library yet, so this claim cannot be resolved in place. Import it first, then press c again.`);
-        return;
-      }
-      await actions.resolveClaim(nodeId, workId);
+      // The server reuses the Work already holding this record, or makes one, and keeps the
+      // node's note, rationale and context links.
+      await actions.resolveClaimCandidate(nodeId, candidate.provider_id);
     } catch (reason: unknown) {
-      actions.fail(reason instanceof Error ? reason.message : "The candidate lookup failed.");
+      actions.fail(reason instanceof Error ? reason.message : "The claim could not be resolved.");
     } finally {
       resolving.current.delete(nodeId);
     }
