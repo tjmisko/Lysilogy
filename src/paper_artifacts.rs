@@ -12,10 +12,13 @@ pub mod core_fields;
 pub mod corrections;
 pub mod features;
 pub mod objects;
+pub mod pipeline;
+pub mod plausibility;
 pub mod resources;
 pub mod run;
 pub mod schema;
 pub mod title;
+pub mod verification;
 
 /// The whole-paper artifacts a model fills in one pass, with every feature on.
 pub const PAPER_ARTIFACTS_SCHEMA: &str = include_str!("../prompts/paper-artifacts.schema.json");

@@ -189,6 +189,8 @@ mod tests {
             glossary: Vec::new(),
             caveats: Vec::new(),
             reading_path: Vec::new(),
+            pipeline_version: None,
+            quality_warnings: Vec::new(),
         }
     }
 }

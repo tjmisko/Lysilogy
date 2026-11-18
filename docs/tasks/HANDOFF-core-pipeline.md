@@ -61,9 +61,29 @@ analysis pipeline.
    and a budget.
 10. **Duplicate extraction.** `load_or_extract` extracts the PDF, then
     `paper_artifacts::resources::build` extracts it again.
-11. **Provider and budget defaults.** `analyze_core_artifacts` leaves
-    `providers: []` and `paper_budget_usd: 0.15`, matching the spike defaults,
-    not the app's spend plumbing.
+11. **Provider and budget defaults.** Resolved 2026-11-18: the app reads an
+    `analysis` section from `lysilogy.config.json` (model, optional
+    `judgment_model` for the self-check, `providers` defaulting to
+    `["deepinfra"]`, `paper_budget_usd` defaulting to 0.50).
+
+## Robustness added 2026-11-18
+
+- The page-1 title prior (`paper_artifacts::title`) ignores rotated margin
+  stamps, edge furniture, drop caps and banners, joins multi-line titles, and
+  is offered to the model as a hint, not as the answer.
+- Records (version 6) carry `verification` (self-check, admission, repair:
+  ran, disabled, not needed, skipped by budget, or failed). A skipped or
+  failed stage makes the record `degraded()` rather than `succeeded()`.
+- `paper_artifacts::plausibility` checks the merged record against the page
+  text (section coverage and count, references and abstract against their
+  headings, title and authors). A call whose sections or references look
+  degenerate is retried once with a note saying what looked wrong; the better
+  answer is kept. The warnings land on the record, on `AnalysisOutcome`, and
+  on the stored `PaperAnalysis.quality_warnings`.
+- `pipeline_version` (model, providers, and a digest of every prompt, schema
+  and plan setting) is on the record and on the stored analysis, so a human
+  review can be tied to what produced the output.
+- None of this has been run against a live model yet.
 
 ## Merge state
 

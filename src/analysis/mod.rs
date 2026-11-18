@@ -14,11 +14,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     Result,
+    config::AnalysisConfig,
     domain::{
         AgentSession, AnalysisProvider, Claim, Clarification, ContextNote, ContextSource,
         EvidenceStrength, ExtractedPaper, GlossaryEntry, KeyQuote, LearningRamp, PageSpan,
-        PaperAnalysis, PaperSection, PromptExperiment, PromptVariant, QuoteSignificance,
-        SectionFamily, SectionKind, SectionSourceSpan,
+        PaperAnalysis, PaperSection, PromptExperiment, PromptVariant, QualityWarning,
+        QuoteSignificance, SectionFamily, SectionKind, SectionSourceSpan,
     },
     error::Error,
     layout::verify_quote,
@@ -37,12 +38,19 @@ pub const LEARNING_RAMP_SCHEMA: &str = include_str!("../../prompts/learning-ramp
 #[derive(Clone, Debug, Default)]
 pub struct AnalysisService {
     local_cli: LocalCliAnalyzer,
+    settings: AnalysisConfig,
 }
 
 #[derive(Debug)]
 pub struct AnalysisOutcome {
     pub analysis: PaperAnalysis,
     pub session: Option<AgentSession>,
+    /// Deterministic plausibility warnings about the model output; also
+    /// stored on the analysis.
+    pub warnings: Vec<QualityWarning>,
+    /// The analysis is usable but not a clean success: a model call failed
+    /// or a verification pass did not run. Show it, flagged.
+    pub degraded: bool,
 }
 
 pub(crate) struct ExperimentVariantRequest<'a> {
@@ -76,8 +84,24 @@ impl AnalysisService {
     }
 
     #[must_use]
-    pub const fn new(local_cli: LocalCliAnalyzer) -> Self {
-        Self { local_cli }
+    pub fn new(local_cli: LocalCliAnalyzer) -> Self {
+        Self {
+            local_cli,
+            settings: AnalysisConfig::default(),
+        }
+    }
+
+    /// Use these model, provider and budget settings for the core pipeline.
+    #[must_use]
+    pub fn with_settings(mut self, settings: AnalysisConfig) -> Self {
+        self.settings = settings;
+        self
+    }
+
+    /// The model, provider and budget settings the core pipeline runs with.
+    #[must_use]
+    pub const fn settings(&self) -> &AnalysisConfig {
+        &self.settings
     }
 
     pub async fn extract_abstract(
@@ -118,6 +142,8 @@ impl AnalysisService {
         Ok(AnalysisOutcome {
             analysis,
             session: None,
+            warnings: Vec::new(),
+            degraded: false,
         })
     }
 
@@ -141,20 +167,22 @@ impl AnalysisService {
         };
         let checkpoint_directory = artifact_directory.join("checkpoints");
         let features = Features::parse("none")?;
+        let settings = &self.settings;
         let options = ExtractOptions {
             pdf: pdf.to_path_buf(),
-            model: openrouter::DEFAULT_MODEL.to_owned(),
+            model: settings.model.clone(),
+            judgment_model: settings.judgment_model.clone(),
             passes: 2,
             dpi: DEFAULT_DPI,
             work_directory: artifact_directory.join("paper-artifacts"),
             output: artifact_directory.join("paper-artifacts.json"),
-            paper_budget_usd: 0.15,
+            paper_budget_usd: settings.paper_budget_usd,
             timeout: std::time::Duration::from_secs(20 * 60),
             features,
             object_pages: 6,
             reasoning: openrouter::ReasoningEffort::Low,
             core_mode: CoreMode::Combined,
-            providers: Vec::new(),
+            providers: settings.providers.clone(),
             plan: Some(core_pipeline(features)),
             progress,
             checkpoints: Some(checkpoint_directory.clone()),
@@ -173,7 +201,18 @@ impl AnalysisService {
             }
         };
         let record = extract_with(&options, backend).await?;
-        let clean = record.failures.is_empty();
+        let clean = record.succeeded();
+        let degraded = record.degraded();
+        if degraded {
+            tracing::warn!(
+                pdf = %pdf.display(),
+                failures = record.failures.len(),
+                verification = ?record.verification,
+                "the core extraction finished degraded"
+            );
+        }
+        let warnings = record.warnings.clone();
+        let pipeline_version = record.pipeline_version.clone();
         let reason = record.failures.first().map_or_else(
             || "the extraction produced no artifacts".to_owned(),
             |failure| failure.error.clone(),
@@ -187,15 +226,20 @@ impl AnalysisService {
                 .as_ref()
                 .and_then(|extraction| extraction.text.clone());
         }
+        analysis.pipeline_version = Some(pipeline_version);
+        analysis.quality_warnings.clone_from(&warnings);
         // A finished run must not be replayed by the next one: a refresh asks
-        // the model again. Keep the saved calls when any call failed, so the
-        // retry pays only for what is missing.
+        // the model again. Keep the saved calls when any call failed or a
+        // verification pass was skipped, so the retry pays only for what is
+        // missing.
         if clean {
             crate::paper_artifacts::checkpoint::clear(&checkpoint_directory).await?;
         }
         Ok(AnalysisOutcome {
             analysis,
             session: None,
+            warnings,
+            degraded,
         })
     }
 
@@ -234,6 +278,8 @@ impl AnalysisService {
         Ok(AnalysisOutcome {
             analysis,
             session: result.session,
+            warnings: Vec::new(),
+            degraded: false,
         })
     }
 
@@ -696,6 +742,8 @@ fn normalize_analysis(
         glossary: deduplicate_glossary(draft.glossary),
         caveats: clean_list(draft.caveats, 12),
         reading_path: clean_list(draft.reading_path, 18),
+        pipeline_version: None,
+        quality_warnings: Vec::new(),
     };
     validate_citations(&mut analysis, &paper.layout)?;
     Ok(analysis)
@@ -1020,6 +1068,76 @@ mod tests {
         TextAnchor,
     };
 
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_run_the_core_pipeline_with_the_configured_settings_and_surface_its_warnings() {
+        use std::os::unix::fs::PermissionsExt;
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let script = directory.path().join("stub-codex");
+        // Every core answer maps only page 1 of the two-page fixture.
+        std::fs::write(
+            &script,
+            r#"#!/bin/sh
+prompt=$(cat)
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--output-last-message" ]; then shift; output="$1"; fi
+  shift
+done
+case "$prompt" in
+  *"You are checking a draft record"*) printf '%s' '{"corrections":[]}' > "$output" ;;
+  *) printf '%s' '{"identity":{"title":"Paragraph Continuation","authors":[{"name":"A. Author","affiliation":null}]},"card":{"thesis":{"text":"Single-view estimation is enough.","evidence":[],"confidence":"high"}},"abstract":{"text":null,"page":null},"references":[],"sections":[{"title":"Front matter","kind":"other","family":"context","pages":{"start":1,"end":1},"summary":"The opening."}]}' > "$output" ;;
+esac
+"#,
+        )
+        .expect("stub script");
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700))
+            .expect("executable");
+        let service = AnalysisService::new(LocalCliAnalyzer::with_commands(&script, &script))
+            .with_settings(AnalysisConfig {
+                providers: vec!["example".to_owned()],
+                ..AnalysisConfig::default()
+            });
+        let pdf =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/paragraph-continuation.pdf");
+        let paper = crate::extract::PdfExtractor::default()
+            .extract(&pdf, &PaperMetadata::default())
+            .await
+            .expect("extraction");
+        let outcome = service
+            .analyze_core_artifacts(
+                AnalysisProvider::Codex,
+                &paper,
+                &pdf,
+                directory.path(),
+                None,
+            )
+            .await
+            .expect("analysis");
+        assert!(!outcome.degraded);
+        assert_eq!(
+            outcome
+                .warnings
+                .iter()
+                .map(|warning| warning.kind)
+                .collect::<Vec<_>>(),
+            [crate::domain::QualityWarningKind::SectionsLowCoverage]
+        );
+        assert_eq!(outcome.analysis.quality_warnings, outcome.warnings);
+        let version = outcome
+            .analysis
+            .pipeline_version
+            .as_deref()
+            .expect("version");
+        assert!(version.starts_with("plan:Codex@example#"), "{version}");
+        let record: serde_json::Value = serde_json::from_slice(
+            &std::fs::read(directory.path().join("paper-artifacts.json")).expect("record"),
+        )
+        .expect("record JSON");
+        assert_eq!(record["paper_budget_usd"], 0.5);
+        assert_eq!(record["providers"], serde_json::json!(["example"]));
+        assert_eq!(record["plausibility_retries"][0]["kept_retry"], false);
+    }
+
     fn anchor(page: u32, start_token: u32, end_token: u32) -> TextAnchor {
         TextAnchor {
             page,
@@ -1104,6 +1222,8 @@ mod tests {
             glossary: Vec::new(),
             caveats: Vec::new(),
             reading_path: Vec::new(),
+            pipeline_version: None,
+            quality_warnings: Vec::new(),
         }
     }
 

@@ -224,6 +224,13 @@ impl AppState {
         })
     }
 
+    /// Run the model reader with these model, provider and budget settings.
+    #[must_use]
+    pub fn with_analysis_config(mut self, settings: crate::config::AnalysisConfig) -> Self {
+        self.analysis = self.analysis.with_settings(settings);
+        self
+    }
+
     /// Replace the `OpenAlex` client used by the literature flow (for tests).
     #[must_use]
     pub fn with_literature_client(mut self, client: crate::literature::LiteratureClient) -> Self {

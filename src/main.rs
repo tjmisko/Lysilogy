@@ -275,6 +275,9 @@ enum Command {
         /// The `OpenRouter` model.
         #[arg(long, default_value = lysilogy::analysis::openrouter::DEFAULT_MODEL)]
         model: String,
+        /// A stronger `OpenRouter` model for the self-check; defaults to --model.
+        #[arg(long)]
+        judgment_model: Option<String>,
         /// 1 for a single pass, 2 to add the self-check pass.
         #[arg(long, default_value_t = 2, value_parser = clap::value_parser!(u8).range(1..=2))]
         passes: u8,
@@ -559,6 +562,7 @@ async fn run(cli: Cli) -> Result<()> {
         .await
         .with_notes_root(&cli.notes)
         .with_vimrc(config.vim.vimrc)
+        .with_analysis_config(config.analysis)
         .with_notes_template(config.notes)?;
     let skip_fields = matches!(
         cli.command,
@@ -605,6 +609,7 @@ async fn run(cli: Cli) -> Result<()> {
             query,
             pdf,
             model,
+            judgment_model,
             passes,
             out,
             work,
@@ -638,6 +643,7 @@ async fn run(cli: Cli) -> Result<()> {
                 work_directory: work.unwrap_or_else(|| extract_root.join(&stem)),
                 pdf,
                 model,
+                judgment_model,
                 passes,
                 dpi,
                 paper_budget_usd,
@@ -2561,6 +2567,14 @@ fn print_extract_summary(
     }
     if let Some(reason) = &record.budget_stopped {
         println!("  budget: {reason}");
+    }
+    println!("  pipeline: {}", record.pipeline_version);
+    for retry in &record.plausibility_retries {
+        let outcome = if retry.kept_retry { "kept" } else { "discarded" };
+        println!("  retried {} for a degenerate answer; retry {outcome}", retry.call);
+    }
+    for warning in &record.warnings {
+        println!("  warning: {}", warning.message);
     }
     for failure in &record.failures {
         println!("  failed {}: {}", failure.stage, failure.error);

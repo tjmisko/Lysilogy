@@ -880,6 +880,8 @@ mod tests {
             glossary: Vec::new(),
             caveats: Vec::new(),
             reading_path: Vec::new(),
+            pipeline_version: None,
+            quality_warnings: Vec::new(),
         };
         store.save_analysis(&id, &analysis).await?;
         assert!(store.load_analysis(&id).await?.is_some());

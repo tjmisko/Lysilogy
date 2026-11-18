@@ -34,8 +34,11 @@ use super::{
     corrections::{self, CheckResponse, Correction, CorrectionOutcome},
     features::Features,
     objects::{self, ChunkObjects, MergeStats},
+    pipeline::{PipelineInputs, pipeline_version},
+    plausibility,
     resources::{self, PageResources},
     title,
+    verification::{StageStatus, Verification},
 };
 use crate::{
     Error, Result,
@@ -44,7 +47,7 @@ use crate::{
         openrouter::{self, ChatRequest, ContentPart, CostSource, ProgressSink, ReasoningEffort},
         spend::SpendLedger,
     },
-    domain::AnalysisProvider,
+    domain::{AnalysisProvider, QualityWarning},
     extract::PdfExtractor,
     store::write_atomic,
 };
@@ -56,7 +59,7 @@ const CHECK_PROMPT: &str = include_str!("../../prompts/paper-artifacts-check.md"
 const REPAIR_PROMPT: &str = include_str!("../../prompts/paper-artifacts-repair.md");
 
 /// Bump when the record shape changes.
-const RECORD_VERSION: u16 = 5;
+const RECORD_VERSION: u16 = 6;
 
 /// Object chunks in flight at once.
 const CHUNK_CONCURRENCY: usize = 3;
@@ -88,6 +91,10 @@ const RAW_PREVIEW_CHARS: usize = 2_000;
 pub struct ExtractOptions {
     pub pdf: PathBuf,
     pub model: String,
+    /// A stronger model for judgment calls: the self-check, and plan calls
+    /// that name the `strong` tier when the plan sets none. `None` uses
+    /// `model` throughout.
+    pub judgment_model: Option<String>,
     /// 1 or 2; pass 2 is the self-check.
     pub passes: u8,
     pub dpi: u32,
@@ -255,13 +262,50 @@ pub struct ExtractRecord {
     pub admission: Vec<SiteOutcome>,
     pub admission_counts: BTreeMap<String, usize>,
     pub artifacts: Option<Value>,
+    /// The stronger model used for judgment calls, when one was configured.
+    pub judgment_model: Option<String>,
+    /// Providers asked, in order; empty when `OpenRouter` chose freely.
+    pub providers: Vec<String>,
+    /// The spend cap no further call could start past.
+    pub paper_budget_usd: f64,
+    /// Model, providers and a digest of every prompt, schema and plan setting
+    /// the run used, so a later review can be tied to what produced it.
+    pub pipeline_version: String,
+    /// Which verification stages ran, were skipped, or failed.
+    pub verification: Verification,
+    /// Plan calls asked a second time because the first answer looked
+    /// degenerate.
+    pub plausibility_retries: Vec<PlausibilityRetry>,
+    /// Deterministic sanity checks the final record failed, including any
+    /// verification stage that did not run.
+    pub warnings: Vec<QualityWarning>,
 }
 
 impl ExtractRecord {
+    /// Artifacts, no failed call, and every verification stage that was
+    /// meant to run did.
     #[must_use]
     pub const fn succeeded(&self) -> bool {
-        self.artifacts.is_some() && self.failures.is_empty()
+        self.artifacts.is_some() && self.failures.is_empty() && self.verification.complete()
     }
+
+    /// Artifacts exist but are not a clean success: a call failed or a
+    /// verification stage was skipped. Show them, flagged.
+    #[must_use]
+    pub const fn degraded(&self) -> bool {
+        self.artifacts.is_some() && !self.succeeded()
+    }
+}
+
+/// A plan call asked again because its first answer failed a plausibility
+/// gate that usually means a degenerate answer.
+#[derive(Clone, Debug, Serialize)]
+pub struct PlausibilityRetry {
+    pub call: String,
+    /// What the first answer failed.
+    pub warnings: Vec<QualityWarning>,
+    /// Whether the second answer was better and replaced the first.
+    pub kept_retry: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -321,6 +365,8 @@ struct SessionState {
     failures: Vec<Failure>,
     recovered: Vec<Failure>,
     budget_stopped: Option<String>,
+    /// Every stage the budget kept from starting, in order.
+    skipped: Vec<String>,
 }
 
 impl<'a> Session<'a> {
@@ -561,8 +607,16 @@ impl<'a> Session<'a> {
             guard.spent_usd, self.paper_budget_usd
         );
         guard.budget_stopped.get_or_insert(reason);
+        if !guard.skipped.iter().any(|skipped| skipped == stage) {
+            guard.skipped.push(stage.to_owned());
+        }
         drop(guard);
         false
+    }
+
+    /// Whether the budget kept `stage` from starting.
+    fn was_skipped(&self, stage: &str) -> bool {
+        self.state().skipped.iter().any(|skipped| skipped == stage)
     }
 
     fn record_call(
@@ -664,15 +718,36 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
     .with_progress(options.progress.clone())
     .with_checkpoints(options.checkpoints.clone());
 
-    let plan = options.plan.clone().unwrap_or_else(|| {
+    let mut plan = options.plan.clone().unwrap_or_else(|| {
         let mut plan = default_pipeline(options.core_mode, options.features);
         if options.passes == 1 {
             plan.verify.self_check = SelfCheckMode::None;
         }
         plan
     });
-    let (core, object_chunks, object_merge) =
-        run_plan(&session, &resources, &plan, options.object_pages).await;
+    // A plan that names no model tier runs on the requested model.
+    plan.models
+        .cheap
+        .get_or_insert_with(|| options.model.clone());
+    if let Some(judge) = &options.judgment_model {
+        plan.models.strong.get_or_insert_with(|| judge.clone());
+    }
+    let model_label = match &session.backend {
+        Backend::OpenRouter { .. } => options.model.clone(),
+        Backend::Plan { .. } => session.backend_label(),
+    };
+    let version = pipeline_version(&PipelineInputs {
+        model: &model_label,
+        judgment_model: options.judgment_model.as_deref(),
+        providers: &options.providers,
+        texts: &pipeline_texts(&plan, options.reasoning),
+    });
+    let PlanRun {
+        draft: core,
+        chunks: object_chunks,
+        merge: object_merge,
+        retries: plausibility_retries,
+    } = run_plan(&session, &resources, &plan, options.object_pages).await;
     let pass1_check = core.as_ref().map(|draft| check(&source, draft));
 
     let mut draft = core.clone();
@@ -683,16 +758,45 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
         .iter()
         .any(|call| !object_kinds(call).is_empty());
     let schema = plan_schema(&plan);
+    let judge = options.judgment_model.as_deref().unwrap_or(&options.model);
     let check_pass = match draft.as_mut() {
         Some(current) if self_check_enabled => {
-            self_check(current, &text, &source, &session, hide_objects, &schema).await?
+            let view = CheckView {
+                text: &text,
+                source: &source,
+                hide_objects,
+                schema: &schema,
+                model: judge,
+            };
+            self_check(current, &view, &session).await?
         }
-        _ => SelfCheck::default(),
+        None if self_check_enabled => SelfCheck {
+            status: StageStatus::NotNeeded,
+            ..SelfCheck::default()
+        },
+        Some(_) | None => SelfCheck::default(),
     };
-    let admission = match draft.as_mut() {
+    let (admission, repair_status) = match draft.as_mut() {
         Some(current) => admit(current, &source, &resources, &session, repair_model).await,
-        None => Vec::new(),
+        None => (Vec::new(), StageStatus::NotNeeded),
     };
+    let verification = Verification {
+        self_check: check_pass.status,
+        admission: if draft.is_some() {
+            StageStatus::Ran
+        } else {
+            StageStatus::NotNeeded
+        },
+        repair: repair_status,
+    };
+    let mut warnings = verification.warnings();
+    if let Some(current) = &draft {
+        warnings.extend(plausibility::check(
+            current,
+            &plan_fields(&plan),
+            &resources.paper.pages,
+        ));
+    }
     let mut admission_counts = BTreeMap::new();
     for outcome in &admission {
         let key = serde_json::to_value(outcome.status)?
@@ -747,6 +851,13 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
         admission,
         admission_counts,
         artifacts: draft,
+        judgment_model: options.judgment_model.clone(),
+        providers: options.providers.clone(),
+        paper_budget_usd: options.paper_budget_usd,
+        pipeline_version: version,
+        verification,
+        plausibility_retries,
+        warnings,
     };
     write_record(&options.output, &record).await?;
     Ok(record)
@@ -795,17 +906,34 @@ struct SelfCheck {
     corrections: Vec<Correction>,
     outcomes: Vec<CorrectionOutcome>,
     counts: Option<CheckCounts>,
+    status: StageStatus,
 }
+
+/// What the self-check reads and which model answers it.
+struct CheckView<'a> {
+    text: &'a [ContentPart],
+    source: &'a SourceText<'a>,
+    hide_objects: bool,
+    schema: &'a Value,
+    model: &'a str,
+}
+
+/// The stage name of the self-check call.
+const CHECK_STAGE: &str = "extract.pass2";
 
 /// Pass 2: the model may only correct or flag the draft.
 async fn self_check(
     draft: &mut Value,
-    text: &[ContentPart],
-    source: &SourceText<'_>,
+    check_view: &CheckView<'_>,
     session: &Session<'_>,
-    hide_objects: bool,
-    schema: &Value,
 ) -> Result<SelfCheck> {
+    let CheckView {
+        text,
+        source,
+        hide_objects,
+        schema,
+        model,
+    } = *check_view;
     // Objects are verified against the page images elsewhere; the text-only
     // self-check spends nothing on them.
     let mut view = draft.clone();
@@ -823,10 +951,26 @@ async fn self_check(
     let mut parts = parts;
     parts.extend(text.iter().cloned());
     let Some(response) = session
-        .call::<CheckResponse>("extract.pass2", &parts, CHECK_SCHEMA, CHECK_MAX_TOKENS)
+        .call_with::<CheckResponse>(
+            CHECK_STAGE,
+            None,
+            &parts,
+            CHECK_SCHEMA,
+            CHECK_MAX_TOKENS,
+            model,
+            session.reasoning,
+        )
         .await
     else {
-        return Ok(SelfCheck::default());
+        let status = if session.was_skipped(CHECK_STAGE) {
+            StageStatus::SkippedBudget
+        } else {
+            StageStatus::Failed
+        };
+        return Ok(SelfCheck {
+            status,
+            ..SelfCheck::default()
+        });
     };
     let outcomes =
         corrections::apply_with_schema(draft, &response.corrections, source, Some(schema));
@@ -834,6 +978,7 @@ async fn self_check(
         corrections: response.corrections,
         outcomes,
         counts: Some(check(source, draft)),
+        status: StageStatus::Ran,
     })
 }
 
@@ -949,18 +1094,69 @@ fn plan_schema(plan: &RunConfig) -> Value {
     schema
 }
 
+/// Every field a plan asks for.
+fn plan_fields(plan: &RunConfig) -> BTreeSet<String> {
+    plan.calls
+        .iter()
+        .flat_map(|call| call.fields.iter().cloned())
+        .collect()
+}
+
+/// Every text that shapes what the model is asked, in a stable order, for
+/// the pipeline version: prompts, per-field instructions and schemas, the
+/// calls, and the verification settings.
+fn pipeline_texts(plan: &RunConfig, reasoning: ReasoningEffort) -> Vec<String> {
+    let mut texts = vec![
+        FIELDS_PROMPT.to_owned(),
+        sections_guidance(1),
+        title_hint("{title}"),
+        format!("{:?}", plan.input),
+        format!("{:?}", plan.models),
+        format!("{:?}", plan.verify),
+        reasoning.label().to_owned(),
+    ];
+    for call in &plan.calls {
+        texts.push(format!("{call:?}"));
+        if !object_kinds(call).is_empty() {
+            texts.push(OBJECTS_PROMPT.to_owned());
+        }
+        for field in &call.fields {
+            texts.push(unit_instruction(field, 1));
+            texts.push(unit_schema(field).unwrap_or_default().to_owned());
+        }
+    }
+    if plan.verify.self_check == SelfCheckMode::Full {
+        texts.extend([CHECK_PROMPT.to_owned(), CHECK_SCHEMA.to_owned()]);
+    }
+    if plan.verify.repair == RepairMode::Model {
+        texts.extend([REPAIR_PROMPT.to_owned(), REPAIR_SCHEMA.to_owned()]);
+    }
+    texts
+}
+
+/// What running a plan produced.
+struct PlanRun {
+    draft: Option<Value>,
+    chunks: Vec<ChunkRecord>,
+    merge: Option<MergeStats>,
+    retries: Vec<PlausibilityRetry>,
+}
+
 /// Run the configured calls in dependency order, independent calls together.
+/// A call whose answer fails a degenerate-answer gate is asked once more,
+/// told what looked wrong, and the better answer is kept.
 async fn run_plan(
     session: &Session<'_>,
     resources: &PageResources,
     plan: &RunConfig,
     object_pages: usize,
-) -> (Option<Value>, Vec<ChunkRecord>, Option<MergeStats>) {
+) -> PlanRun {
     let dependencies = plan.dependencies();
     let mut completed = BTreeSet::new();
     let mut draft = serde_json::Map::new();
     let mut chunks = Vec::new();
     let mut merge = None;
+    let mut retries = Vec::new();
     while completed.len() < plan.calls.len() {
         let ready: Vec<&Call> = plan
             .calls
@@ -978,10 +1174,23 @@ async fn run_plan(
         for batch in ready.chunks(PLAN_CONCURRENCY) {
             let results = futures_util::future::join_all(batch.iter().map(|call| {
                 let draft = draft.clone();
-                plan_call(session, resources, plan, call, object_pages, draft)
+                plan_call(session, resources, plan, call, object_pages, draft, None)
             }))
             .await;
-            for result in results {
+            for (call, mut result) in batch.iter().zip(results) {
+                let retry = retry_if_degenerate(
+                    session,
+                    resources,
+                    plan,
+                    call,
+                    object_pages,
+                    &draft,
+                    &mut result,
+                )
+                .await;
+                if let Some(retry) = retry {
+                    retries.push(retry);
+                }
                 completed.insert(result.name);
                 if let Some(value) = result.value {
                     merge_fields(&mut draft, &value);
@@ -994,7 +1203,74 @@ async fn run_plan(
         }
     }
     let draft = (!draft.is_empty()).then_some(Value::Object(draft));
-    (draft, chunks, merge)
+    PlanRun {
+        draft,
+        chunks,
+        merge,
+        retries,
+    }
+}
+
+/// Ask `call` once more when its answer fails a degenerate-answer gate, and
+/// keep the retry only when it fails fewer gates. A failed retry is not a
+/// run failure: the first answer stands.
+async fn retry_if_degenerate(
+    session: &Session<'_>,
+    resources: &PageResources,
+    plan: &RunConfig,
+    call: &Call,
+    object_pages: usize,
+    draft: &serde_json::Map<String, Value>,
+    result: &mut PlanCallResult,
+) -> Option<PlausibilityRetry> {
+    let fields = call.fields.iter().cloned().collect::<BTreeSet<_>>();
+    let pages = &resources.paper.pages;
+    let warnings = plausibility::degenerate(result.value.as_ref()?, &fields, pages);
+    if warnings.is_empty() {
+        return None;
+    }
+    let note = retry_note(&warnings);
+    let retry = plan_call(
+        session,
+        resources,
+        plan,
+        call,
+        object_pages,
+        draft.clone(),
+        Some(&note),
+    )
+    .await;
+    session.recover(&retry_stage(call));
+    let kept_retry = retry.value.as_ref().is_some_and(|value| {
+        plausibility::degenerate(value, &fields, pages).len() < warnings.len()
+    });
+    if kept_retry {
+        result.value = retry.value;
+    }
+    Some(PlausibilityRetry {
+        call: call.name.clone(),
+        warnings,
+        kept_retry,
+    })
+}
+
+/// The stage, and failure tag, of a call's plausibility retry.
+fn retry_stage(call: &Call) -> String {
+    format!("{}.retry", call.name)
+}
+
+/// What a retried call is told about its first answer.
+fn retry_note(warnings: &[QualityWarning]) -> String {
+    let problems = warnings
+        .iter()
+        .map(|warning| format!("- {}", warning.message))
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!(
+        "An earlier answer to this same request was checked against the page text and looked incomplete:\n{problems}\n\
+         Answer the whole request again from the paper. These checks are rough, so if the paper really is shaped this way, say so through your answer rather than inventing structure; \
+         but usually it means part of the paper was skipped."
+    )
 }
 
 /// One plan call's merged fragment and bookkeeping.
@@ -1042,6 +1318,7 @@ async fn plan_call(
     call: &Call,
     object_pages: usize,
     draft: serde_json::Map<String, Value>,
+    retry_note: Option<&str>,
 ) -> PlanCallResult {
     let kinds = object_kinds(call);
     if !kinds.is_empty() {
@@ -1093,12 +1370,16 @@ async fn plan_call(
     }
     drop(draft);
     parts.push(ContentPart::Text(instruction));
+    if let Some(note) = retry_note {
+        parts.push(ContentPart::Text(note.to_owned()));
+    }
     let model = plan.model_for(call);
     let max_tokens = plan_max_tokens(call, resources.paper.pages.len());
+    let stage = retry_note.map_or_else(|| call.name.clone(), |_| retry_stage(call));
     let value = session
         .call_with::<Value>(
-            &call.name,
-            None,
+            &stage,
+            retry_note.map(|_| stage.as_str()),
             &parts,
             &schema,
             max_tokens,
@@ -1507,7 +1788,7 @@ async fn admit(
     resources: &PageResources,
     session: &Session<'_>,
     repair_model: bool,
-) -> Vec<SiteOutcome> {
+) -> (Vec<SiteOutcome>, StageStatus) {
     let mut outcomes = Vec::new();
     let mut failing = Vec::<(usize, QuoteSite)>::new();
     for site in quote_sites(draft) {
@@ -1545,8 +1826,20 @@ async fn admit(
         }
         outcomes.push(outcome);
     }
-    if !failing.is_empty() && repair_model {
+    let repair_status = if !repair_model {
+        StageStatus::Disabled
+    } else if failing.is_empty() {
+        StageStatus::NotNeeded
+    } else {
         let repairs = request_repairs(&failing, &outcomes, resources, session).await;
+        let status = if repairs.is_some() {
+            StageStatus::Ran
+        } else if session.was_skipped(REPAIR_STAGE) {
+            StageStatus::SkippedBudget
+        } else {
+            StageStatus::Failed
+        };
+        let repairs = repairs.unwrap_or_default();
         for (index, site) in &failing {
             let outcome = &mut outcomes[*index];
             let repair = repairs.get(&format!("q{index}"));
@@ -1578,7 +1871,8 @@ async fn admit(
                 _ => {}
             }
         }
-    }
+        status
+    };
     let removals = failing
         .iter()
         .filter(|(index, _)| {
@@ -1590,15 +1884,18 @@ async fn admit(
         .map(|(_, site)| site.removal.clone())
         .collect::<Vec<_>>();
     apply_removals(draft, &removals);
-    outcomes
+    (outcomes, repair_status)
 }
+
+/// The stage name of the quote repair call.
+const REPAIR_STAGE: &str = "extract.repair";
 
 async fn request_repairs(
     failing: &[(usize, QuoteSite)],
     outcomes: &[SiteOutcome],
     resources: &PageResources,
     session: &Session<'_>,
-) -> BTreeMap<String, Repair> {
+) -> Option<BTreeMap<String, Repair>> {
     let items = failing
         .iter()
         .map(|(index, site)| {
@@ -1635,7 +1932,7 @@ async fn request_repairs(
             }),
     );
     session
-        .call::<RepairResponse>("extract.repair", &parts, REPAIR_SCHEMA, REPAIR_MAX_TOKENS)
+        .call::<RepairResponse>(REPAIR_STAGE, &parts, REPAIR_SCHEMA, REPAIR_MAX_TOKENS)
         .await
         .map(|response| {
             response
@@ -1644,7 +1941,6 @@ async fn request_repairs(
                 .map(|repair| (repair.id.clone(), repair))
                 .collect()
         })
-        .unwrap_or_default()
 }
 
 fn set_quote(draft: &mut Value, site: &QuoteSite, quote: &str, page: u32) {
@@ -1726,7 +2022,8 @@ mod tests {
         let source = SourceText::new(&resources.paper.pages);
         let session = session(&ledger, 0.0);
         let mut value = draft();
-        let outcomes = admit(&mut value, &source, &resources, &session, true).await;
+        let (outcomes, repair) = admit(&mut value, &source, &resources, &session, true).await;
+        assert_eq!(repair, StageStatus::SkippedBudget);
         let statuses = outcomes
             .iter()
             .map(|outcome| (outcome.pointer.as_str(), outcome.status))
@@ -1765,8 +2062,9 @@ mod tests {
         let session = session(&ledger, 1.0);
         let mut value =
             json!({"objects": [{"caption": "Table 1: Accuracy after pruning.", "page": 2}]});
-        let outcomes = admit(&mut value, &source, &resources, &session, true).await;
+        let (outcomes, repair) = admit(&mut value, &source, &resources, &session, true).await;
         assert_eq!(outcomes.len(), 1);
+        assert_eq!(repair, StageStatus::NotNeeded);
         assert!(session.state().calls.is_empty() && session.state().failures.is_empty());
         assert!(session.state().budget_stopped.is_none());
     }
@@ -2122,6 +2420,7 @@ mod tests {
             let options = ExtractOptions {
                 pdf: directory.path().join("missing.pdf"),
                 model: openrouter::DEFAULT_MODEL.to_owned(),
+                judgment_model: None,
                 passes,
                 dpi: resources::DEFAULT_DPI,
                 work_directory: directory.path().join("work"),
@@ -2187,7 +2486,7 @@ esac
             ]}"#,
         )
         .expect("plan");
-        let (draft, _, _) = run_plan(&session, &resources(), &plan, 6).await;
+        let PlanRun { draft, .. } = run_plan(&session, &resources(), &plan, 6).await;
         let draft = draft.expect("merged draft");
         assert!(draft.get("supercut").is_some_and(Value::is_array));
         assert!(draft.get("glossary").is_some_and(Value::is_array));
@@ -2265,11 +2564,13 @@ printf '%s' '{answer}' > "$output"
         let plan = two_call_plan();
 
         let first = checkpointed_session(&cli, directory.path());
-        let (draft, _, _) = run_plan(&first, &resources(), &plan, 6).await;
+        let PlanRun { draft, .. } = run_plan(&first, &resources(), &plan, 6).await;
         assert_eq!(invocations(&log), 2);
 
         let second = checkpointed_session(&cli, directory.path());
-        let (replayed, _, _) = run_plan(&second, &resources(), &plan, 6).await;
+        let PlanRun {
+            draft: replayed, ..
+        } = run_plan(&second, &resources(), &plan, 6).await;
         assert_eq!(invocations(&log), 2, "the retry should not call the model");
         assert_eq!(replayed, draft);
         let state = second.into_state();
@@ -2313,7 +2614,7 @@ printf '%s' '{answer}' > "$output"
             .expect("plan");
 
         let session = checkpointed_session(&cli, directory.path());
-        let (draft, _, _) = run_plan(&session, &resources(), &plan, 6).await;
+        let PlanRun { draft, .. } = run_plan(&session, &resources(), &plan, 6).await;
         assert!(draft.is_none());
         let failed = invocations(&log);
 
@@ -2336,6 +2637,196 @@ printf '%s' '{answer}' > "$output"
         }
         assert_eq!(invocations(&log), 2);
         assert!(!directory.path().join("checkpoints").exists());
+    }
+
+    /// A stub plan harness for the whole pipeline: the self-check finds
+    /// nothing, a plausibility retry gets a full section map, and the first
+    /// core answer maps only page 1 of the two-page fixture.
+    #[cfg(unix)]
+    fn pipeline_stub(directory: &Path) -> PathBuf {
+        use std::os::unix::fs::PermissionsExt;
+        let script = directory.join("stub-codex");
+        let identity = r#""identity":{"title":"Paragraph Continuation","authors":[{"name":"A. Author","affiliation":null}]},"abstract":{"text":null,"page":null},"references":[]"#;
+        std::fs::write(
+            &script,
+            format!(
+                r#"#!/bin/sh
+prompt=$(cat)
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--output-last-message" ]; then shift; output="$1"; fi
+  shift
+done
+case "$prompt" in
+  *"You are checking a draft record"*) printf '%s' '{{"corrections":[]}}' > "$output" ;;
+  *"looked incomplete"*) printf '%s' '{{{identity},"sections":[{{"title":"Setup","kind":"methods","pages":{{"start":1,"end":1}}}},{{"title":"Comparison","kind":"results","pages":{{"start":2,"end":2}}}}]}}' > "$output" ;;
+  *) printf '%s' '{{{identity},"sections":[{{"title":"Front matter","kind":"other","pages":{{"start":1,"end":1}}}}]}}' > "$output" ;;
+esac
+"#
+            ),
+        )
+        .expect("stub script");
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700))
+            .expect("executable");
+        script
+    }
+
+    #[cfg(unix)]
+    fn pipeline_options(directory: &Path, passes: u8, budget: f64) -> ExtractOptions {
+        ExtractOptions {
+            pdf: Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("tests/fixtures/paragraph-continuation.pdf"),
+            model: openrouter::DEFAULT_MODEL.to_owned(),
+            judgment_model: None,
+            passes,
+            dpi: 40,
+            work_directory: directory.join("work"),
+            output: directory.join("record.json"),
+            paper_budget_usd: budget,
+            timeout: Duration::from_secs(30),
+            features: Features::default(),
+            object_pages: 6,
+            reasoning: ReasoningEffort::Low,
+            core_mode: CoreMode::Combined,
+            providers: vec!["deepinfra".to_owned()],
+            plan: None,
+            progress: None,
+            checkpoints: Some(directory.join("checkpoints")),
+        }
+    }
+
+    #[cfg(unix)]
+    fn plan_backend<'a>(cli: &'a LocalCliAnalyzer, directory: &Path) -> Backend<'a> {
+        Backend::Plan {
+            analyzer: cli,
+            provider: AnalysisProvider::Codex,
+            directory: directory.to_path_buf(),
+        }
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_retry_a_degenerate_section_map_and_keep_the_better_answer() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let script = pipeline_stub(directory.path());
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let options = pipeline_options(directory.path(), 2, 1.0);
+        let record = extract_with(&options, plan_backend(&cli, directory.path()))
+            .await
+            .expect("record");
+        assert_eq!(record.record_version, RECORD_VERSION);
+        assert_eq!(record.plausibility_retries.len(), 1);
+        let retry = &record.plausibility_retries[0];
+        assert_eq!(retry.call, "core");
+        assert!(retry.kept_retry);
+        assert_eq!(
+            retry.warnings[0].kind,
+            crate::domain::QualityWarningKind::SectionsLowCoverage
+        );
+        let artifacts = record.artifacts.as_ref().expect("artifacts");
+        assert_eq!(artifacts["sections"].as_array().map(Vec::len), Some(2));
+        assert_eq!(record.verification.self_check, StageStatus::Ran);
+        assert_eq!(record.verification.admission, StageStatus::Ran);
+        assert!(record.warnings.is_empty(), "{:#?}", record.warnings);
+        assert!(record.succeeded() && !record.degraded());
+        assert!(
+            record.pipeline_version.starts_with("plan:Codex@deepinfra#"),
+            "{}",
+            record.pipeline_version
+        );
+        let saved: Value =
+            serde_json::from_slice(&std::fs::read(&options.output).expect("record file"))
+                .expect("record JSON");
+        assert_eq!(saved["pipeline_version"], record.pipeline_version.as_str());
+        assert_eq!(saved["verification"]["self_check"], "ran");
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_mark_a_record_degraded_when_the_budget_skips_the_self_check() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let script = pipeline_stub(directory.path());
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        // A single-pass run saves the core answers; the two-pass run replays
+        // them for free and then has no budget left for the self-check.
+        let first = pipeline_options(directory.path(), 1, 1.0);
+        let record = extract_with(&first, plan_backend(&cli, directory.path()))
+            .await
+            .expect("record");
+        assert_eq!(record.verification.self_check, StageStatus::Disabled);
+        assert!(record.succeeded());
+
+        let second = pipeline_options(directory.path(), 2, 0.0);
+        let record = extract_with(&second, plan_backend(&cli, directory.path()))
+            .await
+            .expect("record");
+        assert!(record.artifacts.is_some());
+        assert_eq!(record.verification.self_check, StageStatus::SkippedBudget);
+        assert!(record.failures.is_empty(), "a budget stop is not a failure");
+        assert!(record.degraded() && !record.succeeded());
+        assert!(
+            record.warnings.iter().any(|warning| warning.kind
+                == crate::domain::QualityWarningKind::VerificationSkipped
+                && warning.field == "self_check"),
+            "{:#?}",
+            record.warnings
+        );
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_report_a_self_check_that_returned_no_usable_answer_as_failed() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let (script, _) = counting_stub(directory.path(), "not json");
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let session = Session::new(
+            plan_backend(&cli, directory.path()),
+            openrouter::DEFAULT_MODEL,
+            1.0,
+            ReasoningEffort::Low,
+            Vec::new(),
+        );
+        let resources = resources();
+        let source = SourceText::new(&resources.paper.pages);
+        let text = text_parts(&resources);
+        let schema = json!({});
+        let view = CheckView {
+            text: &text,
+            source: &source,
+            hide_objects: false,
+            schema: &schema,
+            model: openrouter::DEFAULT_MODEL,
+        };
+        let mut draft = json!({});
+        let result = self_check(&mut draft, &view, &session)
+            .await
+            .expect("check");
+        assert_eq!(result.status, StageStatus::Failed);
+
+        let broke = Session::new(
+            plan_backend(&cli, directory.path()),
+            openrouter::DEFAULT_MODEL,
+            0.0,
+            ReasoningEffort::Low,
+            Vec::new(),
+        );
+        let result = self_check(&mut draft, &view, &broke).await.expect("check");
+        assert_eq!(result.status, StageStatus::SkippedBudget);
+    }
+
+    #[test]
+    fn should_hash_every_prompt_and_schema_a_plan_uses() {
+        let core = pipeline_texts(&core_pipeline(Features::default()), ReasoningEffort::Low);
+        assert!(core.iter().any(|text| text == FIELDS_PROMPT));
+        assert!(core.iter().any(|text| text == SECTIONS_SCHEMA));
+        assert!(core.iter().any(|text| text == CHECK_PROMPT));
+        assert!(core.iter().any(|text| text.starts_with(SECTIONS_POLICY)));
+        assert!(!core.iter().any(|text| text == OBJECTS_PROMPT));
+        let all = pipeline_texts(&core_pipeline(Features::all()), ReasoningEffort::Low);
+        assert!(all.iter().any(|text| text == OBJECTS_PROMPT));
+        assert_ne!(
+            core,
+            pipeline_texts(&core_pipeline(Features::default()), ReasoningEffort::Medium)
+        );
     }
 
     #[test]

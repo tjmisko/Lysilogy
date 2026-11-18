@@ -9,6 +9,70 @@ use tokio::io::AsyncReadExt;
 pub struct AppConfig {
     pub notes: NoteTemplateConfig,
     pub vim: VimConfig,
+    pub analysis: AnalysisConfig,
+}
+
+/// How the model reader runs a paper through the core pipeline.
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[serde(default, deny_unknown_fields)]
+pub struct AnalysisConfig {
+    /// The `OpenRouter` model that answers the core calls.
+    pub model: String,
+    /// A stronger model for judgment calls such as the self-check; `None`
+    /// uses `model` for everything.
+    pub judgment_model: Option<String>,
+    /// `OpenRouter` providers to try, in order. The extraction experiments
+    /// found unpinned routing flaky and about ten times the cost; `DeepInfra`
+    /// was the stable choice. Empty lets `OpenRouter` choose.
+    pub providers: Vec<String>,
+    /// No further model call starts once one paper has spent this much.
+    /// Generous enough that a normal paper always reaches its self-check.
+    pub paper_budget_usd: f64,
+}
+
+impl Default for AnalysisConfig {
+    fn default() -> Self {
+        Self {
+            model: crate::analysis::openrouter::DEFAULT_MODEL.to_owned(),
+            judgment_model: None,
+            providers: vec!["deepinfra".to_owned()],
+            paper_budget_usd: 0.50,
+        }
+    }
+}
+
+impl AnalysisConfig {
+    fn validate(&self) -> Result<()> {
+        if self.model.trim().is_empty() {
+            return Err(Error::InvalidRequest(
+                "analysis.model must not be empty".into(),
+            ));
+        }
+        if self
+            .judgment_model
+            .as_deref()
+            .is_some_and(|model| model.trim().is_empty())
+        {
+            return Err(Error::InvalidRequest(
+                "analysis.judgment_model must not be empty; omit it to use analysis.model".into(),
+            ));
+        }
+        if self
+            .providers
+            .iter()
+            .any(|provider| provider.trim().is_empty())
+        {
+            return Err(Error::InvalidRequest(
+                "analysis.providers must not contain an empty name".into(),
+            ));
+        }
+        if !self.paper_budget_usd.is_finite() || self.paper_budget_usd <= 0.0 {
+            return Err(Error::InvalidRequest(
+                "analysis.paper_budget_usd must be a positive number".into(),
+            ));
+        }
+        Ok(())
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -50,6 +114,7 @@ impl AppConfig {
         let mut config: Self = serde_json::from_slice(&bytes).map_err(|error| {
             Error::InvalidRequest(format!("configuration {}: {error}", path.display()))
         })?;
+        config.analysis.validate()?;
         if config.vim.vimrc.as_os_str().is_empty() {
             return Err(Error::InvalidRequest("vim.vimrc must not be empty".into()));
         }
@@ -97,6 +162,54 @@ mod tests {
                 .to_string()
                 .contains("unknown_setting")
         );
+    }
+
+    #[tokio::test]
+    async fn should_default_the_analysis_to_a_pinned_provider_and_a_budget_that_reaches_the_self_check()
+     {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        let defaults = AppConfig::load(&path, false).await.unwrap().analysis;
+        assert_eq!(defaults.model, crate::analysis::openrouter::DEFAULT_MODEL);
+        assert_eq!(defaults.judgment_model, None);
+        assert_eq!(defaults.providers, ["deepinfra"]);
+        assert!(defaults.paper_budget_usd >= 0.5);
+
+        tokio::fs::write(
+            &path,
+            br#"{"analysis":{"judgment_model":"anthropic/claude-opus-4","paper_budget_usd":1.25}}"#,
+        )
+        .await
+        .unwrap();
+        let config = AppConfig::load(&path, true).await.unwrap().analysis;
+        assert_eq!(
+            config.judgment_model.as_deref(),
+            Some("anthropic/claude-opus-4")
+        );
+        assert!((config.paper_budget_usd - 1.25).abs() < f64::EPSILON);
+        assert_eq!(
+            config.providers,
+            ["deepinfra"],
+            "unset fields keep defaults"
+        );
+
+        for invalid in [
+            r#"{"analysis":{"paper_budget_usd":0}}"#,
+            r#"{"analysis":{"model":" "}}"#,
+            r#"{"analysis":{"providers":[""]}}"#,
+            r#"{"analysis":{"judgment_model":""}}"#,
+            r#"{"analysis":{"budget":1}}"#,
+        ] {
+            tokio::fs::write(&path, invalid).await.unwrap();
+            assert!(AppConfig::load(&path, true).await.is_err(), "{invalid}");
+        }
+    }
+
+    #[tokio::test]
+    async fn should_load_the_committed_config() {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("lysilogy.config.json");
+        let config = AppConfig::load(&path, true).await.unwrap();
+        assert_eq!(config.analysis, AnalysisConfig::default());
     }
 
     #[tokio::test]

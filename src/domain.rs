@@ -301,6 +301,61 @@ pub struct PaperAnalysis {
     pub caveats: Vec<String>,
     #[serde(default)]
     pub reading_path: Vec<String>,
+    /// What produced this analysis: a digest of the prompts and schemas plus
+    /// the model and provider, so a later review can be tied to exactly the
+    /// pipeline that wrote it. Absent on analyses made before it was recorded.
+    #[serde(default)]
+    pub pipeline_version: Option<String>,
+    /// Deterministic plausibility warnings about the model output, such as a
+    /// section map that covers too little of the paper or a skipped
+    /// verification pass. Empty when nothing looked wrong.
+    #[serde(default)]
+    pub quality_warnings: Vec<QualityWarning>,
+}
+
+/// One deterministic sanity check the model output failed.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct QualityWarning {
+    pub kind: QualityWarningKind,
+    /// The record field the warning is about, e.g. `sections` or `identity`.
+    pub field: String,
+    /// A plain-language account of what looked wrong, with the numbers.
+    pub message: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum QualityWarningKind {
+    /// The section map is empty.
+    SectionsMissing,
+    /// Far fewer reading units than the page count warrants.
+    SectionsSparse,
+    /// The section map leaves much of the main text uncovered.
+    SectionsLowCoverage,
+    /// No references, although the text has a references heading.
+    ReferencesMissing,
+    /// No abstract, although the text has an abstract heading.
+    AbstractMissing,
+    /// The title is empty, very short, or looks like an identifier or stamp.
+    TitleImplausible,
+    /// No authors were returned.
+    AuthorsMissing,
+    /// A verification pass did not run because the paper budget ran out.
+    VerificationSkipped,
+    /// A verification pass ran but returned no usable answer.
+    VerificationFailed,
+    /// A kind written by a newer version.
+    #[serde(other)]
+    Other,
+}
+
+impl QualityWarningKind {
+    /// Whether the warning means the result should not be shown as a clean
+    /// success: verification did not complete.
+    #[must_use]
+    pub const fn degrades(self) -> bool {
+        matches!(self, Self::VerificationSkipped | Self::VerificationFailed)
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
