@@ -1,3 +1,9 @@
+import { useEffect, useState } from "react";
+
+import { api } from "../lib/api";
+import {
+  type EdgeWhy, edgeRelationLabel, edgeWhyByWork, engagementLabel, laterCitations, pathLabel, runSummary, whyHeading,
+} from "../lib/edgeLabels";
 import {
   CONTEXT_PARTS,
   basisCounts,
@@ -7,11 +13,13 @@ import {
   pipelineLabel,
   readerWarnings,
 } from "../lib/readerOutput";
-import type { ContextClaim, ContextNote, ContextSource, PaperAnalysis, PaperContext } from "../types";
+import type { ContextClaim, ContextNote, ContextSource, PaperAnalysis, PaperContext, PaperEdgeLabels } from "../types";
 import { ReadAlongsideList } from "./ReadAlongsideList";
 
 type AbstractViewProps = {
   analysis: PaperAnalysis;
+  /** The paper, for reading its citation labels from the graph; omit to use only the stored ones. */
+  paperId?: string | null;
   abstractPage: number | null;
   onOpenPage: (page: number) => void;
   onOpenPaper: (paperId: string) => void;
@@ -79,9 +87,28 @@ function claimWorks(context: PaperContext): Map<string, CitedWork> {
   return works;
 }
 
-function ClaimList({ claims, context, onOpenPage, onOpenPaper }: {
+/** One edge's "why": the relation, the reason, and the quote it rests on. */
+export function EdgeWhyLine({ why, compact = false }: { why: EdgeWhy; compact?: boolean }) {
+  const engagement = engagementLabel(why.engagement);
+  return <div className="edge-why" data-relation={why.relation} data-path={why.path ?? "edge_labeler"} data-direction={why.direction}>
+    <p>
+      <span className="edge-why-heading">{whyHeading(why)}:</span>{" "}
+      <span className="edge-why-relation">{edgeRelationLabel(why.relation)}</span>
+      {why.reason !== "" && <> — {why.reason}</>}
+    </p>
+    {!compact && why.quote != null && why.quote !== "" && <blockquote className="edge-why-quote">“{why.quote}”</blockquote>}
+    <p className="edge-why-caption">
+      Citation graph label, {pathLabel(why.path)}
+      {why.reviewState === "accepted" ? ", accepted" : why.reviewState === "unreviewed" ? ", not yet reviewed" : ""}
+      {engagement !== null && ` · ${engagement}`}
+    </p>
+  </div>;
+}
+
+function ClaimList({ claims, context, whys, onOpenPage, onOpenPaper }: {
   claims: ContextClaim[];
   context: PaperContext;
+  whys: Map<string, EdgeWhy>;
   onOpenPage: (page: number) => void;
   onOpenPaper: (paperId: string) => void;
 }) {
@@ -109,6 +136,10 @@ function ClaimList({ claims, context, onOpenPage, onOpenPaper }: {
           {work.year != null && ` (${work.year})`}
         </span>)}
       </p>}
+      {cited.map((work) => {
+        const why = whys.get(work.id);
+        return why === undefined ? null : <EdgeWhyLine key={`why-${work.id}`} why={why} compact />;
+      })}
       {downgrade !== null && <p className="context-claim-downgrade">Shown as background: {downgrade}</p>}
     </li>;
   })}</ul>;
@@ -131,12 +162,32 @@ function PipelineChecks({ analysis }: { analysis: PaperAnalysis }) {
   </details>;
 }
 
-function ContextNodeView({ context, onOpenPage, onOpenPaper }: {
+/** How later papers in the graph cite this one: the "what happened after" evidence. */
+function LaterCitations({ labels, titles }: { labels: PaperEdgeLabels | null; titles: Map<string, string> }) {
+  const later = laterCitations(labels);
+  if (later.length === 0) return null;
+  return <section className="later-citations" aria-labelledby="later-citations-heading">
+    <header>
+      <span className="eyebrow">Citation graph</span>
+      <h2 id="later-citations-heading">How later papers cite it</h2>
+    </header>
+    <ol>{later.map((why) => <li key={why.workId} data-relation={why.relation}>
+      <strong>{titles.get(why.workId) ?? why.workId}</strong>
+      <EdgeWhyLine why={why} />
+    </li>)}</ol>
+  </section>;
+}
+
+function ContextNodeView({ context, labels, onOpenPage, onOpenPaper }: {
   context: PaperContext;
+  labels: PaperEdgeLabels | null;
   onOpenPage: (page: number) => void;
   onOpenPaper: (paperId: string) => void;
 }) {
   const counts = basisCounts(context);
+  const whys = edgeWhyByWork(context, labels);
+  const titles = new Map((labels?.incoming ?? []).map((edge) => [edge.work_id, edge.title ?? edge.work_id] as const));
+  const labelLine = runSummary(labels);
   return <>
     <section className="reading-context is-node" aria-label="Research history and subsequent influence">
       {CONTEXT_PARTS.map(({ part, eyebrow, heading }) => {
@@ -145,7 +196,7 @@ function ContextNodeView({ context, onOpenPage, onOpenPaper }: {
           <span className="eyebrow">{eyebrow}</span>
           <h2>{heading}</h2>
           {claims.length > 0
-            ? <ClaimList claims={claims} context={context} onOpenPage={onOpenPage} onOpenPaper={onOpenPaper} />
+            ? <ClaimList claims={claims} context={context} whys={whys} onOpenPage={onOpenPage} onOpenPaper={onOpenPaper} />
             : <p className="context-empty">Nothing was written for this part.</p>}
         </article>;
       })}
@@ -155,13 +206,31 @@ function ContextNodeView({ context, onOpenPage, onOpenPaper }: {
     )}
     <p className="context-provenance">
       {counts.paper} from the paper · {counts.dossier} from the citation graph · {counts.background} unverified background
+      {labelLine !== null && <> · {labelLine}</>}
     </p>
-    <ReadAlongsideList items={context.read_alongside} onOpenPaper={onOpenPaper} />
+    <ReadAlongsideList items={context.read_alongside} whys={whys} onOpenPaper={onOpenPaper} />
+    <LaterCitations labels={labels} titles={titles} />
   </>;
+}
+
+/** The citation labels around a paper, read from the graph; `null` until loaded or when unavailable. */
+function usePaperEdgeLabels(paperId: string | null | undefined): PaperEdgeLabels | null {
+  const [loaded, setLoaded] = useState<{ paperId: string; labels: PaperEdgeLabels } | null>(null);
+  useEffect(() => {
+    if (paperId == null) return;
+    const controller = new AbortController();
+    api.paperEdgeLabels(paperId, controller.signal)
+      .then((labels) => setLoaded({ paperId, labels }))
+      // Labels are an addition to the page: without a graph or on an older server the page reads as before.
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [paperId]);
+  return loaded !== null && loaded.paperId === paperId ? loaded.labels : null;
 }
 
 export function AbstractView({
   analysis,
+  paperId = null,
   abstractPage,
   onOpenPage,
   onOpenPaper,
@@ -170,6 +239,8 @@ export function AbstractView({
   refreshing = null,
 }: AbstractViewProps) {
   const node = paperContext(analysis);
+  const labels = usePaperEdgeLabels(paperId);
+  const leadWhys = edgeWhyByWork(node, labels);
   const context = validContext(analysis);
   const sourceNumbers = new Map(
     context.sources.map((source, index) => [source.id, index + 1] as const),
@@ -202,7 +273,7 @@ export function AbstractView({
         <article className="why-it-matters" aria-labelledby="why-it-matters-heading">
           <span className="eyebrow">Surrounding context</span>
           <h2 id="why-it-matters-heading">Why it matters</h2>
-          <ClaimList claims={node.lead} context={node} onOpenPage={onOpenPage} onOpenPaper={onOpenPaper} />
+          <ClaimList claims={node.lead} context={node} whys={leadWhys} onOpenPage={onOpenPage} onOpenPaper={onOpenPaper} />
         </article>
       )}
 
@@ -232,7 +303,7 @@ export function AbstractView({
         )}
       </article>
 
-      {node !== null ? <ContextNodeView context={node} onOpenPage={onOpenPage} onOpenPaper={onOpenPaper} />
+      {node !== null ? <ContextNodeView context={node} labels={labels} onOpenPage={onOpenPage} onOpenPaper={onOpenPaper} />
         : <section className="reading-context" aria-label="Research history and subsequent influence">
         {(["before", "after"] as const).map((kind) => {
           const notes = context.notes.filter((note) => note.kind === kind);

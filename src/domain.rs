@@ -631,6 +631,36 @@ pub struct DossierWorkSummary {
     pub citing: bool,
     /// The library paper that holds this work, when Lysilogy has it.
     pub local_paper_id: Option<String>,
+    /// The citation label on the edge between this work and the paper, when
+    /// the graph had one at analysis time: why the paper cites it, or (for a
+    /// citing work) why it cites the paper.
+    pub edge: Option<DossierEdgeLabel>,
+}
+
+/// A citation label as the context node read it from the graph.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct DossierEdgeLabel {
+    pub relation: String,
+    pub reason: String,
+    pub quote: Option<String>,
+    /// `core_relation`, `edge_labeler` or `user`.
+    pub path: Option<String>,
+    /// `substantive`, `perfunctory` or `not_shown`, when the labeler said.
+    pub engagement: Option<String>,
+    /// `unreviewed`, `accepted` or `disputed`; rejected labels are left out.
+    pub review_state: String,
+}
+
+impl DossierEdgeLabel {
+    /// Whether the label says the citation is only a mention.
+    #[must_use]
+    pub fn is_perfunctory(&self) -> bool {
+        matches!(
+            self.engagement.as_deref(),
+            Some("perfunctory" | "not_shown")
+        )
+    }
 }
 
 impl PaperContext {

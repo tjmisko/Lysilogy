@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { acquisitionStatusText } from "../lib/acquisition";
 import { api } from "../lib/api";
+import { type EdgeWhy, edgeRelationLabel, engagementLabel, whyHeading } from "../lib/edgeLabels";
 import { basisLabel, relationLabel } from "../lib/readerOutput";
 import type { AcquisitionStatus, ReadAlongside } from "../types";
 
@@ -9,6 +10,8 @@ const POLL_MILLISECONDS = 2000;
 
 type Props = {
   items: ReadAlongside[];
+  /** The citation-graph "why" of each work's edge to the paper, by Work id. */
+  whys?: Map<string, EdgeWhy>;
   onOpenPaper: (paperId: string) => void;
 };
 
@@ -17,7 +20,7 @@ type Props = {
  * reader; a known graph work can be fetched through the usual acquisition
  * flow and opens once it lands; anything else is shown as a citation only.
  */
-export function ReadAlongsideList({ items, onOpenPaper }: Props) {
+export function ReadAlongsideList({ items, whys, onOpenPaper }: Props) {
   if (items.length === 0) return null;
   return (
     <section className="read-alongside" aria-labelledby="read-alongside-heading">
@@ -27,14 +30,19 @@ export function ReadAlongsideList({ items, onOpenPaper }: Props) {
       </header>
       <ol>
         {items.map((item, index) => (
-          <ReadAlongsideItem key={`${item.work_id ?? item.title}-${index}`} item={item} onOpenPaper={onOpenPaper} />
+          <ReadAlongsideItem key={`${item.work_id ?? item.title}-${index}`} item={item}
+            why={item.work_id == null ? undefined : whys?.get(item.work_id)} onOpenPaper={onOpenPaper} />
         ))}
       </ol>
     </section>
   );
 }
 
-function ReadAlongsideItem({ item, onOpenPaper }: { item: ReadAlongside; onOpenPaper: (paperId: string) => void }) {
+function ReadAlongsideItem({ item, why, onOpenPaper }: {
+  item: ReadAlongside;
+  why: EdgeWhy | undefined;
+  onOpenPaper: (paperId: string) => void;
+}) {
   const [status, setStatus] = useState<AcquisitionStatus | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const running = status?.job.state === "running";
@@ -81,6 +89,14 @@ function ReadAlongsideItem({ item, onOpenPaper }: { item: ReadAlongside; onOpenP
         {byline !== "" && <span className="read-alongside-byline">{byline}</span>}
       </div>
       <p>{item.why}</p>
+      {why !== undefined && (
+        <p className="read-alongside-edge" data-relation={why.relation} title={why.quote ?? undefined}>
+          <span className="edge-why-heading">{whyHeading(why)}:</span>{" "}
+          <span className="edge-why-relation">{edgeRelationLabel(why.relation)}</span>
+          {why.reason !== "" && <> — {why.reason}</>}
+          {engagementLabel(why.engagement) !== null && <span className="edge-why-caption"> ({engagementLabel(why.engagement)})</span>}
+        </p>
+      )}
       <div className="read-alongside-actions">
         <span className={`context-basis basis-${item.basis}`} title={basis.long}>{basis.short}</span>
         {fetchedPaper !== null ? (

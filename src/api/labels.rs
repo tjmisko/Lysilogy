@@ -8,7 +8,7 @@ use axum::{
     extract::{Path as AxumPath, State},
     http::StatusCode,
     response::{IntoResponse, Response},
-    routing::{post, put},
+    routing::{get, post, put},
 };
 use chrono::{DateTime, Utc};
 use lysilogy_core::{RelationshipClaimId, RelationshipOrigin, ReviewState, WorkId};
@@ -68,6 +68,7 @@ pub(super) struct GraphEdge {
 
 pub(super) fn routes() -> Router<AppState> {
     Router::new()
+        .route("/api/papers/{id}/edge-labels", get(paper_edge_labels))
         .route("/api/relationship-claims/{id}/accept", post(accept_label))
         .route("/api/relationship-claims/{id}/reject", post(reject_label))
         .route("/api/relationship-claims/{id}", put(edit_label))
@@ -162,6 +163,22 @@ async fn edge_label(state: &AppState, stored: &StoredClaimWithMention) -> EdgeLa
         path: claim.path(),
         engagement: claim.engagement.clone(),
         prompt_version: claim.prompt_version,
+    }
+}
+
+/// Why the paper cites each work, why later labelled papers cite it, and the
+/// last labelling run. Without a graph the run record is still returned.
+async fn paper_edge_labels(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<String>,
+) -> Response {
+    let paper_id = match super::parse_id(&id) {
+        Ok(paper_id) => paper_id,
+        Err(error) => return error.into_response(),
+    };
+    match state.paper_edge_labels(&paper_id).await {
+        Ok(labels) => Json(labels).into_response(),
+        Err(error) => error.into_response(),
     }
 }
 
@@ -882,5 +899,73 @@ mod tests {
         )
         .await;
         assert_eq!(json["center"], into.id.to_string());
+    }
+
+    #[tokio::test]
+    async fn should_run_the_labels_step_and_serve_the_labels_around_a_paper() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let fixture = labeled_fixture(graph).await;
+        let uri = format!("/api/papers/{}/edge-labels", fixture.paper_id);
+        let (status, json) = send(&fixture.state, "GET", &uri, None).await;
+        assert_eq!(status, StatusCode::OK, "{json}");
+        assert_eq!(json["status"], "ok");
+        assert_eq!(json["work_id"], fixture.citing.to_string());
+        assert_eq!(json["outgoing"][0]["work_id"], fixture.cited.to_string());
+        assert_eq!(json["outgoing"][0]["label"]["relation"], "background");
+        assert_eq!(json["outgoing"][0]["label"]["path"], "edge_labeler");
+        assert_eq!(json["incoming"], json!([]));
+        assert!(json["run"].is_null());
+
+        // The core reading names the same edge with another relation, and a
+        // key that matches no entry.
+        let record = json!({
+            "pipeline_version": "core-test",
+            "artifacts": {
+                "relations": [
+                    {"reference_key": "1", "relation": "uses_method",
+                     "why": "Builds its reward model on the cited comparison method.",
+                     "quote": "reward learning from comparisons is feasible", "page": 1,
+                     "confidence": "high"},
+                    {"reference_key": "9", "relation": "supports", "why": "Agrees with it.",
+                     "quote": "shows reward learning from", "page": 1, "confidence": "medium"}
+                ],
+                "citations": [],
+                "references": []
+            }
+        });
+        tokio::fs::write(
+            fixture.state.store.paper_dir(&fixture.paper_id).join("paper-artifacts.json"),
+            record.to_string(),
+        )
+        .await
+        .unwrap();
+        let labeler = ScriptedLabeler::new("fake:model", |_| {
+            Err(lysilogy_ingest::labels::LabelerError::Failed("not called".to_owned()))
+        });
+        let run = fixture
+            .state
+            .label_paper_edges_with(
+                &fixture.paper_id,
+                crate::domain::AnalysisProvider::OpenRouter,
+                Some(&labeler),
+            )
+            .await;
+        assert_eq!(run.status, crate::edge_labels::EdgeLabelStatus::Completed, "{run:?}");
+        assert_eq!(labeler.calls(), 0, "the edge already has a label");
+        let core = run.core.as_ref().expect("seed summary");
+        assert_eq!(core.kept_existing, 1);
+        assert_eq!(core.disagreements.len(), 1);
+        assert_eq!(core.disagreements[0].existing_relation, "background");
+        assert_eq!(core.unresolved.get("no_matching_entry"), Some(&1));
+        assert_eq!(core.unresolved_keys[0].key, "9");
+        assert_eq!(run.pipeline_version.as_deref(), Some("core-test"));
+        assert_eq!((run.counts.edges, run.counts.labelled), (1, 1));
+        assert_eq!(run.edges[0].label.as_ref().map(|label| label.relation.as_str()), Some("background"));
+        let detail = run.task_detail();
+        assert!(detail.contains("1 of 1 edges labelled (0 from the core reading, 1 by the edge labeler)"), "{detail}");
+        assert!(detail.contains("1 reference keys unresolved"), "{detail}");
     }
 }

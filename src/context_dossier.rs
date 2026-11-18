@@ -20,7 +20,7 @@ use lysilogy_db::{DbError, prominence::StoredProminence};
 
 use crate::{
     AppState,
-    domain::{DossierStatus, PaperId},
+    domain::{DossierEdgeLabel, DossierStatus, PaperId},
     graph::GraphState,
     paper_artifacts::dossier::{Dossier, DossierWork},
 };
@@ -87,10 +87,26 @@ impl AppState {
                 .map(|work| dossier_work(work, prominence.get(&work.id)))
                 .collect::<Vec<_>>()
         };
+        let mut pairs: Vec<(WorkId, WorkId)> =
+            references.iter().map(|work| (center, work.id)).collect();
+        pairs.extend(citing.iter().map(|work| (work.id, center)));
+        let labels = edge_labels(
+            &graph.relationships.current_claims_for_edges(&pairs).await?,
+        );
+        let with_labels = |mut works: Vec<DossierWork>, citing: bool| {
+            for work in &mut works {
+                let Ok(id) = work.id.parse::<WorkId>() else {
+                    continue;
+                };
+                let pair = if citing { (id, center) } else { (center, id) };
+                work.edge = labels.get(&pair).cloned();
+            }
+            works
+        };
         let mut dossier = Dossier {
             subject,
-            references: side(&references),
-            citing: side(&citing),
+            references: with_labels(side(&references), false),
+            citing: with_labels(side(&citing), true),
             status: DossierStatus::Ok,
         }
         .ranked();
@@ -144,6 +160,33 @@ impl AppState {
     }
 }
 
+/// The newest current label on each edge, leaving out labels a person
+/// rejected: a rejected label is not evidence.
+fn edge_labels(
+    claims: &[lysilogy_db::relationship::StoredClaimWithMention],
+) -> BTreeMap<(WorkId, WorkId), DossierEdgeLabel> {
+    let mut labels = BTreeMap::new();
+    for stored in claims {
+        let claim = &stored.claim;
+        if claim.review_state == lysilogy_core::ReviewState::Rejected {
+            labels.remove(&(stored.citing, stored.cited));
+            continue;
+        }
+        labels.insert(
+            (stored.citing, stored.cited),
+            DossierEdgeLabel {
+                relation: claim.relation.clone(),
+                reason: claim.reason.clone().unwrap_or_default(),
+                quote: claim.quote.clone(),
+                path: Some(claim.path().as_str().to_owned()),
+                engagement: claim.engagement.clone(),
+                review_state: claim.review_state.as_str().to_owned(),
+            },
+        );
+    }
+    labels
+}
+
 /// One graph Work as a dossier record.
 fn dossier_work(work: &Work, prominence: Option<&StoredProminence>) -> DossierWork {
     DossierWork {
@@ -162,6 +205,7 @@ fn dossier_work(work: &Work, prominence: Option<&StoredProminence>) -> DossierWo
         local_paper_id: None,
         abstract_text: None,
         thesis: None,
+        edge: None,
     }
 }
 

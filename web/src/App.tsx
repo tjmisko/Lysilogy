@@ -1205,6 +1205,7 @@ export function App() {
               {view === "abstract" && analysis !== null ? (
                 <AbstractView
                   analysis={analysis}
+                  paperId={selectedId}
                   abstractPage={abstractPage}
                   onRefresh={refreshComponent}
                   refreshing={refreshingComponent}

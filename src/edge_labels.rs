@@ -27,7 +27,7 @@ use chrono::{DateTime, Utc};
 use lysilogy_core::{ReviewState, WorkId};
 use lysilogy_db::relationship::{LabelPath, StoredClaimWithMention};
 use lysilogy_ingest::labels::{
-    LABEL_PROMPT_VERSION, LabelBrief, LabelContext, LabelOptions, LabelSummary,
+    LABEL_PROMPT_VERSION, LabelBrief, LabelContext, LabelOptions, LabelSummary, RelationshipLabeler,
     seed::{CoreReading, CoreSeedSummary, seed_core_labels},
 };
 use serde::{Deserialize, Serialize};
@@ -395,16 +395,17 @@ impl AppState {
         id: &PaperId,
         provider: AnalysisProvider,
     ) -> EdgeLabelRun {
-        let run = match self.label_paper_edges_inner(id, provider).await {
-            Ok(run) => run,
-            Err(error) => {
-                tracing::warn!(paper_id = %id, %error, "edge labelling failed");
-                EdgeLabelRun {
-                    status: EdgeLabelStatus::Failed,
-                    detail: Some(error.to_string()),
-                    ..EdgeLabelRun::skipped(provider, "")
-                }
+        let chosen = crate::labeling::labeler_for(
+            provider,
+            self.analysis.settings(),
+            self.analysis.local_cli(),
+            self.store.root().join("labels"),
+        );
+        let run = match chosen {
+            Ok(labeler) => {
+                Box::pin(self.label_paper_edges_with(id, provider, labeler.as_deref())).await
             }
+            Err(error) => Self::failed_run(id, provider, &error),
         };
         if let Err(error) = self.save_edge_label_run(id, &run).await {
             tracing::warn!(paper_id = %id, %error, "could not save the edge label run");
@@ -412,10 +413,34 @@ impl AppState {
         run
     }
 
+    fn failed_run(id: &PaperId, provider: AnalysisProvider, error: &Error) -> EdgeLabelRun {
+        tracing::warn!(paper_id = %id, %error, "edge labelling failed");
+        EdgeLabelRun {
+            status: EdgeLabelStatus::Failed,
+            detail: Some(error.to_string()),
+            ..EdgeLabelRun::skipped(provider, "")
+        }
+    }
+
+    /// [`Self::label_paper_edges`] with a given labeler (`None` when the
+    /// provider has no model), without saving the run.
+    pub(crate) async fn label_paper_edges_with(
+        &self,
+        id: &PaperId,
+        provider: AnalysisProvider,
+        labeler: Option<&dyn RelationshipLabeler>,
+    ) -> EdgeLabelRun {
+        match self.label_paper_edges_inner(id, provider, labeler).await {
+            Ok(run) => run,
+            Err(error) => Self::failed_run(id, provider, &error),
+        }
+    }
+
     async fn label_paper_edges_inner(
         &self,
         id: &PaperId,
         provider: AnalysisProvider,
+        labeler: Option<&dyn RelationshipLabeler>,
     ) -> Result<EdgeLabelRun> {
         let Some(graph) = &self.graph else {
             return Ok(EdgeLabelRun::skipped(
@@ -424,13 +449,7 @@ impl AppState {
             ));
         };
         let settings = self.analysis.settings().clone();
-        let Some(labeler) = crate::labeling::labeler_for(
-            provider,
-            &settings,
-            self.analysis.local_cli(),
-            self.store.root().join("labels"),
-        )?
-        else {
+        let Some(labeler) = labeler else {
             return Ok(EdgeLabelRun::skipped(
                 provider,
                 "the offline reader has no model to label citations with",
@@ -482,7 +501,7 @@ impl AppState {
                 &context,
                 target.citing_work,
                 target.document_version,
-                labeler.as_ref(),
+                labeler,
                 &brief,
                 options,
             )

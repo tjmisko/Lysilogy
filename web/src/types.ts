@@ -329,6 +329,24 @@ export type DossierWorkSummary = {
   /** True for a later work citing the paper, false for one it cites. */
   citing: boolean;
   local_paper_id: string | null;
+  /** The citation label on the edge, as the context node read it; absent on older contexts. */
+  edge?: DossierEdgeLabel | null;
+};
+
+/** Which path wrote an edge label. */
+export type EdgeLabelPath = "core_relation" | "edge_labeler" | "user";
+
+/** How much the citing paper does with the cited work, in the labeler's judgement. */
+export type EdgeEngagement = "substantive" | "perfunctory" | "not_shown";
+
+/** A citation label stored with the context's dossier. */
+export type DossierEdgeLabel = {
+  relation: string;
+  reason: string;
+  quote: string | null;
+  path: EdgeLabelPath | null;
+  engagement: EdgeEngagement | null;
+  review_state: string;
 };
 
 /** The model's abstract against the deterministic extraction. */
@@ -676,6 +694,73 @@ export type EdgeLabel = {
   model: string | null;
   created_at: string;
   mention: EdgeLabelMention | null;
+  /** Absent from servers older than the edge-label paths. */
+  path?: EdgeLabelPath;
+  engagement?: EdgeEngagement | null;
+  prompt_version?: number | null;
+};
+
+/** One current label as the Abstract page and the review panel read it. */
+export type EdgeLabelBrief = {
+  claim_id: string;
+  relation: string;
+  reason: string;
+  quote: string | null;
+  path: EdgeLabelPath | null;
+  engagement: EdgeEngagement | null;
+  review_state: EdgeLabelReviewState;
+  model: string | null;
+  prompt_version: number | null;
+  passage: string | null;
+  page: number | null;
+};
+
+/** An edge from (outgoing) or into (incoming) a paper, with its current label. */
+export type LabelledEdge = {
+  work_id: string;
+  title: string | null;
+  year: number | null;
+  first_author: string | null;
+  mention_count: number;
+  label: EdgeLabelBrief | null;
+};
+
+export type EdgeLabelCounts = {
+  edges: number;
+  labelled: number;
+  unlabelled_with_passages: number;
+  unlabelled_without_passages: number;
+  by_path: Record<string, number>;
+  by_relation: Record<string, number>;
+  by_engagement: Record<string, number>;
+  perfunctory: number;
+  not_shown: number;
+  rejected: number;
+};
+
+/** The record of one labelling run (`edge-labels.json`). Counts beyond these are kept as JSON. */
+export type EdgeLabelRun = {
+  generated_at: string | null;
+  status: "completed" | "skipped" | "failed";
+  detail: string | null;
+  provider: string | null;
+  labeler: string | null;
+  prompt_version: number;
+  pipeline_version: string | null;
+  local_evidence_error: string | null;
+  core: Record<string, unknown> | null;
+  labels: Record<string, unknown> | null;
+  counts: EdgeLabelCounts;
+  edges: LabelledEdge[];
+};
+
+/** `GET /api/papers/{id}/edge-labels`. */
+export type PaperEdgeLabels = {
+  status: "ok" | "no_graph" | "not_linked" | "error";
+  work_id: string | null;
+  outgoing: LabelledEdge[];
+  incoming: LabelledEdge[];
+  run: EdgeLabelRun | null;
 };
 
 export type EdgeLabelEdit = {

@@ -72,3 +72,45 @@ test('shows pipeline warnings and a short pipeline label', () => {
   assert.equal(pipelineLabel(current.pipeline_version), 'example/core-model+example/judge-model@deepinfra');
   assert.equal(pipelineLabel(undefined), null);
 });
+
+test('reads the citation labels the context node saw, and lets the live graph override them', async () => {
+  const { edgeWhyByWork, groupByRelation, laterCitations, runSummary, edgeRelationLabel, engagementLabel, whyHeading } =
+    await import('../src/lib/edgeLabels.ts');
+  const context = paperContext(current);
+  const stored = edgeWhyByWork(context, null);
+  assert.equal(stored.get('W100').relation, 'uses_method');
+  assert.equal(stored.get('W100').direction, 'cites');
+  assert.equal(stored.get('W100').source, 'dossier');
+  assert.equal(whyHeading(stored.get('W200')), 'How it cites this paper');
+  assert.equal(edgeRelationLabel('uses_method'), 'Uses its method');
+  assert.equal(edgeRelationLabel('something_new'), 'something new');
+  assert.equal(engagementLabel('perfunctory'), 'Cited in passing');
+  assert.equal(engagementLabel('substantive'), null);
+
+  const label = (relation, review_state = 'unreviewed', engagement = 'substantive') => ({
+    claim_id: `r-${relation}`, relation, reason: `Reason for ${relation}.`, quote: 'a quoted phrase here', path: 'edge_labeler',
+    engagement, review_state, model: null, prompt_version: 2, passage: null, page: null,
+  });
+  const edge = (work_id, label) => ({ work_id, title: `Title ${work_id}`, year: 2001, first_author: null, mention_count: 1, label });
+  const live = {
+    status: 'ok', work_id: 'W0', run: null,
+    outgoing: [edge('W100', label('extends')), edge('W300', label('background', 'unreviewed', 'perfunctory'))],
+    incoming: [edge('W200', label('critiques', 'rejected')), edge('W400', label('extends', 'accepted'))],
+  };
+  const whys = edgeWhyByWork(context, live);
+  assert.equal(whys.get('W100').relation, 'extends', 'the live label wins');
+  assert.equal(whys.get('W100').source, 'graph');
+  assert.equal(whys.has('W200'), false, 'a rejected label is not shown');
+  assert.equal(whys.get('W400').direction, 'cited_by');
+  assert.deepEqual(laterCitations(live).map((why) => why.workId), ['W400']);
+  assert.deepEqual(laterCitations({ ...live, status: 'no_graph' }), []);
+  assert.deepEqual(
+    groupByRelation([{ relation: 'background' }, { relation: 'uses_method' }, { relation: 'zzz' }, { relation: 'background' }])
+      .map((group) => [group.relation, group.items.length]),
+    [['uses_method', 1], ['background', 2], ['zzz', 1]],
+  );
+  assert.equal(runSummary(live), null);
+  const counts = { edges: 5, labelled: 3, unlabelled_with_passages: 1, unlabelled_without_passages: 1, by_path: {}, by_relation: {}, by_engagement: {}, perfunctory: 1, not_shown: 0, rejected: 0 };
+  assert.equal(runSummary({ ...live, run: { status: 'completed', detail: null, counts } }), '3 of 5 citations labelled · 1 still to label · 1 cited in passing');
+  assert.equal(runSummary({ ...live, run: { status: 'skipped', detail: 'no graph', counts } }), 'Citation labels: no graph');
+});
