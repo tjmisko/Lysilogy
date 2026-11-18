@@ -164,3 +164,52 @@ the record and both on the stored `PaperAnalysis`.
   stored analysis carry `abstract_agreement` (token F1 against the
   deterministic abstract).
 - Records are version 8. Tested with stub plan harnesses only.
+
+## Reader wiring and review merge, 2026-11-18
+
+- **Merged** the `review-env` branch (rubric, evaluation set, fetcher, review
+  storage and API, `lysilogy review`, the F2 review panel). The one conflict
+  was the CLI dispatch in `src/main.rs`.
+- **Abstract view** (`web/src/components/AbstractView.tsx`,
+  `ReadAlongsideList.tsx`): shows the context node's lead as "Why it
+  matters", then before / what it changed / after, each claim with a source
+  class marker (From the paper, with its quote and a page link; Citation
+  graph, naming the graph record; Background · unverified, with the reason
+  when a claim was downgraded), the reception note, the read-alongside list
+  (Open in reader for a library paper, Fetch PDF through the acquisition flow
+  for a graph work, plain citation otherwise), and a collapsed line with the
+  pipeline warnings, pipeline version and abstract F1. Older analyses fall
+  back to the earlier URL-checked notes.
+- **Overview** (`SectionAtlas.tsx`, `SourceMap.tsx`): a Logical units /
+  Outline toggle (`O`, remembered per browser). Tiles and a unit index under
+  the page map name the printed headings each unit groups (`§ 1–2.1`). The
+  outline is a hierarchical list with each heading's page and owning unit;
+  `j`/`k` move, Enter opens the unit that holds the heading (or its page).
+- **Review panel**: reads snapshot fields with the reader model's types;
+  shows the outline, the units with the headings they group and their
+  questions, the context with source classes and counts, and per-component
+  pipeline warnings. The snapshot now pins `quality_warnings`; the rubric's
+  `reads` lists the real field names.
+- **Shared fixtures**: `tests/fixtures/reader/analysis-current.json` (every
+  reader field) and `analysis-legacy.json` (a schema-4 analysis without
+  them). `src/domain/fixture_tests.rs` round-trips the current fixture and
+  fails if `PaperAnalysis` drops a fixture field or has a field the fixture
+  does not exercise; `web/scripts/reader-output.test.mjs` and
+  `review.test.mjs` run the helpers on both; `web/scripts/reader-output-smoke.mjs`
+  renders the built app on them and writes `docs/screenshots/`.
+
+### Still unverified against a live model
+
+Everything above renders stub or fixture data. Nothing in this branch has run
+against a real model or a real paper: the title hint, the plausibility retry
+and its cost, the outline candidates and the model's confirmation of them, the
+quality of logical groupings, the context node's source classes and
+specificity, the dossier assembled from a live Postgres graph, and the cost of
+three or four whole-paper calls per paper within the 0.50 USD budget. The
+evaluation-set identifiers in `eval/review/papers.json` are unverified and the
+fetcher has never downloaded anything. The first live step is: fetch the set,
+analyse two AI and two economics papers, read the outline candidates and
+context in the run records, and grade them in the panel.
+
+Known UI gap: on a narrow page-map tile the logical-unit title can still
+overflow its tile (e.g. a long word at 6 columns); this predates the toggle.

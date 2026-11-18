@@ -116,25 +116,25 @@ that record none are grouped as `unversioned`.
 
 ## What the panel reads from an analysis
 
-The panel and the snapshot read `analysis.json` as untyped JSON, so the reader
-model can add fields without a matching change here. It looks for:
+The snapshot copies these top-level fields of `analysis.json` verbatim
+(`REVIEWED_PREFIXES` in `src/review/snapshot.rs`), and the panel reads them with
+the reader model's types (`ReviewedFields` in `web/src/lib/review.ts`):
 
-- abstract: `author_abstract`; thesis: `thesis`.
-- context: `outsider_brief`, `context_notes[].text`, `context_sources`, and a
-  `context` string or object with any of `why_it_matters`, `summary`,
-  `before`, `after`, `what_changed`, `reception`, `notes`, `sources`, and a
-  read-alongside list in `context.read_alongside` (or top-level
-  `read_alongside` / `neighbours`), each item with `title`, `authors`, `year`,
-  `why` and optionally `doi`, `arxiv` or `url`.
-- outline: `outline` as a list (or an object with `sections` / `entries`) of
-  `{title, number?, level?, page? | pages{start,end}, children?}`.
-- logical units: the first non-empty of `logical_sections`, `section_groups`,
-  `reading_units`, `logical_segmentation`, else the existing `sections`, each
-  `{title, summary | digest, pages{start,end}, covers?}`.
+- abstract: `author_abstract`, `abstract_extraction`, `abstract_agreement`
+  (token F1 against the deterministic extraction); thesis: `thesis`.
+- context: the context node's `context` (lead, before, contribution, after,
+  each claim with its `basis` of `paper`, `dossier` or `background`, plus
+  `read_alongside`, `reception_note` and `counts`). Analyses made before the
+  node show `outsider_brief`, the older `context_notes` and `context_sources`.
+- outline: `outline`, the printed headings with number, level, page and role.
+- logical units: `sections`; each unit's `outline_entries` index into
+  `outline`, and the panel shows the headings it groups. Units made without a
+  usable outline have none and are labelled page-span units.
+- `quality_warnings`: shown above the component whose field they concern.
 
-Anything else renders as "not produced". If the backend settles on different
-names, extend the readers in `web/src/lib/review.ts` and the prefixes in
-`src/review/snapshot.rs`.
+A missing field renders as "not produced". The shared fixture
+`tests/fixtures/reader/analysis-current.json` exercises every field; tests on
+both sides load it.
 
 ## Files
 
