@@ -107,6 +107,7 @@ const GROUPS = [
       ["b", "Open the paper finder"],
       ["F1", "Find a paper outside the notes buffer"],
       ["F10", "Fuzzy-find and switch articles"],
+      ["F2", "Review this paper's output against the rubric"],
       ["Home layouts", "Gallery, two-column list, list, or details with abstracts"],
       [":analyze", "Analyze with the selected provider"],
       [":supercut", "Create a source-verified cut with Lysilogos"],

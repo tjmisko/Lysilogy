@@ -12,6 +12,7 @@ import { CommandMenu } from "./components/CommandMenu";
 import { PassageQuestion } from "./components/PassageQuestion";
 import { DigestPanel } from "./components/DigestPanel";
 import { ExperimentPanel } from "./components/ExperimentPanel";
+import { ReviewPanel } from "./components/ReviewPanel";
 import { GlossaryView } from "./components/GlossPanel";
 import { HelpOverlay } from "./components/HelpOverlay";
 import { HomePage } from "./components/HomePage";
@@ -101,6 +102,7 @@ export function App() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
   const [experimentOpen, setExperimentOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [sourceFocus, setSourceFocus] = useState<(SourceFocus & { paperId: string }) | null>(null);
   const sourceFocusNonce = useRef(0);
   const [toolsTab, setToolsTab] = useState<"supercut" | "references" | null>(null);
@@ -241,6 +243,10 @@ export function App() {
         setCommandOpen(false);
         setQueueOpen(false);
         setSwitcherOpen((open) => !open);
+      } else if (event.key === "F2") {
+        event.preventDefault();
+        setCommandOpen(false);
+        setReviewOpen((open) => !open);
       } else if (event.key === ":" && !isEditableTarget(event.target)) {
         event.preventDefault();
         setPanel(null);
@@ -613,6 +619,9 @@ export function App() {
         setReferenceSeed(null);
         setToolsTab(name);
         break;
+      case "review":
+        setReviewOpen(true);
+        break;
       case "import":
         setImportOpen(true);
         break;
@@ -669,7 +678,7 @@ export function App() {
     nativeTab: home,
     // The switcher and the command menu read Tab themselves; everywhere else
     // Tab steps through the reading phases of the current paper.
-    overlayHandlesTab: home || importOpen || switcherOpen || commandOpen || queueOpen || sourceQuestion !== null || experimentOpen || toolsTab !== null || paperView?.analysis == null || (panel === "digest" && view === "overview"),
+    overlayHandlesTab: home || importOpen || switcherOpen || commandOpen || queueOpen || sourceQuestion !== null || experimentOpen || reviewOpen || toolsTab !== null || paperView?.analysis == null || (panel === "digest" && view === "overview"),
     onCycle: (delta) => {
       setQueueOpen(false);
       cycleView(delta);
@@ -678,7 +687,7 @@ export function App() {
 
   useGlobalKeys({
     enabled:
-      !home && panel === null && sourceQuestion === null && view !== "glossary" && view !== "sources" && !importOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null,
+      !home && panel === null && sourceQuestion === null && view !== "glossary" && view !== "sources" && !importOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && !reviewOpen && toolsTab === null,
     activeIndex: activeSection,
     itemCount: sections.length,
     view,
@@ -952,6 +961,7 @@ export function App() {
       const target = event.target instanceof Element ? event.target : null;
       if (target?.closest(".notes-panel") != null) return;
       if (document.querySelector('.pdf-reader[data-link-hints="true"]') !== null) return;
+      if (reviewOpen && event.key !== "Escape" && event.key !== "q") return;
       if (event.key === "/" && !isEditableTarget(event.target) && !home && !readingPdf && panel === null && !commandOpen && !switcherOpen && !queueOpen && !experimentOpen && toolsTab === null) {
         event.preventDefault(); event.stopImmediatePropagation(); pendingSourceSearch.current = true; setTextMode("pdf"); setView("text"); return;
       }
@@ -982,6 +992,11 @@ export function App() {
         setView("text");
       };
       else if (experimentOpen) close = () => setExperimentOpen(false);
+      else if (reviewOpen) close = () => {
+        // The panel may first close its issue form or leave a text field.
+        const node = document.querySelector(".review-panel");
+        if (node === null || node.dispatchEvent(new CustomEvent("review-quit", { cancelable: true }))) setReviewOpen(false);
+      };
       else if (toolsTab !== null) close = () => setToolsTab(null);
       else if (panel === "help") close = () => setPanel(null);
       else {
@@ -1008,7 +1023,7 @@ export function App() {
     window.addEventListener("keydown", onReaderKey, true);
     return () => window.removeEventListener("keydown", onReaderKey, true);
   }, [analysis, closeSection, commandOpen, experimentOpen, home, markMode, notesOpen, openHome, openNotes, panel,
-    queueOpen, readingPdf, requestNotesClose, sectionFocused, selectedId, sourceQuestion, switcherOpen, toolsTab, view]);
+    queueOpen, readingPdf, requestNotesClose, reviewOpen, sectionFocused, selectedId, sourceQuestion, switcherOpen, toolsTab, view]);
 
   return (
     <div className={`app-shell ${home ? "is-home" : ""} ${notesOpen ? "has-notes" : ""} ${readingPdf ? "is-reading" : ""} ${sectionFocused ? "has-section-focus" : ""}`} style={{ "--topbar-height": `${topbarHeight}px` } as CSSProperties}>
@@ -1126,7 +1141,7 @@ export function App() {
           {!loading && home && <HomePage papers={library?.papers ?? []}
             darkInk={darkInk} onToggleInk={() => setDarkInk((value) => !value)}
             query={homeQuery} onQuery={setHomeQuery} onSelect={selectPaper} activeId={homeActiveId} onActive={setHomeActiveId}
-            keyboardEnabled={!importOpen && !switcherOpen && !commandOpen && !queueOpen && panel === null && !experimentOpen && toolsTab === null}
+            keyboardEnabled={!importOpen && !switcherOpen && !commandOpen && !queueOpen && panel === null && !experimentOpen && !reviewOpen && toolsTab === null}
             onImport={() => setImportOpen(true)} onUpload={uploadPdf} directories={library?.directories ?? []}
             onAddDirectory={addLibraryDirectory} onRemoveDirectory={removeLibraryDirectory} />}
           {!loading && !home && paperView === null && <div className="center-state"><span className="loader large" /><p>Opening paper…</p></div>}
@@ -1198,7 +1213,7 @@ export function App() {
                       zoom={pdfZoom}
                       darkInk={darkInk}
                       spread={pdfSpread}
-                      keyboardEnabled={panel === null && sourceQuestion === null && !importOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null}
+                      keyboardEnabled={panel === null && sourceQuestion === null && !importOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && !reviewOpen && toolsTab === null}
                       onZoom={(delta) => setPdfZoom((value) => Math.max(.5, Math.min(2.5, value + delta)))}
                       onPage={setPdfPage}
                       onPageCount={setPdfPages}
@@ -1225,12 +1240,12 @@ export function App() {
         <SectionFocus key={`${currentPaper.id}:${selectedSection.id}`} url={api.source(currentPaper.id)} title={currentPaper.metadata.title}
           toolbarVisible={toolbarVisible}
           analysis={analysis} section={selectedSection} index={activeSection} paperMap={paperMap} darkInk={darkInk}
-          keyboardEnabled={!importOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && sourceQuestion === null}
+          keyboardEnabled={!importOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && !reviewOpen && toolsTab === null && sourceQuestion === null}
           snapshots={pageSnapshots} onToggleInk={() => setDarkInk((value) => !value)} onSection={openSection} onClose={closeSection}
           onFullPaper={openPage} onClarify={clarifySentence}
           onSaveReference={(text, page) => { setReferenceSeed({ text, page }); setToolsTab("references"); }}
           digest={(onPage, keyboardEnabled, navigation) => <DigestPanel key={`${selectedSection.id}:${clarifySeed}`} navigation={navigation}
-            section={selectedSection} claims={relatedClaims} initialSelection={clarifySeed} keyboardEnabled={keyboardEnabled && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null}
+            section={selectedSection} claims={relatedClaims} initialSelection={clarifySeed} keyboardEnabled={keyboardEnabled && !commandOpen && !queueOpen && !experimentOpen && !reviewOpen && toolsTab === null}
             onClose={closeSection} onGloss={openGlossary} onOpenPage={onPage} onClarify={clarify} />}
         />
       ) : panel === "digest" && selectedSection !== null ? (
@@ -1279,6 +1294,9 @@ export function App() {
           provider={provider}
           onClose={() => setExperimentOpen(false)}
         />
+      )}
+      {reviewOpen && (
+        <ReviewPanel key={selectedId ?? "home"} paperId={selectedId} onClose={() => setReviewOpen(false)} onOpenPaper={(id) => selectPaper(id)} />
       )}
 
       {toolsTab !== null && selectedId !== null && (
