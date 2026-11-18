@@ -564,3 +564,24 @@ fn should_count_label_review_actions_as_grading_data() {
     let empty = crate::review::LabelActionSummary::from(lysilogy_db::relationship::LabelReviewCounts::default());
     assert_eq!(empty.accept_rate, None);
 }
+
+#[test]
+fn should_load_a_review_saved_before_citation_labels_were_graded() {
+    let stored = json!({
+        "schema_version": 1,
+        "rubric_id": "reader-review-v2",
+        "paper_id": "0123456789abcdef",
+        "paper_title": "An older review",
+        "snapshot": {"snapshot_id": "s-00", "pipeline_version": "core-v4", "fields": {"thesis": "T."}},
+        "created_at": "2026-11-01T00:00:00Z",
+        "updated_at": "2026-11-01T00:00:00Z",
+        "components": {"context": {"values": {"accuracy": 3}}}
+    });
+    let review: Review = serde_json::from_value(stored).expect("older review loads");
+    assert!(review.snapshot.field(EDGE_LABELS_FIELD).is_none());
+    let rubric = Rubric::bundled().expect("rubric");
+    let summary = summarize(&rubric, std::slice::from_ref(&review));
+    assert!(summary.label_versions.is_empty(), "no labels were graded");
+    assert_eq!(summary.groups[0].components["context"].graded, 1);
+    assert_eq!(summary.groups[0].components["edge_labels"].graded, 0);
+}

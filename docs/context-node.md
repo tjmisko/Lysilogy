@@ -56,10 +56,15 @@ Assembled deterministically by `AppState::neighbour_dossier`
 - `reader.work_prominence` gives worldwide citation counts (from the
   provider payload), local citing counts and a prominence score;
 - a neighbour the library holds contributes the abstract and thesis of its
-  stored analysis. The graph keeps no abstracts of its own.
+  stored analysis. The graph keeps no abstracts of its own;
+- the current citation label on the edge (since 2026-11-18): why the paper
+  cites a work, or why a citing work cites the paper, with its relation,
+  reason, quote, path, engagement and review state. Rejected labels are
+  left out. See `docs/edge-labels.md`.
 
-Each side keeps the 25 most useful titled works: prominence, then worldwide
-citations, then local citations, then oldest, then id. The paper's own
+Each side keeps the 25 most useful titled works: those whose label says
+what role they play, then prominence, then worldwide citations, then local
+citations, then oldest, then id. The paper's own
 counts are given as the subject. A paper with no graph, no Work link, or a
 failing query gets an empty dossier; the prompt says so and the node still
 runs.

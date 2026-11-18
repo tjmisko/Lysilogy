@@ -48,8 +48,12 @@ analysis pipeline.
    empty, so several tabs are thin.
 3. **Feature opt-in.** The pipeline supports `objects`, `supercut`, `analysis`,
    and `glossary` nodes, but the reader always asks for `none`. No UI opts in.
-4. **Graph fields.** `references`, `citations`, and `relations` come back from
-   the core call but are not wired into the reference resolver.
+4. **Graph fields.** Resolved 2026-11-18 for edge labels: admitted
+   `relations` seed a first label per edge and `citations` give passages to
+   edges without stored mentions, resolved from `reference_key` through the
+   paper's stored bibliography (`docs/edge-labels.md`). The core
+   `references` list is used only as a fallback for key matching; it is
+   still not fed to the reference resolver.
 5. **Feedback path.** `revise` still uses the old pipeline and the old
    deterministic abstract extraction, so feedback can diverge from analyze.
 6. **`:analyze` command.** It accepts only codex, claude, or heuristic, so the
@@ -150,7 +154,7 @@ the record and both on the stored `PaperAnalysis`.
 ## Gates
 
 - `cargo clippy --workspace --all-targets -- -D warnings`
-- `cargo test --workspace --lib` (1005 tests)
+- `cargo test --workspace --lib` (1175 tests without a database)
 - web `typecheck`, `lint`, `build`
 
 ## Context node added 2026-11-18
@@ -216,3 +220,56 @@ context in the run records, and grade them in the panel.
 
 Known UI gap: on a narrow page-map tile the logical-unit title can still
 overflow its tile (e.g. a long word at 6 columns); this predates the toggle.
+
+## Edge labels online, 2026-11-18
+
+Contract: `docs/edge-labels.md`.
+
+- **Runs by default.** The initial analysis job has a `labels` task after
+  `persist`: refresh local evidence, seed labels from the core reading's
+  admitted relations, run the labeler chosen by the provider setting
+  (`OpenRouterLabeler` on the analysis settings with its own
+  `label_budget_usd` and `label_limit`, or the CLI sidecars), and write
+  `edge-labels.json`. It skips with a reason when there is no graph, no
+  model, or no Work link, and never fails the analysis. Resumable from the
+  label cache.
+- **One source of truth.** Migration 0011 records `label_path`
+  (`core_relation`, `edge_labeler`, `user`), `engagement` and
+  `prompt_version` on relationship claims. `merge_decision` keeps one
+  current label per edge: reviewed labels are never replaced, the labeler
+  outranks an unreviewed core label, a newer core reading replaces an older
+  one. Unresolvable reference keys and disagreements are counted and listed.
+- **Prompt version 2.** `prompts/edge-label.md`: the role the cited work
+  plays, specific versus weak reasons, honest `perfunctory` and `not_shown`.
+  The model sees the citing thesis, the cited abstract when held, passages
+  widened by a sentence on each side, markers and how many works each cites.
+  The relation vocabulary is unchanged; `engagement` carries the weight.
+- **Abstract page and context node.** The dossier carries each neighbour's
+  label in both directions and ranks labelled works first; the context
+  prompt may rely on labels as `dossier` evidence. The Abstract view shows
+  each edge's "why" under graph claims and on read-alongside works, and how
+  later papers cite this one (`GET /api/papers/{id}/edge-labels`).
+- **Graph.** Hover and selection show an edge's reason; the center paper's
+  panel lists labelled references grouped by relation.
+- **Review.** Rubric `reader-review-v3` adds `edge_labels`; the snapshot pins
+  a sample of the labelling run at a review's first save; the summary groups
+  label grades by labeler and prompt version and counts accept, reject and
+  edit actions in the graph.
+
+### Still unverified
+
+No live model has run the version 2 prompt, and `OpenRouterLabeler` has
+never made a request. The database paths were tested against a local
+Postgres 16 started for this work; the stubbed model answers stand in for
+everything else. A first live step: analyse two papers that are linked to
+the graph, read `edge-labels.json` (unresolved keys, disagreements,
+engagement counts), then grade the sample in the panel.
+
+A context written during the first analysis cannot see the paper's own new
+labels (they are written after it); refresh the context to include them.
+
+Pre-existing: `expansion::tests::should_warn_and_still_expand_when_local_evidence_fails`
+and `api::acquisition::tests::should_report_mapped_acquisition_and_paper_id_when_job_finished`
+fail when a test database is configured, on this branch's base (`edc0c3b`)
+as well; both skip without one. With no database the workspace library
+tests pass (1175).

@@ -97,6 +97,16 @@ because dimensions that measure the same thing (specificity, economy and
 orientation all measured genericness) add noise to prompt comparisons rather
 than signal. Reviews graded against v1 keep their dimension ids; the summary
 reports what each review recorded.
+- **Citation labels** (rubric `reader-review-v3`) grades a sample of up to
+  eight labelled edges from the paper's last labelling run: counts of wrong
+  relations, vague or wrong reasons, quotes that do not support the label
+  and wrong engagement, out of the labels checked, plus one score for
+  whether the reasons together let you navigate the references from above,
+  and counts of important unlabelled edges and passing mentions. Counts
+  compare across prompt versions without a feeling-based scale. The accept,
+  reject and edit actions you take on labels in the literature graph are
+  counted separately in the summary, per label path, model and prompt
+  version, so they are grading data too.
 - **Overall** and free notes, then **issue flags**: component, severity, an
   optional tag, a note and the quoted text. Flags are the raw material for
   regression cases: the export puts each one next to the exact output it was
@@ -138,6 +148,14 @@ the reader model's types (`ReviewedFields` in `web/src/lib/review.ts`):
   `outline`, and the panel shows the headings it groups. Units made without a
   usable outline have none and are labelled page-span units.
 - `quality_warnings`: shown above the component whose field they concern.
+- citation labels: `edge_labels` is not an analysis field. It is a sample of
+  the last labelling run (`edge-labels.json`: label version, counts,
+  unresolved keys, grounding failures, and up to eight labelled edges chosen
+  by a hash of the claim id), pinned beside the analysis fields without
+  changing the snapshot id. The first save of a review pins it and later
+  saves keep it, so grades stay on the labels they were given even after a
+  relabel or a review in the graph. The summary groups these grades by
+  `label_version` (labeler and prompt version).
 
 A missing field renders as "not produced". The shared fixture
 `tests/fixtures/reader/analysis-current.json` exercises every field; tests on

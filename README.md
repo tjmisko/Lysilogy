@@ -42,6 +42,11 @@ Two provenance rules hold everywhere:
   shown as background and says why; it is never silently promoted. Analyses made before the
   context node keep their older web-researched notes, which are shown only when every cited URL
   passed the reachability checks.
+- Every citation edge carries at most one current label saying why the paper cites the work: a
+  relation, a reason, a quote checked against the citing text, how much the paper does with the
+  work, and which path wrote it (the paper reading, the citation labeler, or you). Labels run after
+  each analysis, show in the literature graph and under the Abstract page's graph claims and
+  reading list, and feed the context node. See `docs/edge-labels.md`.
 - Pipeline checks (sparse sections, a repaired grouping, downgraded context claims, a skipped
   verification pass) and the pipeline version sit in a collapsed line at the foot of the Abstract
   view.
@@ -436,6 +441,7 @@ Everything generated lives beneath the data root:
         ├── context-assessment.json # claim/link support counts, reviews, and research gaps
         ├── sectioning-report.json # initial/final size and parent-topic fragmentation checks
         ├── analysis.json        # typed, versioned application model
+        ├── edge-labels.json     # the last citation-labelling run: counts and every edge's label
         ├── digest.md            # portable human-readable digest
         ├── highlights.jsonl     # canonical one-highlight-per-line records (AI and reader)
         ├── highlights.md        # generated human-readable projection
@@ -461,7 +467,8 @@ running the frontend.
 
 The review panel grades what the Abstract and Overview views show against a rubric
 (`eval/review/rubric.json`): the abstract (exact or not), the thesis, why it matters (marked highest
-value, with a hard reject for a false claim), the outline and the logical units. Grades are stored
+value, with a hard reject for a false claim), the outline, the logical units and a sample of the
+paper's citation labels. Grades are stored
 per analysis run and summarised by pipeline version, so a prompt change can be compared with the
 run before it. `eval/review/README.md` explains the rubric and the storage.
 
@@ -475,13 +482,15 @@ run before it. `eval/review/README.md` explains the rubric and the storage.
    Paywalled papers come back as `needs-manual`; save them under the printed file name.
 2. **Analyse.** Add the folder to the library from the home page and analyse each paper. The
    app path uses the `analysis` section of `lysilogy.config.json` (model, optional judgment model,
-   providers, default `["deepinfra"]`, and the per-paper budget).
+   providers, default `["deepinfra"]`, and the per-paper budget). Citation labels follow the
+   analysis with `label_model`, `label_budget_usd` and `label_limit` from the same section.
 3. **Grade.** Open a paper and press `F2` (or `:review`). Each component's output, with its source
    classes and any pipeline warnings, sits next to its rubric dimensions; `j`/`k` move, `0`–`4`
    score, `i` flags an issue with the selected text as its quote. Grades save as you go.
 4. **Summarise.** `cargo run -- review` prints means, pass rates and flagged issues per pipeline
    version; `--json` prints the same as JSON and `--export reviews.json` writes every review and
-   issue next to the output it refers to.
+   issue next to the output it refers to. Citation-label grades are grouped by labeler and prompt
+   version, and with a graph the accept, reject and edit actions on labels are counted too.
 
 The shared fixtures in `tests/fixtures/reader/` (a current analysis using every reader field and
 an older one without them) are loaded by Rust (`src/domain/fixture_tests.rs`), by
