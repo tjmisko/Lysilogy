@@ -1,8 +1,9 @@
 # Edge labels: why a paper cites each work
 
-Status: 2026-11-18. Built and tested against stub model answers and a local
-test Postgres only. No live model has labelled an edge with the version 2
-prompt yet.
+Status: 2026-11-18. Built and tested against stub model answers only; the
+database-backed tests skip without `LYSILOGY_TEST_DATABASE_URL` and have
+not been run against the review fixes below. No live model has labelled an
+edge with the version 3 prompt yet.
 
 Every citation edge in the literature graph (paper A cites work B) can carry
 one current label saying why A cites B: a relation, a reason, a verbatim
@@ -17,11 +18,18 @@ so the literature positioning and the graph agree.
 - **One current label per edge**, stored as a `graph.relationship_claim`
   row with a null `superseded_by`. Nothing is deleted: a replacement points
   the old row at the new one.
-- **Every label is grounded.** A labeler answer is kept only when its quote
-  (at least three words) is an exact substring of a passage the model was
-  shown. A core-reading label's quote passed quote admission against the
-  page text. A person's new quote is checked against the stored passage; a
-  quote kept unchanged in an edit is not re-checked.
+- **Every label is grounded in the citing text of its own edge.** A
+  labeler answer is kept only when its quote (at least three words) is an
+  exact substring of a passage the model was shown, and, in a passage
+  widened by a neighbour sentence, when it overlaps the citing sentence or
+  sits in a neighbour that carries no other work's citation marker
+  (`quote_outside_citing_sentence` otherwise). A core-reading relation is
+  written only when its quote (whitespace and case folded) is in one of the
+  edge's stored mention passages, or, for an edge without stored mentions,
+  in a core citing sentence for it (`not_in_citing_passage` otherwise);
+  quote admission alone only checked it against the page. A person's new
+  quote is checked against the stored passage; a quote kept unchanged in an
+  edit is not re-checked.
 - **Every label records its path** (`label_path`, migration 0011):
   `core_relation` (the core reading's admitted relations), `edge_labeler`
   (the dedicated per-edge labeler) or `user`. Rows from before the migration
@@ -50,8 +58,17 @@ distinction the owner asked for is about weight, not kind:
 | `not_shown` | the passages do not show why the work is cited |
 
 `background` and `other` are the honest relations for perfunctory and
-unclear citations. Labels from the core reading have no engagement
-(unstated).
+unclear citations, and the application enforces it for `not_shown`: an
+answer pairing `not_shown` with any other relation is rejected as
+`inconsistent_engagement`. Labels from the core reading have no engagement
+(unstated). A label "names a role" when its engagement is `substantive`,
+or no engagement is stated and its relation is neither `background` nor
+`other`; the run counts these (`labelled_with_role`) and the context
+dossier ranks only these as leaned on.
+
+Version 3 asks first for `cites_this_work`: `false` means no passage refers
+to the cited work (a citation-matching error). Such an answer is counted as
+`misattributed` and no label is stored.
 
 ## The merge rule
 
@@ -65,20 +82,38 @@ unclear citations. Labels from the core reading have no engagement
    this question, so its unreviewed label outranks a core label: a core
    relation never replaces it.
 4. By default the labeler fills only edges without a label. With
-   `relabel_unreviewed` it may replace an unreviewed AI label (after a
-   prompt change, say); replacing a core label that named another relation
-   is counted as `disagreements_with_core`.
+   `relabel_unreviewed` it may replace any unreviewed AI label; with
+   `relabel_older_prompt` (the `relabel_older_prompt` flag of the run
+   route and `--relabel-older-prompt` of `lysilogy labels`) only unreviewed
+   edge-labeler labels from an older prompt version. Replacing a core label
+   that named another relation is counted as `disagreements_with_core`.
 
 A core relation that meets a label it does not replace, or replaces one
 with another relation, is listed in the run record as a disagreement with
 both relations and the existing path.
 
-## The step after analysis
+## When the step runs
 
-The initial analysis job has a `labels` task after `persist`
-(`AppState::label_paper_edges`, `src/edge_labels.rs`). Its outcome line
-stays on the task in the job queue, and a failure there marks the task
-failed without failing the analysis.
+- After analysis: the initial analysis job has a `labels` task after
+  `persist` (`AppState::label_paper_edges`, `src/edge_labels.rs`), then a
+  `context-labels` task that rewrites the context node when the run wrote
+  or replaced a label, so the first analysis of a linked paper already
+  carries its own labels in "why this paper matters" (one more context
+  call). The `labels` task is completed, a warning for a partial run, or
+  failed; neither task fails the analysis.
+- After the literature flow links a paper and refreshes its local evidence
+  (unless a CLI sidecar labeler was asked for), so linking produces labels
+  and a fresh `edge-labels.json`.
+- On demand: `POST /api/papers/{id}/edge-labels/run` (optional body
+  `{"provider": "openrouter", "relabel_older_prompt": false}`) and
+  `lysilogy labels <paper>`. Both resume a partial run and rewrite the
+  context when labels changed.
+
+A run is `partial` when edges were left by failed calls, the budget or the
+call limit, and `failed` when every labeler call failed; `detail` gives the
+counts and the first error.
+
+The steps:
 
 1. **Skip, saying why**, when there is no graph (`LYSILOGY_DATABASE_URL`),
    the provider is the offline reader, or the paper is not linked to a Work
@@ -94,9 +129,17 @@ failed without failing the analysis.
    the core reading's own bibliography entry by DOI and then by title. One
    match resolves; several are `ambiguous_entry`; none is
    `no_matching_entry`; an entry with no accepted Work or no edge is
-   `entry_not_in_graph`; an empty key is `empty_key`. Relations marked low
-   confidence are left for the labeler. The core reading's citing sentences
-   become passages for edges that have no stored mention.
+   `entry_not_in_graph`; an empty key is `empty_key`. A key that packs
+   several works (`6, 7, 10`, `[3-5]`, `A, 2004; B, 2009`) is split, on `;`
+   always and on `,` for numeric keys with ranges expanded, and each part
+   resolved and grounded on its own (`multi_key`, `key_parts`). Edges are
+   keyed by bibliography entry, so a preprint and its journal version that
+   resolve to one Work stay two edges. A title match needs three shared
+   words, 80% of the longer title, and the year to agree when both have
+   one. Relations marked low confidence are left for the labeler. The core
+   reading's citing sentences become passages for edges that have no
+   stored mention. The stored model is the one `paper-artifacts.json`
+   names, not the current configuration.
 4. **Run the labeler** chosen by the provider setting
    (`labeling::labeler_for`): `OpenRouterLabeler` for OpenRouter, the CLI
    sidecars for Claude and Codex. It labels edges with citing passages and
@@ -112,11 +155,15 @@ failed without failing the analysis.
 (default: the judgment model, then the core model), the provider order and
 the shared spend ledger, plus its own per-paper cap
 `analysis.label_budget_usd` (default 0.10). A call refused by either budget
-counts as `over_budget`, as does a call past `label_limit` (`over_limit`);
-both are left for a later run. Every raw answer, including one that fails
-grounding, is cached in `source.source_record` under a key that includes
-the prompt version and the whole request, so a rerun pays only for edges
-never answered under the current prompt. Bumping `LABEL_PROMPT_VERSION`
+counts as `over_budget`, and a call past `label_limit` as `over_limit`;
+both make the run partial, and running the step again resumes. Every raw
+answer, including one that fails grounding, is cached in
+`source.source_record` under a key that hashes the prompt version, the full
+prompt text (brief and request as formatted), the schema and the request,
+so an edit to the brief is never served a stale answer even without a
+version bump, and a rerun pays only for edges never answered under the
+current prompt. The run records `brief_digest`, a digest of the brief and
+schema, so grades can tell prompt edits apart within one version. Bumping `LABEL_PROMPT_VERSION`
 makes every edge without a label eligible again; edges that already have a
 label keep it unless a relabel is asked for.
 
@@ -131,9 +178,11 @@ a brief to the model: who reads the labels (someone scanning a literature
 from above), the question (why does this paper cite that work, and what
 role does it play in its argument), what good and weak reasons look like
 (illustrative examples about made-up reef-ecology papers, kept out of the
-evaluation set by the prompt lint), the honest uses of `background`,
-`other`, `perfunctory` and `not_shown`, and the order to decide in. The
-schema asks for `passage_index`, `quote`, `engagement`, `relation`,
+evaluation set by the prompt lint; the honest declines are described in
+prose rather than given as sentences to copy), the honest uses of
+`background`, `other`, `perfunctory` and `not_shown`, where a borrowed
+definition or framework goes, and the order to decide in. The schema asks
+for `cites_this_work`, `passage_index`, `quote`, `engagement`, `relation`,
 `reason` in that order.
 
 After the brief the model sees:
@@ -159,10 +208,9 @@ After the brief the model sees:
   substantive label rank first. `prompts/context.md` tells the model it may
   rely on a label as graph-record evidence (`dossier` basis), and that a
   perfunctory one only shows the work was cited. The stored dossier keeps
-  the label, so a reviewer sees what the node read. A first analysis only
-  sees labels that existed before it (incoming labels from other papers,
-  labels from earlier runs); refreshing the context after labelling lets
-  the node read the paper's own labels.
+  the label, so a reviewer sees what the node read. The context is
+  rewritten after any labels run that wrote a label, so the node reads the
+  paper's own labels.
 - **Abstract page**: `GET /api/papers/{id}/edge-labels` (outgoing labels,
   labelled incoming edges, the last run). Dossier claims and read-alongside
   works show the edge's "why" (the live label first, the stored copy
@@ -194,4 +242,9 @@ Stub answers, with a local Postgres for the database tests
 - How often core reference keys resolve on real bibliographies, and how
   often the core reading and the labeler disagree.
 - The cost per paper of up to forty label calls on the judgment model.
-- The OpenRouter labeler has never made a live request.
+- The OpenRouter labeler has never made a live request. Before relying on
+  this, run `cargo test --workspace` with a Postgres in
+  `LYSILOGY_TEST_DATABASE_URL`, and record one live label call on an e13
+  paper to compare with the e13 relations.
+- How often a cheap model answers `cites_this_work: false`, and whether the
+  citing-sentence rule rejects many good quotes from neighbour sentences.

@@ -3,7 +3,7 @@
 // (see scripts/review.test.mjs).
 
 import type {
-  ContextNote, ContextSource, EdgeLabelCounts, LabelledEdge, PaperAnalysis, PaperContext, PaperSection,
+  ContextNote, ContextSource, EdgeLabelCounts, EdgeLabelRunStatus, LabelledEdge, PaperAnalysis, PaperContext, PaperSection,
 } from "../types";
 import { groupedHeadings, groupedRangeLabel, outlineLabel, outlineRows, paperContext, type OutlineRow } from "./readerOutput.ts";
 
@@ -30,6 +30,8 @@ export type RubricComponent = {
   reads: string[];
   dimensions: RubricDimension[];
   hard_reject?: { id: string; label: string; question: string };
+  /** One verdict per sampled item, stored as a choice under `${prefix}${item id}`. */
+  item_verdict?: { prefix: string; label: string; question: string; options: RubricOption[] };
 };
 
 export type Rubric = {
@@ -114,7 +116,10 @@ export type Review = ReviewDraft & {
   updated_at: string;
 };
 
-export type ReviewInput = ReviewDraft & { snapshot_id: string };
+/** Which citation labels the panel showed: the run and the sampled claim ids. */
+export type EdgeLabelsPin = { generated_at: string | null; claim_ids: string[] };
+
+export type ReviewInput = ReviewDraft & { snapshot_id: string; edge_labels_pin?: EdgeLabelsPin | null };
 
 export type EarlierReview = {
   snapshot_id: string;
@@ -152,22 +157,27 @@ export const GENERAL_COMPONENT = "general";
 // stored analysis verbatim (src/review/snapshot.rs), so they have the reader
 // model's types; fields an older analysis lacks are simply absent.
 
+/** A sampled edge, with the version key its label's verdict is filed under. */
+export type SampledEdge = LabelledEdge & { label_version?: string | null };
+
 /**
  * The citation labels pinned beside the analysis fields (`edge_labels`): a
- * sample of the last labelling run, pinned at a review's first save.
+ * sample of the graph's current labels (rejected ones left out) with the
+ * last labelling run's counts, pinned at a review's first save.
  */
 export type PinnedEdgeLabels = {
   generated_at: string | null;
-  status: "completed" | "skipped" | "failed";
+  status: EdgeLabelRunStatus;
   detail: string | null;
   labeler: string | null;
   prompt_version: number;
+  brief_digest?: string | null;
   label_version: string;
   counts: Partial<EdgeLabelCounts>;
   unresolved_keys: number | null;
   left_for_later: number | null;
   rejected_for_grounding: number | null;
-  sample: LabelledEdge[];
+  sample: SampledEdge[];
 };
 
 /** The analysis fields a review snapshot carries, plus the pinned citation labels. */
@@ -250,7 +260,7 @@ export function readThesis(fields: ReviewedFields): string | null {
 export type EdgeLabelOutput = {
   pinned: PinnedEdgeLabels | null;
   /** Sampled edges that carry a label. */
-  sample: LabelledEdge[];
+  sample: SampledEdge[];
   /** One line of the run's counts, for the grader. */
   countsLine: string | null;
 };
@@ -261,17 +271,46 @@ export function readEdgeLabels(fields: ReviewedFields): EdgeLabelOutput {
   const counts = pinned.counts;
   const parts: string[] = [];
   if (counts.edges != null) parts.push(`${counts.labelled ?? 0} of ${counts.edges} edges labelled`);
+  if (counts.labelled_with_role != null && (counts.labelled ?? 0) > 0) parts.push(`${counts.labelled_with_role} say what role the work plays`);
   if ((counts.unlabelled_with_passages ?? 0) > 0) parts.push(`${counts.unlabelled_with_passages} with passages but no label`);
   if ((counts.perfunctory ?? 0) > 0) parts.push(`${counts.perfunctory} perfunctory`);
   if ((counts.not_shown ?? 0) > 0) parts.push(`${counts.not_shown} where the passages do not show why`);
   if ((pinned.unresolved_keys ?? 0) > 0) parts.push(`${pinned.unresolved_keys} core reference keys unresolved`);
-  if ((pinned.left_for_later ?? 0) > 0) parts.push(`${pinned.left_for_later} left for a later run`);
+  if ((pinned.left_for_later ?? 0) > 0) parts.push(`${pinned.left_for_later} left unlabelled (run the labels step again to finish)`);
   if ((pinned.rejected_for_grounding ?? 0) > 0) parts.push(`${pinned.rejected_for_grounding} answers failed grounding`);
   return {
     pinned,
     sample: pinned.sample.filter((edge) => edge.label !== null),
     countsLine: parts.length === 0 ? null : parts.join(" · "),
   };
+}
+
+/** The pin of the labels a panel shows, sent with each save; null when none are pinned. */
+export function edgeLabelsPin(fields: ReviewedFields | null): EdgeLabelsPin | null {
+  const pinned = fields?.edge_labels;
+  if (pinned === undefined) return null;
+  return {
+    generated_at: pinned.generated_at,
+    claim_ids: pinned.sample.flatMap((edge) => (edge.label === null ? [] : [edge.label.claim_id])),
+  };
+}
+
+/** The items a component takes one verdict each for: the sampled label claim ids. */
+export function verdictItems(component: RubricComponent, fields: ReviewedFields | null): string[] {
+  if (component.item_verdict === undefined || fields === null) return [];
+  return readEdgeLabels(fields).sample.flatMap((edge) => (edge.label === null ? [] : [edge.label.claim_id]));
+}
+
+export function verdictOf(draft: ReviewDraft, component: RubricComponent, item: string): string | null {
+  if (component.item_verdict === undefined) return null;
+  const value = gradeOf(draft, component.id).values[`${component.item_verdict.prefix}${item}`];
+  return typeof value === "string" ? value : null;
+}
+
+/** Sets (or clears, with null) one item's verdict. */
+export function setVerdict(draft: ReviewDraft, component: RubricComponent, item: string, verdict: string | null): ReviewDraft {
+  if (component.item_verdict === undefined) return draft;
+  return setValue(draft, component.id, `${component.item_verdict.prefix}${item}`, verdict);
 }
 
 /**
@@ -398,26 +437,33 @@ export function applyGradingKey(draft: ReviewDraft, row: FocusRow, key: string, 
 
 export type Completion = { graded: number; total: number; components: Record<string, boolean>; done: boolean };
 
-/** How much of the rubric is filled in. A component marked not produced counts once any of its dimensions is graded or it is flagged. */
-export function completion(rubric: Rubric, draft: ReviewDraft): Completion {
+/**
+ * How much of the rubric is filled in. A component marked not produced counts
+ * once any of its dimensions is graded or it is flagged. With `fields`, each
+ * item a component takes a verdict for (a sampled citation label) counts too.
+ */
+export function completion(rubric: Rubric, draft: ReviewDraft, fields: ReviewedFields | null = null): Completion {
   let graded = 0;
   let total = 0;
   const components: Record<string, boolean> = {};
   for (const component of rubric.components) {
     const grade = gradeOf(draft, component.id);
     const dimensions = visibleDimensions(component, grade);
-    const filled = dimensions.filter((dimension) => grade.values[dimension.id] !== undefined).length;
+    const items = grade.not_produced ? [] : verdictItems(component, fields);
+    const filled = dimensions.filter((dimension) => grade.values[dimension.id] !== undefined).length
+      + items.filter((item) => verdictOf(draft, component, item) !== null).length;
+    const needed = dimensions.length + items.length;
     graded += filled;
-    total += dimensions.length;
-    components[component.id] = filled === dimensions.length;
+    total += needed;
+    components[component.id] = filled === needed;
   }
   total += 1;
   if (draft.overall !== null) graded += 1;
   return { graded, total, components, done: graded === total };
 }
 
-export function toInput(snapshotId: string, draft: ReviewDraft): ReviewInput {
-  return { snapshot_id: snapshotId, ...draft };
+export function toInput(snapshotId: string, draft: ReviewDraft, pin: EdgeLabelsPin | null = null): ReviewInput {
+  return { snapshot_id: snapshotId, ...draft, edge_labels_pin: pin };
 }
 
 export function nextIssueId(issues: IssueFlag[]): string {

@@ -1,8 +1,12 @@
 //! Why a paper cites each work: the labelling step after analysis, its run
 //! record, and the labels the Abstract page and the review panel read.
 //!
-//! After a paper is analysed, [`AppState::label_paper_edges`] runs as the
-//! `labels` task of the job:
+//! [`AppState::label_paper_edges`] runs as the `labels` task after a paper
+//! is analysed, at the end of the literature flow once local evidence is
+//! refreshed, and on demand (`POST /api/papers/{id}/edge-labels/run`,
+//! `lysilogy labels <paper>`), which also resumes a run that failed, ran out
+//! of budget or reached the call limit, and can relabel labels written under
+//! an older prompt version:
 //!
 //! 1. find the paper's Work and document version in the citation graph (a
 //!    paper the literature flow never linked is skipped, and the run says so);
@@ -17,17 +21,20 @@
 //! 5. write `edge-labels.json` beside the analysis: what each step did and
 //!    the current label of every outgoing edge.
 //!
-//! A failure in this step never fails the analysis; it is recorded on the
-//! run and on the task. The contract is in `docs/edge-labels.md`.
+//! When a run writes or replaces a label, the caller rewrites the context
+//! node ("why this paper matters") so its neighbour dossier carries the new
+//! labels. A failure in this step never fails the analysis; it is recorded
+//! on the run and on the task. The contract is in `docs/edge-labels.md`.
 
 use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
 use chrono::{DateTime, Utc};
-use lysilogy_core::{ReviewState, WorkId};
+use lysilogy_core::{AssertionId, ReviewState, WorkId};
 use lysilogy_db::relationship::{LabelPath, StoredClaimWithMention};
 use lysilogy_ingest::labels::{
     LABEL_PROMPT_VERSION, LabelBrief, LabelContext, LabelOptions, LabelSummary, RelationshipLabeler,
+    label_brief_digest,
     seed::{CoreReading, CoreSeedSummary, seed_core_labels},
 };
 use serde::{Deserialize, Serialize};
@@ -47,20 +54,53 @@ pub const EDGE_LABELS_FILE: &str = "edge-labels.json";
 const SURROUND_UNITS: usize = 450;
 
 /// How many edges the review panel samples per paper.
-pub const REVIEW_SAMPLE_SIZE: usize = 8;
+pub const REVIEW_SAMPLE_SIZE: usize = 5;
+
+/// The route and command that run (or resume) the labels step.
+pub const RESUME_HINT: &str =
+    "run it again with `lysilogy labels <paper>` or POST /api/papers/<id>/edge-labels/run";
 
 /// How a labelling run ended.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EdgeLabelStatus {
-    /// Labels were seeded and the labeler ran (some edges may still be
-    /// unlabelled; the counts say how many and why).
+    /// Labels were seeded and the labeler finished every edge it took on
+    /// (some edges may still be unlabelled, e.g. without passages or with
+    /// answers that failed grounding; the counts say how many and why).
     Completed,
+    /// The labeler left edges unlabelled because calls failed, the budget
+    /// was spent or the call limit was reached; `detail` says which, with
+    /// the first error. Running the step again resumes.
+    Partial,
     /// Nothing could run; `detail` says why (no graph, not linked, no model).
     #[default]
     Skipped,
-    /// A step failed; `detail` holds the error. Labels written before it stay.
+    /// A step failed, or every labeler call failed; `detail` holds the
+    /// error. Labels written before it stay.
     Failed,
+}
+
+impl EdgeLabelStatus {
+    /// How the job queue shows the `labels` task: a partial run is a
+    /// warning, not a completed step.
+    #[must_use]
+    pub const fn task_status(self) -> crate::domain::AnalysisTaskStatus {
+        use crate::domain::AnalysisTaskStatus;
+        match self {
+            Self::Completed | Self::Skipped => AnalysisTaskStatus::Completed,
+            Self::Partial => AnalysisTaskStatus::Warning,
+            Self::Failed => AnalysisTaskStatus::Failed,
+        }
+    }
+}
+
+/// How a labels run is asked for.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
+#[serde(default)]
+pub struct EdgeLabelRequest {
+    /// Also relabel unreviewed edge-labeler labels written under an older
+    /// prompt version (reviewed labels are never touched).
+    pub relabel_older_prompt: bool,
 }
 
 /// One current label, as the reader and the review panel show it.
@@ -107,6 +147,16 @@ impl EdgeLabelBrief {
     pub fn is_rejected(&self) -> bool {
         self.review_state == ReviewState::Rejected.as_str()
     }
+
+    /// Whether the label says what role the work plays, rather than
+    /// marking a passing mention or an unclear citation.
+    #[must_use]
+    pub fn names_a_role(&self) -> bool {
+        self.engagement.as_deref().map_or_else(
+            || !matches!(self.relation.as_str(), "background" | "other"),
+            |engagement| engagement == "substantive",
+        )
+    }
 }
 
 /// One edge of the paper (outgoing) or into it (incoming), with its label.
@@ -129,6 +179,10 @@ pub struct LabelledEdge {
 pub struct EdgeLabelCounts {
     pub edges: usize,
     pub labelled: usize,
+    /// Labels that say what role the work plays: engagement `substantive`,
+    /// or no engagement stated and a relation other than `background` or
+    /// `other`. Passing mentions and declines are labelled but not here.
+    pub labelled_with_role: usize,
     /// Edges with stored citing passages and no label.
     pub unlabelled_with_passages: usize,
     /// Edges with no stored passage and no label.
@@ -159,6 +213,9 @@ impl EdgeLabelCounts {
                 continue;
             };
             counts.labelled += 1;
+            if label.names_a_role() {
+                counts.labelled_with_role += 1;
+            }
             let path = label.path.map_or("unknown", LabelPath::as_str);
             *counts.by_path.entry(path.to_owned()).or_default() += 1;
             *counts
@@ -195,6 +252,11 @@ pub struct EdgeLabelRun {
     /// The labeler's model key.
     pub labeler: Option<String>,
     pub prompt_version: u32,
+    /// A digest of the labeler's brief and schema, so prompt edits within
+    /// one prompt version can be told apart.
+    pub brief_digest: Option<String>,
+    /// The model that wrote the core reading the labels were seeded from.
+    pub core_model: Option<String>,
     /// The analysis pipeline whose core relations seeded the labels.
     pub pipeline_version: Option<String>,
     /// The local evidence refresh failed; existing mentions were used.
@@ -218,6 +280,68 @@ impl EdgeLabelRun {
         }
     }
 
+    /// Whether the run wrote or replaced any label, so the context node
+    /// should be rewritten to carry them.
+    #[must_use]
+    pub fn wrote_labels(&self) -> bool {
+        let core = self
+            .core
+            .as_ref()
+            .is_some_and(|core| core.inserted + core.replaced > 0);
+        let labeler = self
+            .labels
+            .as_ref()
+            .is_some_and(|labels| labels.labeled + labels.replaced > 0);
+        core || labeler
+    }
+
+    /// Set `Partial` or `Failed` from the labeler's counts on a run that
+    /// otherwise completed. Every call failing is a failed run; edges left
+    /// by failures, the budget or the call limit make it partial.
+    pub fn settle_status(&mut self) {
+        if self.status != EdgeLabelStatus::Completed {
+            return;
+        }
+        let Some(labels) = &self.labels else {
+            return;
+        };
+        let first_error = labels
+            .first_error
+            .as_deref()
+            .map(|error| format!(" (first error: {error})"))
+            .unwrap_or_default();
+        if labels.model_calls > 0
+            && labels.labeled + labels.replaced == 0
+            && labels.failed == labels.model_calls
+        {
+            self.status = EdgeLabelStatus::Failed;
+            self.detail = Some(format!(
+                "all {} labeler calls failed{first_error}",
+                labels.model_calls
+            ));
+            return;
+        }
+        if labels.left_unlabelled() == 0 {
+            return;
+        }
+        let mut parts = Vec::new();
+        if labels.failed > 0 {
+            parts.push(format!("{} failed{first_error}", labels.failed));
+        }
+        if labels.over_budget > 0 {
+            parts.push(format!("{} over the label budget", labels.over_budget));
+        }
+        if labels.over_limit > 0 {
+            parts.push(format!("{} over the call limit", labels.over_limit));
+        }
+        self.status = EdgeLabelStatus::Partial;
+        self.detail = Some(format!(
+            "{} edges left unlabelled: {}",
+            labels.left_unlabelled(),
+            parts.join(", ")
+        ));
+    }
+
     /// One line for the job queue's task detail.
     #[must_use]
     pub fn task_detail(&self) -> String {
@@ -227,16 +351,16 @@ impl EdgeLabelRun {
                 self.detail.as_deref().unwrap_or("nothing to label")
             ),
             EdgeLabelStatus::Failed => format!(
-                "Failed: {}",
+                "Failed: {}; {RESUME_HINT}",
                 self.detail.as_deref().unwrap_or("unknown error")
             ),
-            EdgeLabelStatus::Completed => {
+            EdgeLabelStatus::Completed | EdgeLabelStatus::Partial => {
                 let counts = &self.counts;
                 let core = counts.by_path.get("core_relation").copied().unwrap_or(0);
                 let labeler = counts.by_path.get("edge_labeler").copied().unwrap_or(0);
                 let mut parts = vec![format!(
-                    "{} of {} edges labelled ({core} from the core reading, {labeler} by the edge labeler)",
-                    counts.labelled, counts.edges
+                    "{} of {} edges labelled ({core} from the core reading, {labeler} by the edge labeler; {} say what role the work plays)",
+                    counts.labelled, counts.edges, counts.labelled_with_role
                 )];
                 if let Some(seed) = &self.core {
                     let unresolved: usize = seed.unresolved.values().sum();
@@ -244,45 +368,68 @@ impl EdgeLabelRun {
                         parts.push(format!("{unresolved} reference keys unresolved"));
                     }
                 }
+                if let Some(seed) = &self.core
+                    && seed.not_in_citing_passage > 0
+                {
+                    parts.push(format!(
+                        "{} core relations not written: quote not where the work is cited",
+                        seed.not_in_citing_passage
+                    ));
+                }
                 if let Some(labels) = &self.labels {
-                    let left = labels.over_limit + labels.over_budget + labels.failed;
-                    if left > 0 {
-                        parts.push(format!("{left} left for a later run"));
-                    }
                     if labels.rejected_for_grounding > 0 {
                         parts.push(format!(
                             "{} answers failed grounding",
                             labels.rejected_for_grounding
                         ));
                     }
+                    if labels.misattributed > 0 {
+                        parts.push(format!(
+                            "{} edges whose passages cite another work",
+                            labels.misattributed
+                        ));
+                    }
+                }
+                if self.status == EdgeLabelStatus::Partial {
+                    parts.push(format!(
+                        "{}; {RESUME_HINT}",
+                        self.detail.as_deref().unwrap_or("edges left unlabelled")
+                    ));
                 }
                 parts.join("; ")
             }
         }
     }
 
-    /// A deterministic sample of labelled edges for the review panel: the
-    /// first `size` by a hash of the claim id, so the same run always offers
-    /// the same edges and the sample does not favour the top of the list.
+    /// [`review_sample`] of this run's edges.
     #[must_use]
     pub fn review_sample(&self, size: usize) -> Vec<LabelledEdge> {
-        use sha2::{Digest, Sha256};
-        let mut labelled: Vec<(String, &LabelledEdge)> = self
-            .edges
-            .iter()
-            .filter_map(|edge| {
-                let label = edge.label.as_ref()?;
-                let digest = format!("{:x}", Sha256::digest(label.claim_id.as_bytes()));
-                Some((digest, edge))
-            })
-            .collect();
-        labelled.sort_by(|left, right| left.0.cmp(&right.0));
-        labelled
-            .into_iter()
-            .take(size)
-            .map(|(_, edge)| edge.clone())
-            .collect()
+        review_sample(&self.edges, size)
     }
+}
+
+/// A deterministic sample of labelled edges for the review panel.
+///
+/// The first `size` by a hash of the claim id, so the same labels always give the same
+/// sample and it does not favour the top of the list. Rejected labels are
+/// not sampled: a person already said they are wrong.
+#[must_use]
+pub fn review_sample(edges: &[LabelledEdge], size: usize) -> Vec<LabelledEdge> {
+    use sha2::{Digest, Sha256};
+    let mut labelled: Vec<(String, &LabelledEdge)> = edges
+        .iter()
+        .filter_map(|edge| {
+            let label = edge.label.as_ref().filter(|label| !label.is_rejected())?;
+            let digest = format!("{:x}", Sha256::digest(label.claim_id.as_bytes()));
+            Some((digest, edge))
+        })
+        .collect();
+    labelled.sort_by(|left, right| left.0.cmp(&right.0));
+    labelled
+        .into_iter()
+        .take(size)
+        .map(|(_, edge)| edge.clone())
+        .collect()
 }
 
 /// The labels around a paper, for the Abstract page.
@@ -347,6 +494,15 @@ pub fn surrounding_text(
     Some(String::from_utf16_lossy(&text[before..after]))
 }
 
+/// The model a `paper-artifacts.json` record says wrote it.
+fn core_model_of(record: &serde_json::Value) -> Option<&str> {
+    record
+        .get("model")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|model| !model.is_empty())
+}
+
 /// The model key stored on labels seeded from a core reading by `provider`.
 #[must_use]
 pub fn core_model_key(provider: AnalysisProvider, model: &str) -> String {
@@ -388,12 +544,13 @@ impl AppState {
         })
     }
 
-    /// Label why the paper cites each work, after its analysis. Never fails:
-    /// a step that fails is recorded on the run, which is also saved.
+    /// Label why the paper cites each work. Never fails: a step that fails
+    /// is recorded on the run, which is also saved.
     pub async fn label_paper_edges(
         &self,
         id: &PaperId,
         provider: AnalysisProvider,
+        request: EdgeLabelRequest,
     ) -> EdgeLabelRun {
         let chosen = crate::labeling::labeler_for(
             provider,
@@ -403,7 +560,13 @@ impl AppState {
         );
         let run = match chosen {
             Ok(labeler) => {
-                Box::pin(self.label_paper_edges_with(id, provider, labeler.as_deref())).await
+                Box::pin(self.label_paper_edges_with(
+                    id,
+                    provider,
+                    labeler.as_deref(),
+                    request,
+                ))
+                .await
             }
             Err(error) => Self::failed_run(id, provider, &error),
         };
@@ -429,11 +592,80 @@ impl AppState {
         id: &PaperId,
         provider: AnalysisProvider,
         labeler: Option<&dyn RelationshipLabeler>,
+        request: EdgeLabelRequest,
     ) -> EdgeLabelRun {
-        match self.label_paper_edges_inner(id, provider, labeler).await {
-            Ok(run) => run,
+        match self
+            .label_paper_edges_inner(id, provider, labeler, request)
+            .await
+        {
+            Ok(mut run) => {
+                run.settle_status();
+                run
+            }
             Err(error) => Self::failed_run(id, provider, &error),
         }
+    }
+
+    /// Run the labels step on demand, save it, and when it wrote or
+    /// replaced a label, rewrite the context node so its dossier carries
+    /// the labels. The context rewrite's failure is logged and returned
+    /// beside the run; it never undoes the labels.
+    ///
+    /// # Errors
+    /// `PaperNotFound`, or `AlreadyProcessing` while the paper is being
+    /// analysed (the analysis job runs its own labels step).
+    pub async fn run_edge_labels(
+        &self,
+        id: &PaperId,
+        provider: AnalysisProvider,
+        request: EdgeLabelRequest,
+    ) -> Result<(EdgeLabelRun, Option<Result<()>>)> {
+        let status = self
+            .catalog
+            .read()
+            .await
+            .get(id)
+            .map(|entry| entry.overview.status.clone())
+            .ok_or_else(|| Error::PaperNotFound(id.to_string()))?;
+        if matches!(
+            status,
+            crate::domain::ProcessingStatus::Queued { .. }
+                | crate::domain::ProcessingStatus::Extracting
+                | crate::domain::ProcessingStatus::Analyzing { .. }
+        ) {
+            return Err(Error::AlreadyProcessing(id.to_string()));
+        }
+        let run = Box::pin(self.label_paper_edges(id, provider, request)).await;
+        let context = Box::pin(self.refresh_context_after_labels(id, provider, &run)).await;
+        Ok((run, context))
+    }
+
+    /// Rewrite the context node after a labels run that wrote labels, when
+    /// the paper has an analysis to rewrite. `None` when nothing was needed.
+    pub async fn refresh_context_after_labels(
+        &self,
+        id: &PaperId,
+        provider: AnalysisProvider,
+        run: &EdgeLabelRun,
+    ) -> Option<Result<()>> {
+        if !run.wrote_labels() || provider == AnalysisProvider::Heuristic {
+            return None;
+        }
+        if !matches!(self.store.load_analysis(id).await, Ok(Some(_))) {
+            return None;
+        }
+        let outcome = Box::pin(self.refresh_component(
+            id,
+            provider,
+            false,
+            crate::domain::AnalysisComponent::Context,
+        ))
+        .await
+        .map(|_| ());
+        if let Err(error) = &outcome {
+            tracing::warn!(paper_id = %id, %error, "could not rewrite the context node after labelling");
+        }
+        Some(outcome)
     }
 
     async fn label_paper_edges_inner(
@@ -441,6 +673,7 @@ impl AppState {
         id: &PaperId,
         provider: AnalysisProvider,
         labeler: Option<&dyn RelationshipLabeler>,
+        request: EdgeLabelRequest,
     ) -> Result<EdgeLabelRun> {
         let Some(graph) = &self.graph else {
             return Ok(EdgeLabelRun::skipped(
@@ -467,6 +700,7 @@ impl AppState {
             provider: Some(provider.to_string()),
             labeler: Some(labeler.model_key().to_owned()),
             prompt_version: LABEL_PROMPT_VERSION,
+            brief_digest: Some(label_brief_digest()),
             ..EdgeLabelRun::default()
         };
         if let Err(error) = Box::pin(self.run_local_evidence_at(id, target.clone())).await {
@@ -482,6 +716,7 @@ impl AppState {
         let (reading, malformed, pipeline_version) =
             self.core_reading(id, provider, &settings.model).await;
         run.pipeline_version = pipeline_version;
+        run.core_model = Some(reading.model.clone());
         let seeded = seed_core_labels(
             &context,
             target.citing_work,
@@ -494,6 +729,7 @@ impl AppState {
         let brief = Box::pin(self.label_brief(graph, id, &target, seeded.extra_passages)).await;
         let options = LabelOptions {
             limit: settings.label_limit,
+            relabel_older_prompt: request.relabel_older_prompt,
             ..LabelOptions::default()
         };
         run.labels = Some(
@@ -514,7 +750,9 @@ impl AppState {
 
     /// The core reading of the last analysis: its admitted relations,
     /// citations and references. A paper analysed before the record existed
-    /// has none, and seeding then does nothing.
+    /// has none, and seeding then does nothing. The model stored on the
+    /// labels is the one the record names, not the current configuration;
+    /// `model` is only the fallback for a record that names none.
     async fn core_reading(
         &self,
         id: &PaperId,
@@ -541,6 +779,7 @@ impl AppState {
             .get("artifacts")
             .cloned()
             .unwrap_or(serde_json::Value::Null);
+        let model = core_model_of(&record).unwrap_or(model);
         let (reading, malformed) =
             CoreReading::from_artifacts(&artifacts, &run_key, &core_model_key(provider, model));
         (reading, malformed, pipeline_version)
@@ -554,7 +793,7 @@ impl AppState {
         graph: &GraphState,
         id: &PaperId,
         target: &LocalEvidenceTarget,
-        extra_passages: HashMap<WorkId, Vec<String>>,
+        extra_passages: HashMap<AssertionId, Vec<String>>,
     ) -> LabelBrief {
         let citing_thesis = self
             .store
@@ -901,6 +1140,14 @@ mod tests {
             (counts.perfunctory, counts.not_shown, counts.rejected),
             (1, 1, 1)
         );
+        assert_eq!(
+            counts.labelled_with_role, 1,
+            "passing mentions and declines are labelled but name no role"
+        );
+        let unstated = |relation| label("x", relation, None, LabelPath::CoreRelation);
+        assert!(unstated("uses_method").names_a_role());
+        assert!(!unstated("background").names_a_role());
+        assert!(!unstated("other").names_a_role());
     }
 
     #[test]
@@ -959,18 +1206,85 @@ mod tests {
             ..CoreSeedSummary::default()
         });
         run.labels = Some(LabelSummary {
+            model_calls: 1,
+            labeled: 1,
             over_budget: 1,
             ..LabelSummary::default()
         });
+        run.settle_status();
+        assert_eq!(run.status, EdgeLabelStatus::Partial);
+        assert_eq!(
+            run.status.task_status(),
+            crate::domain::AnalysisTaskStatus::Warning,
+            "a partial run is not shown as done"
+        );
         let detail = run.task_detail();
         assert!(
             detail.starts_with(
-                "1 of 2 edges labelled (1 from the core reading, 0 by the edge labeler)"
+                "1 of 2 edges labelled (1 from the core reading, 0 by the edge labeler; 1 say what role the work plays)"
             ),
             "{detail}"
         );
         assert!(detail.contains("2 reference keys unresolved"), "{detail}");
-        assert!(detail.contains("1 left for a later run"), "{detail}");
+        assert!(detail.contains("1 over the label budget"), "{detail}");
+        assert!(detail.contains(RESUME_HINT), "names how to resume: {detail}");
+    }
+
+    #[test]
+    fn should_fail_a_run_whose_every_labeler_call_failed_and_keep_the_first_error() {
+        let mut run = EdgeLabelRun {
+            status: EdgeLabelStatus::Completed,
+            labels: Some(LabelSummary {
+                model_calls: 40,
+                failed: 40,
+                first_error: Some("labeler failed: 401 Unauthorized".to_owned()),
+                ..LabelSummary::default()
+            }),
+            ..EdgeLabelRun::default()
+        };
+        run.settle_status();
+        assert_eq!(run.status, EdgeLabelStatus::Failed);
+        let detail = run.task_detail();
+        assert!(detail.contains("all 40 labeler calls failed"), "{detail}");
+        assert!(detail.contains("401 Unauthorized"), "{detail}");
+
+        let mut some = EdgeLabelRun {
+            status: EdgeLabelStatus::Completed,
+            labels: Some(LabelSummary {
+                model_calls: 3,
+                failed: 1,
+                labeled: 2,
+                first_error: Some("boom".to_owned()),
+                ..LabelSummary::default()
+            }),
+            ..EdgeLabelRun::default()
+        };
+        some.settle_status();
+        assert_eq!(some.status, EdgeLabelStatus::Partial);
+        assert!(some.detail.as_deref().unwrap_or_default().contains("1 failed (first error: boom)"));
+
+        let mut clean = EdgeLabelRun {
+            status: EdgeLabelStatus::Completed,
+            labels: Some(LabelSummary {
+                model_calls: 2,
+                labeled: 1,
+                rejected_for_grounding: 1,
+                ..LabelSummary::default()
+            }),
+            ..EdgeLabelRun::default()
+        };
+        clean.settle_status();
+        assert_eq!(clean.status, EdgeLabelStatus::Completed);
+        assert!(clean.wrote_labels());
+        assert!(!EdgeLabelRun::default().wrote_labels());
+    }
+
+    #[test]
+    fn should_store_the_model_the_core_record_names() {
+        let record = serde_json::json!({"model": "cheap/model-a", "pipeline_version": "core-v9"});
+        assert_eq!(core_model_of(&record), Some("cheap/model-a"));
+        assert_eq!(core_model_of(&serde_json::json!({"model": "  "})), None);
+        assert_eq!(core_model_of(&serde_json::json!({})), None);
     }
 
     #[tokio::test]
@@ -983,7 +1297,7 @@ mod tests {
         let state = AppState::new(library.path(), data.path()).await.unwrap();
         let id = PaperId::from_relative_path(Path::new("paper.pdf"));
         let run = state
-            .label_paper_edges(&id, AnalysisProvider::OpenRouter)
+            .label_paper_edges(&id, AnalysisProvider::OpenRouter, EdgeLabelRequest::default())
             .await;
         assert_eq!(run.status, EdgeLabelStatus::Skipped);
         assert!(

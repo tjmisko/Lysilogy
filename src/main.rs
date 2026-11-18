@@ -528,6 +528,17 @@ enum Command {
         #[arg(long)]
         arm_b: PathBuf,
     },
+    /// Label why one paper cites each work (or resume a partial run), save
+    /// edge-labels.json, and rewrite its context when a label was written.
+    Labels {
+        /// Paper ID or unambiguous title fragment.
+        query: String,
+        #[arg(long, default_value = "openrouter")]
+        provider: AnalysisProvider,
+        /// Also relabel unreviewed labels written under an older prompt version.
+        #[arg(long)]
+        relabel_older_prompt: bool,
+    },
     /// Summarise human reviews of reader output by pipeline version, or export them.
     Review {
         /// Write every review, the summary and the flagged issues to this JSON file.
@@ -962,6 +973,29 @@ async fn run(cli: Cli) -> Result<()> {
         }
         Command::ExperimentReport { output } => {
             Box::pin(experiment_report_command(&state, output)).await
+        }
+        Command::Labels {
+            query,
+            provider,
+            relabel_older_prompt,
+        } => {
+            let id = resolve_paper(&state, &query).await?;
+            let (run, context) = Box::pin(state.run_edge_labels(
+                &id,
+                provider,
+                lysilogy::edge_labels::EdgeLabelRequest {
+                    relabel_older_prompt,
+                },
+            ))
+            .await?;
+            eprintln!("{}", run.task_detail());
+            match context {
+                None => eprintln!("context: not rewritten (no label was written)"),
+                Some(Ok(())) => eprintln!("context: rewritten with the new labels"),
+                Some(Err(error)) => eprintln!("context: rewrite failed: {error}"),
+            }
+            println!("{}", serde_json::to_string_pretty(&run)?);
+            Ok(())
         }
         Command::Review { export, json } => {
             let store = lysilogy::store::ArtifactStore::new(&cli.data);

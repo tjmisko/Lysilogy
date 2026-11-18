@@ -6,6 +6,12 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 
+use crate::edge_labels::{
+    EdgeLabelBrief, EdgeLabelRun, LabelledEdge, REVIEW_SAMPLE_SIZE, review_sample,
+};
+use lysilogy_db::relationship::LabelPath;
+use lysilogy_ingest::labels::LabelSummary;
+
 /// Top-level analysis keys copied into a snapshot, matched by prefix:
 /// `abstract` covers `abstract_extraction` and `abstract_agreement`,
 /// `context` covers the context node's `context` and the older
@@ -33,36 +39,134 @@ const REVIEWED_PREFIXES: &[&str] = &[
 /// first save of a review pins the sample it graded and later saves keep it.
 pub const EDGE_LABELS_FIELD: &str = "edge_labels";
 
-/// Pin a sample of the last labelling run's labels into `snapshot`, unless
-/// one is already pinned. Without a run nothing is pinned and the panel shows
-/// the component as not produced.
-pub fn pin_edge_labels(snapshot: &mut ReviewSnapshot, run: Option<&crate::edge_labels::EdgeLabelRun>) {
+/// Pin a sample of the citation labels into `snapshot`, unless one is
+/// already pinned.
+///
+/// The sample is drawn from `current` (the paper's outgoing
+/// edges with their labels as the graph holds them now) when given, else
+/// from the run's edges; rejected labels are never sampled. The run gives
+/// the counts and the versions. Without a run nothing is pinned and the
+/// panel shows the component as not produced.
+pub fn pin_edge_labels(
+    snapshot: &mut ReviewSnapshot,
+    run: Option<&EdgeLabelRun>,
+    current: Option<&[LabelledEdge]>,
+) {
     if snapshot.fields.contains_key(EDGE_LABELS_FIELD) {
         return;
     }
     let Some(run) = run else {
         return;
     };
+    let edges = current.unwrap_or(&run.edges);
+    let sample: Vec<serde_json::Value> = review_sample(edges, REVIEW_SAMPLE_SIZE)
+        .into_iter()
+        .map(|edge| {
+            let version = edge
+                .label
+                .as_ref()
+                .map(|label| item_label_version(label, run));
+            let mut value = serde_json::to_value(&edge).unwrap_or_default();
+            if let Some(object) = value.as_object_mut() {
+                object.insert("label_version".to_owned(), serde_json::json!(version));
+            }
+            value
+        })
+        .collect();
     let pinned = serde_json::json!({
         "generated_at": run.generated_at,
         "status": run.status,
         "detail": run.detail,
         "labeler": run.labeler,
         "prompt_version": run.prompt_version,
-        "label_version": label_version(run.labeler.as_deref(), run.prompt_version),
+        "brief_digest": run.brief_digest,
+        "label_version": label_version(run.labeler.as_deref(), run.prompt_version, run.brief_digest.as_deref()),
+        "from_graph": current.is_some(),
         "counts": run.counts,
         "unresolved_keys": run.core.as_ref().map(|core| core.unresolved.values().sum::<usize>()),
-        "left_for_later": run.labels.as_ref().map(|labels| labels.over_limit + labels.over_budget + labels.failed),
+        "left_for_later": run.labels.as_ref().map(LabelSummary::left_unlabelled),
         "rejected_for_grounding": run.labels.as_ref().map(|labels| labels.rejected_for_grounding),
-        "sample": run.review_sample(crate::edge_labels::REVIEW_SAMPLE_SIZE),
+        "sample": sample,
     });
     snapshot.fields.insert(EDGE_LABELS_FIELD.to_owned(), pinned);
 }
 
-/// The key edge-label grades are compared under: the labeler and its prompt version.
+/// Which labels a pinned sample shows.
+///
+/// The run it came with and the claim ids in order. The review panel sends the pin it showed, and a first save
+/// whose pin differs from the current one is refused as stale.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct EdgeLabelsPin {
+    pub generated_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub claim_ids: Vec<String>,
+}
+
+impl EdgeLabelsPin {
+    /// The pin of a pinned `edge_labels` field.
+    #[must_use]
+    pub fn of(pinned: &serde_json::Value) -> Self {
+        Self {
+            generated_at: pinned
+                .get("generated_at")
+                .cloned()
+                .and_then(|value| serde_json::from_value(value).ok()),
+            claim_ids: pinned
+                .get("sample")
+                .and_then(serde_json::Value::as_array)
+                .map(|sample| {
+                    sample
+                        .iter()
+                        .filter_map(|edge| edge.pointer("/label/claim_id")?.as_str())
+                        .map(str::to_owned)
+                        .collect()
+                })
+                .unwrap_or_default(),
+        }
+    }
+}
+
+/// The key the edge labeler's grades are compared under: the labeler, its
+/// prompt version and, when known, the digest of its brief and schema.
 #[must_use]
-pub fn label_version(labeler: Option<&str>, prompt_version: u32) -> String {
-    format!("{} @ prompt v{prompt_version}", labeler.unwrap_or("no labeler"))
+pub fn label_version(labeler: Option<&str>, prompt_version: u32, brief_digest: Option<&str>) -> String {
+    let digest = brief_digest.map(|digest| format!("+{digest}")).unwrap_or_default();
+    format!("{}@v{prompt_version}{digest}", labeler.unwrap_or("no labeler"))
+}
+
+/// The key one sampled label's verdict is compared under.
+///
+/// By the path that wrote it: a core relation by the core model and pipeline version, an
+/// edge-labeler label by its model and prompt version (with the brief
+/// digest when it is the run's version), a person's label as `user`.
+#[must_use]
+pub fn item_label_version(label: &EdgeLabelBrief, run: &EdgeLabelRun) -> String {
+    match label.path.unwrap_or(LabelPath::EdgeLabeler) {
+        LabelPath::CoreRelation => format!(
+            "core:{}@{}",
+            label
+                .model
+                .as_deref()
+                .or(run.core_model.as_deref())
+                .unwrap_or("unknown model"),
+            run.pipeline_version.as_deref().unwrap_or("unversioned")
+        ),
+        LabelPath::EdgeLabeler => {
+            let version = label
+                .prompt_version
+                .and_then(|version| u32::try_from(version).ok())
+                .unwrap_or(1);
+            let digest = (version == run.prompt_version)
+                .then_some(run.brief_digest.as_deref())
+                .flatten();
+            label_version(
+                label.model.as_deref().or(run.labeler.as_deref()),
+                version,
+                digest,
+            )
+        }
+        LabelPath::User => "user".to_owned(),
+    }
 }
 
 /// What a review graded: the reviewed fields as they were, plus the

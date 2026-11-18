@@ -132,14 +132,30 @@ export function laterCitations(labels: PaperEdgeLabels | null): EdgeWhy[] {
   return labels.incoming.map((edge) => fromGraph(edge, "cited_by")).filter((why): why is EdgeWhy => why !== null);
 }
 
-/** One line saying how complete a paper's labels are, from its last run. */
+/**
+ * One line saying how complete a paper's labels are, from its last run: how
+ * many say what role the work plays, and what went wrong (failed calls, the
+ * budget, answers that failed grounding), so "nothing went wrong yet" and
+ * "every call failed" read differently.
+ */
 export function runSummary(labels: PaperEdgeLabels | null): string | null {
   const run = labels?.run;
   if (run == null) return null;
-  if (run.status !== "completed") return run.detail === null ? null : `Citation labels: ${run.detail}`;
+  if (run.status === "skipped" || run.status === "failed") {
+    return run.detail === null ? null : `Citation labels ${run.status === "failed" ? "failed" : "skipped"}: ${run.detail}`;
+  }
   const counts = run.counts;
+  const pass = run.labels ?? {};
   const parts = [`${counts.labelled} of ${counts.edges} citations labelled`];
+  if (counts.labelled_with_role !== undefined && counts.labelled > 0) parts.push(`${counts.labelled_with_role} say what role the work plays`);
   if (counts.unlabelled_with_passages > 0) parts.push(`${counts.unlabelled_with_passages} still to label`);
   if (counts.perfunctory > 0) parts.push(`${counts.perfunctory} cited in passing`);
+  const failed = pass.failed ?? 0;
+  if (failed > 0) parts.push(`${failed} labeler calls failed${pass.first_error ? ` (${pass.first_error})` : ""}`);
+  if ((pass.over_budget ?? 0) > 0) parts.push(`${pass.over_budget} over the label budget`);
+  if ((pass.over_limit ?? 0) > 0) parts.push(`${pass.over_limit} over the call limit`);
+  if ((pass.rejected_for_grounding ?? 0) > 0) parts.push(`${pass.rejected_for_grounding} answers failed grounding`);
+  if ((pass.misattributed ?? 0) > 0) parts.push(`${pass.misattributed} whose passages cite another work`);
+  if (run.status === "partial") parts.push("run the labels step again to finish");
   return parts.join(" · ");
 }

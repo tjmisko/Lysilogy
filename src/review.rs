@@ -28,7 +28,8 @@ pub use self::{
     progress::{MANIFEST_JSON, Manifest, ManifestPaper, ProgressRow, manifest_match, progress},
     rubric::{DimensionKind, GENERAL_COMPONENT, RUBRIC_JSON, Rubric, RubricComponent},
     snapshot::{
-        EDGE_LABELS_FIELD, ReviewSnapshot, label_version, pin_edge_labels, snapshot_from_analysis,
+        EDGE_LABELS_FIELD, EdgeLabelsPin, ReviewSnapshot, item_label_version, label_version,
+        pin_edge_labels, snapshot_from_analysis,
     },
     storage::{load_all_reviews, load_analysis_json, load_paper_reviews, load_review, save_review},
     summary::{
@@ -134,6 +135,10 @@ pub struct ReviewInput {
     pub notes: String,
     #[serde(default)]
     pub issues: Vec<IssueFlag>,
+    /// The citation labels the panel showed, so a first save cannot pin a
+    /// different sample than the one graded. Absent from older clients.
+    #[serde(default)]
+    pub edge_labels_pin: Option<EdgeLabelsPin>,
 }
 
 /// Identifies the paper a review belongs to.

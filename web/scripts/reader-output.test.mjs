@@ -112,5 +112,15 @@ test('reads the citation labels the context node saw, and lets the live graph ov
   assert.equal(runSummary(live), null);
   const counts = { edges: 5, labelled: 3, unlabelled_with_passages: 1, unlabelled_without_passages: 1, by_path: {}, by_relation: {}, by_engagement: {}, perfunctory: 1, not_shown: 0, rejected: 0 };
   assert.equal(runSummary({ ...live, run: { status: 'completed', detail: null, counts } }), '3 of 5 citations labelled · 1 still to label · 1 cited in passing');
-  assert.equal(runSummary({ ...live, run: { status: 'skipped', detail: 'no graph', counts } }), 'Citation labels: no graph');
+  assert.equal(runSummary({ ...live, run: { status: 'skipped', detail: 'no graph', counts } }), 'Citation labels skipped: no graph');
+  assert.equal(
+    runSummary({ ...live, run: { status: 'partial', detail: '2 edges left', counts: { ...counts, labelled_with_role: 2 },
+      labels: { failed: 1, first_error: 'labeler failed: 401', over_budget: 1, rejected_for_grounding: 2 } } }),
+    '3 of 5 citations labelled · 2 say what role the work plays · 1 still to label · 1 cited in passing · 1 labeler calls failed (labeler failed: 401) · 1 over the label budget · 2 answers failed grounding · run the labels step again to finish',
+    'failures, the budget and grounding rejections are named',
+  );
+  assert.equal(
+    runSummary({ ...live, run: { status: 'failed', detail: 'all 40 labeler calls failed', counts } }),
+    'Citation labels failed: all 40 labeler calls failed',
+  );
 });

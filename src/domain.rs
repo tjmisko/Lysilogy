@@ -155,6 +155,9 @@ pub enum AnalysisTaskStatus {
     Pending,
     Active,
     Completed,
+    /// Finished, but part of the work was not done (for example some
+    /// citation labels failed or ran out of budget); the detail says what.
+    Warning,
     Failed,
 }
 
@@ -653,6 +656,17 @@ pub struct DossierEdgeLabel {
 }
 
 impl DossierEdgeLabel {
+    /// Whether the label says what role the work plays: engagement
+    /// `substantive`, or no engagement stated (a core relation, a version 1
+    /// label) and a relation that claims a role, not `background` or `other`.
+    #[must_use]
+    pub fn names_a_role(&self) -> bool {
+        self.engagement.as_deref().map_or_else(
+            || !matches!(self.relation.as_str(), "background" | "other"),
+            |engagement| engagement == "substantive",
+        )
+    }
+
     /// Whether the label says the citation is only a mention.
     #[must_use]
     pub fn is_perfunctory(&self) -> bool {

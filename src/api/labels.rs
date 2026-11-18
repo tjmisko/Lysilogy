@@ -69,6 +69,7 @@ pub(super) struct GraphEdge {
 pub(super) fn routes() -> Router<AppState> {
     Router::new()
         .route("/api/papers/{id}/edge-labels", get(paper_edge_labels))
+        .route("/api/papers/{id}/edge-labels/run", post(run_edge_labels))
         .route("/api/relationship-claims/{id}/accept", post(accept_label))
         .route("/api/relationship-claims/{id}/reject", post(reject_label))
         .route("/api/relationship-claims/{id}", put(edit_label))
@@ -182,6 +183,51 @@ async fn paper_edge_labels(
     }
 }
 
+/// What `POST /api/papers/{id}/edge-labels/run` takes; every field is optional.
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+struct RunLabelsRequest {
+    /// The model provider; `OpenRouter` when absent, as for analysis.
+    provider: Option<crate::domain::AnalysisProvider>,
+    /// Relabel unreviewed edge-labeler labels from an older prompt version.
+    relabel_older_prompt: bool,
+}
+
+/// Run (or resume) the labels step for one paper: seed from the core
+/// reading, label the edges still without a label, save `edge-labels.json`,
+/// and rewrite the context node when a label was written. Answers with the
+/// run and what happened to the context.
+async fn run_edge_labels(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<String>,
+    body: Option<Json<RunLabelsRequest>>,
+) -> Response {
+    let paper_id = match super::parse_id(&id) {
+        Ok(paper_id) => paper_id,
+        Err(error) => return error.into_response(),
+    };
+    let request = body.map(|Json(request)| request).unwrap_or_default();
+    let provider = request
+        .provider
+        .unwrap_or(crate::domain::AnalysisProvider::OpenRouter);
+    let options = crate::edge_labels::EdgeLabelRequest {
+        relabel_older_prompt: request.relabel_older_prompt,
+    };
+    match Box::pin(state.run_edge_labels(&paper_id, provider, options)).await {
+        Ok((run, context)) => {
+            let context = match context {
+                None => serde_json::json!({"status": "not_needed"}),
+                Some(Ok(())) => serde_json::json!({"status": "rewritten"}),
+                Some(Err(error)) => {
+                    serde_json::json!({"status": "failed", "error": error.to_string()})
+                }
+            };
+            Json(serde_json::json!({"run": run, "context": context})).into_response()
+        }
+        Err(error) => error.into_response(),
+    }
+}
+
 fn parse_claim_id(text: &str) -> Result<RelationshipClaimId, GraphError> {
     text.parse().map_err(|_| {
         Box::new(graph_error(
@@ -274,6 +320,12 @@ fn rejection_response(rejection: GroundingRejection) -> Response {
         GroundingRejection::InvalidEngagement => "That engagement is not in the vocabulary.",
         GroundingRejection::EmptyReason => "The reason is empty.",
         GroundingRejection::ReasonTooLong => "The reason is too long.",
+        GroundingRejection::InconsistentEngagement => {
+            "A citation whose role is not shown takes the relation other or background."
+        }
+        GroundingRejection::QuoteOutsideCitingSentence => {
+            "The quote must come from the sentence that cites this work."
+        }
     };
     graph_error(
         StatusCode::UNPROCESSABLE_ENTITY,
@@ -337,6 +389,7 @@ async fn edit_label(
                 quote: quote.clone(),
                 passage_index: 0,
                 engagement: None,
+                cites_this_work: None,
             };
             match ground_quote(std::slice::from_ref(passage), &draft) {
                 Ok(_) => Some(quote.as_str()),
@@ -526,6 +579,7 @@ mod tests {
                 quote: request.passages[0].clone(),
                 passage_index: 0,
                 engagement: Some("substantive".to_owned()),
+                cites_this_work: None,
             })
         });
         let labels = state
@@ -902,6 +956,28 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn should_run_the_labels_step_on_demand_and_save_the_run() {
+        let root = tempfile::tempdir().unwrap();
+        let library = root.path().join("library");
+        std::fs::create_dir_all(&library).unwrap();
+        std::fs::write(library.join("paper.pdf"), b"pdf").unwrap();
+        let state = AppState::new(&library, root.path().join("data")).await.unwrap();
+        let id = PaperId::from_relative_path(Path::new("paper.pdf"));
+        let uri = format!("/api/papers/{id}/edge-labels/run");
+        let (status, json) = send(&state, "POST", &uri, None).await;
+        assert_eq!(status, StatusCode::OK, "{json}");
+        assert_eq!(json["run"]["status"], "skipped");
+        assert_eq!(json["context"]["status"], "not_needed", "no label was written");
+        let saved = state.load_edge_label_run(&id).await.unwrap().expect("the run is saved");
+        assert_eq!(saved.status, crate::edge_labels::EdgeLabelStatus::Skipped);
+
+        let (status, _) = send(&state, "POST", &uri, Some(json!({"relabel_older_prompt": true}))).await;
+        assert_eq!(status, StatusCode::OK);
+        let (status, _) = send(&state, "POST", "/api/papers/1234567890abcdef/edge-labels/run", None).await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
     async fn should_run_the_labels_step_and_serve_the_labels_around_a_paper() {
         let Some(graph) = test_graph().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
@@ -951,6 +1027,7 @@ mod tests {
                 &fixture.paper_id,
                 crate::domain::AnalysisProvider::OpenRouter,
                 Some(&labeler),
+                crate::edge_labels::EdgeLabelRequest::default(),
             )
             .await;
         assert_eq!(run.status, crate::edge_labels::EdgeLabelStatus::Completed, "{run:?}");
@@ -965,7 +1042,7 @@ mod tests {
         assert_eq!((run.counts.edges, run.counts.labelled), (1, 1));
         assert_eq!(run.edges[0].label.as_ref().map(|label| label.relation.as_str()), Some("background"));
         let detail = run.task_detail();
-        assert!(detail.contains("1 of 1 edges labelled (0 from the core reading, 1 by the edge labeler)"), "{detail}");
+        assert!(detail.contains("1 of 1 edges labelled (0 from the core reading, 1 by the edge labeler; 1 say what role the work plays)"), "{detail}");
         assert!(detail.contains("1 reference keys unresolved"), "{detail}");
     }
 }

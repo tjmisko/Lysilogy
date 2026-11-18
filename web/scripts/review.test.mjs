@@ -114,7 +114,7 @@ test('reads the pinned citation labels and keeps a saved review on the labels it
   });
   const pinned = (reason) => ({
     generated_at: '2026-11-18T00:00:00Z', status: 'completed', detail: null, labeler: 'openrouter:m', prompt_version: 2,
-    label_version: 'openrouter:m @ prompt v2',
+    label_version: 'openrouter:m@v2',
     counts: { edges: 5, labelled: 3, unlabelled_with_passages: 1, perfunctory: 1, not_shown: 0 },
     unresolved_keys: 2, left_for_later: 0, rejected_for_grounding: 1,
     sample: [
@@ -136,5 +136,40 @@ test('reads the pinned citation labels and keeps a saved review on the labels it
   assert.equal(shownFields(null, null), null);
   const edgeComponent = component('edge_labels');
   assert.deepEqual(edgeComponent.reads, ['edge_labels']);
-  assert.ok(edgeComponent.dimensions.some((dimension) => dimension.id === 'wrong_relation' && dimension.kind === 'count'));
+  assert.deepEqual(edgeComponent.dimensions.map((dimension) => dimension.id), ['specificity'], 'no hand-kept tallies');
+  assert.deepEqual(
+    edgeComponent.item_verdict.options.map((option) => option.id),
+    ['ok', 'wrong_relation', 'weak_reason', 'unsupported_quote', 'wrong_engagement', 'misattributed'],
+  );
+  assert.ok(rubric.issues.tags.includes('weak_reason') && !rubric.issues.tags.includes('vague_reason'), 'the tag matches the verdict id');
+});
+
+test('grades each sampled citation label with one verdict and sends the pin it showed', async () => {
+  const { completion, edgeLabelsPin, setVerdict, toInput, verdictItems, verdictOf } = await import('../src/lib/review.ts');
+  const edge = (claim_id) => ({ work_id: `w-${claim_id}`, title: claim_id, year: null, first_author: null, mention_count: 1,
+    label: { claim_id, relation: 'uses_method', reason: 'R.', quote: null, path: 'edge_labeler', engagement: 'substantive',
+      review_state: 'unreviewed', model: null, prompt_version: 3, passage: null, page: null }, label_version: 'm@v3' });
+  const fields = { edge_labels: { generated_at: '2026-11-18T00:00:00Z', status: 'partial', detail: null, labeler: 'm', prompt_version: 3,
+    label_version: 'm@v3', counts: {}, unresolved_keys: null, left_for_later: 2, rejected_for_grounding: null,
+    sample: [edge('r1'), edge('r2'), { work_id: 'w3', title: null, year: null, first_author: null, mention_count: 0, label: null }] } };
+  const edgeComponent = component('edge_labels');
+  assert.deepEqual(verdictItems(edgeComponent, fields), ['r1', 'r2']);
+  assert.deepEqual(edgeLabelsPin(fields), { generated_at: '2026-11-18T00:00:00Z', claim_ids: ['r1', 'r2'] });
+  assert.equal(edgeLabelsPin({}), null);
+
+  let draft = emptyDraft();
+  const before = completion(rubric, draft, fields);
+  draft = setVerdict(draft, edgeComponent, 'r1', 'weak_reason');
+  assert.equal(draft.components.edge_labels.values['edge:r1'], 'weak_reason');
+  assert.equal(verdictOf(draft, edgeComponent, 'r1'), 'weak_reason');
+  assert.equal(verdictOf(draft, edgeComponent, 'r2'), null);
+  assert.equal(completion(rubric, draft, fields).graded, before.graded + 1);
+  assert.equal(completion(rubric, draft, fields).components.edge_labels, false, 'r2 and the score are still open');
+  draft = setVerdict(draft, edgeComponent, 'r1', null);
+  assert.equal(draft.components.edge_labels.values['edge:r1'], undefined);
+  assert.equal(completion(rubric, draft).total, before.total - 2, 'without fields, only the dimensions count');
+
+  const input = toInput('s-1', draft, edgeLabelsPin(fields));
+  assert.deepEqual(input.edge_labels_pin.claim_ids, ['r1', 'r2']);
+  assert.equal(toInput('s-1', draft).edge_labels_pin, null);
 });

@@ -97,13 +97,15 @@ because dimensions that measure the same thing (specificity, economy and
 orientation all measured genericness) add noise to prompt comparisons rather
 than signal. Reviews graded against v1 keep their dimension ids; the summary
 reports what each review recorded.
-- **Citation labels** (rubric `reader-review-v3`) grades a sample of up to
-  eight labelled edges from the paper's last labelling run: counts of wrong
-  relations, vague or wrong reasons, quotes that do not support the label
-  and wrong engagement, out of the labels checked, plus one score for
-  whether the reasons together let you navigate the references from above,
-  and counts of important unlabelled edges and passing mentions. Counts
-  compare across prompt versions without a feeling-based scale. The accept,
+- **Citation labels** (rubric `reader-review-v4`) grades a sample of up to
+  five labels drawn from the graph as it stands when the review opens
+  (rejected labels left out). Each label gets one verdict with a click: ok,
+  wrong relation, vague reason, quote does not show it, wrong engagement,
+  or passage does not cite this work. The summary derives the counts and
+  the number checked, keyed by claim id, so the grades are also labelled
+  data for the next prompt. One score asks whether the reasons together
+  let you navigate the references from above. (v3 asked for hand-kept
+  tallies; those reviews still load.) The accept,
   reject and edit actions you take on labels in the literature graph are
   counted separately in the summary, per label path, model and prompt
   version, so they are grading data too.
@@ -149,13 +151,18 @@ the reader model's types (`ReviewedFields` in `web/src/lib/review.ts`):
   usable outline have none and are labelled page-span units.
 - `quality_warnings`: shown above the component whose field they concern.
 - citation labels: `edge_labels` is not an analysis field. It is a sample of
-  the last labelling run (`edge-labels.json`: label version, counts,
-  unresolved keys, grounding failures, and up to eight labelled edges chosen
-  by a hash of the claim id), pinned beside the analysis fields without
-  changing the snapshot id. The first save of a review pins it and later
-  saves keep it, so grades stay on the labels they were given even after a
-  relabel or a review in the graph. The summary groups these grades by
-  `label_version` (labeler and prompt version).
+  up to five current labels from the graph (rejected ones left out; the
+  run's edges when there is no graph), chosen by a hash of the claim id,
+  with the last run's counts (`edge-labels.json`), pinned beside the
+  analysis fields without changing the snapshot id. The panel sends the pin
+  it showed (run time and claim ids); a first save whose pin no longer
+  matches is refused (HTTP 409 `stale_labels`), and later saves keep the
+  first pin, so grades stay on the labels the reviewer saw. Each sampled
+  label carries the version its verdict is filed under, by the path that
+  wrote it: `core:{model}@{pipeline_version}` for a core relation,
+  `{labeler}@v{prompt_version}+{brief digest}` for the edge labeler, `user`
+  for a person's label. The summary groups verdicts by that key, and the
+  review-level score by the run's edge-labeler version.
 
 A missing field renders as "not produced". The shared fixture
 `tests/fixtures/reader/analysis-current.json` exercises every field; tests on

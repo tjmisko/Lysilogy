@@ -185,6 +185,7 @@ async fn should_round_trip_reviews_and_keep_earlier_snapshots() -> Result<()> {
         overall: Some(3),
         notes: "  Good orientation.  ".to_owned(),
         issues: vec![issue("i1", "context", "major")],
+        edge_labels_pin: None,
     };
     rubric.validate(&input)?;
     let created = Utc::now();
@@ -358,6 +359,7 @@ fn should_summarise_by_pipeline_version_and_component() -> Result<()> {
                 overall: Some(accuracy),
                 notes: String::new(),
                 issues: vec![issue("i1", "context", "major")],
+                edge_labels_pin: None,
             },
             minutes,
         )

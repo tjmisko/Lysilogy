@@ -9,6 +9,7 @@ import {
   applyGradingKey,
   completion,
   draftFromReview,
+  edgeLabelsPin,
   emptyDraft,
   focusRows,
   gradeOf,
@@ -24,10 +25,14 @@ import {
   readOutline,
   readThesis,
   setRowValue,
+  setVerdict,
   toInput,
   updateGrade,
   valueOf,
+  verdictItems,
+  verdictOf,
   visibleDimensions,
+  type EdgeLabelsPin,
   type FocusRow,
   type IssueFlag,
   type Manifest,
@@ -51,7 +56,7 @@ type ReviewPanelProps = {
   onOpenPaper: (id: string) => void;
 };
 
-type SaveState = { kind: "idle" } | { kind: "saving" } | { kind: "saved"; at: string } | { kind: "error"; message: string } | { kind: "stale" };
+type SaveState = { kind: "idle" } | { kind: "saving" } | { kind: "saved"; at: string } | { kind: "error"; message: string } | { kind: "stale"; message: string };
 
 const reviewApi = {
   rubric: (): Promise<Rubric> => request("/api/review/rubric"),
@@ -327,6 +332,38 @@ function DimensionRow({ row, rubric, draft, focused, onFocus, onChange }: Dimens
   );
 }
 
+type ItemVerdictsProps = {
+  component: RubricComponent;
+  fields: ReviewedFields;
+  draft: ReviewDraft;
+  onChange: (next: ReviewDraft) => void;
+};
+
+/** One click row per sampled citation label: ok, or its one main problem. */
+function ItemVerdicts({ component, fields, draft, onChange }: ItemVerdictsProps) {
+  const verdict = component.item_verdict;
+  if (verdict === undefined) return null;
+  const items = verdictItems(component, fields);
+  if (items.length === 0) return null;
+  const titles = new Map(readEdgeLabels(fields).sample.map((edge) => [edge.label?.claim_id ?? "", edge.title ?? edge.work_id]));
+  return <div className="review-dimension review-verdicts">
+    <div className="review-dimension-head">
+      <span className="review-dimension-label">{verdict.label}</span>
+      <span className="review-dimension-question">{verdict.question}</span>
+    </div>
+    {items.map((item, index) => {
+      const current = verdictOf(draft, component, item);
+      return <div key={item} className="review-verdict-row">
+        <span className="review-muted">{index + 1}. {titles.get(item) ?? item}</span>
+        <div className="review-choices">{verdict.options.map((option) => (
+          <button key={option.id} type="button" className={current === option.id ? "is-selected" : ""}
+            onClick={() => onChange(setVerdict(draft, component, item, current === option.id ? null : option.id))}>{option.label}</button>
+        ))}</div>
+      </div>;
+    })}
+  </div>;
+}
+
 type IssueFormState = { component: string; severity: string; tag: string; note: string; quote: string };
 
 export function ReviewPanel({ paperId, onClose, onOpenPaper }: ReviewPanelProps) {
@@ -342,6 +379,9 @@ export function ReviewPanel({ paperId, onClose, onOpenPaper }: ReviewPanelProps)
   const [changes, setChanges] = useState(0);
   const draftRef = useRef<ReviewDraft>(emptyDraft());
   const pendingRef = useRef(false);
+  // The citation labels on screen, sent with each save so a first save
+  // cannot pin labels the reviewer never saw.
+  const pinRef = useRef<EdgeLabelsPin | null>(null);
   const panelRef = useRef<HTMLElement>(null);
   const issueNoteRef = useRef<HTMLTextAreaElement>(null);
   const snapshotId = paper?.snapshot?.snapshot_id ?? null;
@@ -387,11 +427,11 @@ export function ReviewPanel({ paperId, onClose, onOpenPaper }: ReviewPanelProps)
     pendingRef.current = false;
     setSaveState({ kind: "saving" });
     try {
-      const saved = await reviewApi.save(paperId, toInput(snapshotId, draftRef.current));
+      const saved = await reviewApi.save(paperId, toInput(snapshotId, draftRef.current, pinRef.current));
       setSaveState({ kind: "saved", at: saved.updated_at });
       refreshProgress();
     } catch (reason: unknown) {
-      if (reason instanceof ApiError && reason.status === 409) setSaveState({ kind: "stale" });
+      if (reason instanceof ApiError && reason.status === 409) setSaveState({ kind: "stale", message: reason.message });
       else {
         pendingRef.current = true;
         setSaveState({ kind: "error", message: reason instanceof Error ? reason.message : "Could not save the review" });
@@ -419,9 +459,12 @@ export function ReviewPanel({ paperId, onClose, onOpenPaper }: ReviewPanelProps)
 
   const rows = useMemo(() => (rubric === null ? [] : focusRows(rubric, draft)), [draft, rubric]);
   const focusedRow = rows[Math.min(focusIndex, Math.max(0, rows.length - 1))] ?? null;
-  const done = rubric === null ? null : completion(rubric, draft);
   const manifestPaper = manifest?.papers.find((entry) => entry.id === paper?.manifest_id) ?? null;
   const fields = shownFields(paper?.snapshot ?? null, paper?.review ?? null);
+  const done = rubric === null ? null : completion(rubric, draft, fields);
+  const pin = edgeLabelsPin(fields);
+  const pinKey = pin === null ? "" : JSON.stringify(pin);
+  useEffect(() => { pinRef.current = pinKey === "" ? null : JSON.parse(pinKey) as EdgeLabelsPin; }, [pinKey]);
   const counts = progressCounts(progress);
 
   const focusRow = useCallback((index: number): void => {
@@ -506,7 +549,7 @@ export function ReviewPanel({ paperId, onClose, onOpenPaper }: ReviewPanelProps)
   const saveLabel = saveState.kind === "saving" ? "Saving…"
     : saveState.kind === "saved" ? `Saved ${new Date(saveState.at).toLocaleTimeString()}`
     : saveState.kind === "error" ? `Not saved: ${saveState.message}`
-    : saveState.kind === "stale" ? "This paper was analysed again; reopen the review to grade the new output."
+    : saveState.kind === "stale" ? saveState.message
     : "Changes save automatically";
 
   return (
@@ -566,6 +609,7 @@ export function ReviewPanel({ paperId, onClose, onOpenPaper }: ReviewPanelProps)
                       <input type="checkbox" checked={grade.hard_reject} onChange={(event) => change(updateGrade(draft, component.id, { hard_reject: event.target.checked }))} /> {component.hard_reject.label} <kbd>r</kbd>
                     </label>}
                   </div>
+                  {component.item_verdict !== undefined && !grade.not_produced && <ItemVerdicts component={component} fields={fields} draft={draft} onChange={change} />}
                   {visibleDimensions(component, grade).map((dimension) => {
                     const row: FocusRow = { componentId: component.id, dimension };
                     const index = rows.findIndex((candidate) => rowKey(candidate) === rowKey(row));

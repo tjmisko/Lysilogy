@@ -71,12 +71,14 @@ pub struct DossierWork {
 }
 
 impl DossierWork {
-    /// Whether the edge carries a label that says what role the work plays.
+    /// Whether the edge carries a label that says what role the work plays
+    /// ([`DossierEdgeLabel::names_a_role`]): a `background` label with no
+    /// engagement stated is not ranked as leaned on.
     #[must_use]
     pub fn has_substantive_label(&self) -> bool {
         self.edge
             .as_ref()
-            .is_some_and(|edge| !edge.is_perfunctory())
+            .is_some_and(DossierEdgeLabel::names_a_role)
     }
 }
 
@@ -415,6 +417,27 @@ mod tests {
         .map(|work| work.id)
         .collect::<Vec<_>>();
         assert_eq!(ids, ["wl", "wp", "wm"], "a perfunctory label earns no priority");
+    }
+
+    #[test]
+    fn should_not_rank_a_background_label_without_engagement_as_leaned_on() {
+        // Core relations and version 1 labels carry no engagement.
+        let mut core_background = work("wb", Some("Background"), 0.1, None);
+        core_background.edge = Some(label("background", None));
+        let mut core_method = work("wc", Some("Core method"), 0.05, None);
+        core_method.edge = Some(label("uses_method", None));
+        let ids = select(
+            vec![
+                core_background,
+                work("wp", Some("Prominent"), 0.9, None),
+                core_method,
+            ],
+            3,
+        )
+        .into_iter()
+        .map(|work| work.id)
+        .collect::<Vec<_>>();
+        assert_eq!(ids, ["wc", "wp", "wb"]);
     }
 
     #[test]

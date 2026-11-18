@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "id": "reader-review-v3",
+  "id": "reader-review-v4",
   "name": "Reader output review",
   "purpose": "Grade what Lysilogy shows on the Abstract and Overview views for one paper, against the paper itself and the papers around it. Grade each component on its own before forming an overall view. Not produced is a real outcome: mark it and grade what that means for the reader.",
   "time_budget_minutes": 10,
@@ -243,38 +243,39 @@
       "reads": [
         "edge_labels"
       ],
-      "guidance": "The panel shows up to eight labelled edges sampled from the last labelling run, each with its relation, reason, quote, citing passage, the path that wrote it (paper reading or citation labeler) and its engagement, plus the run's counts. Check each sampled label against its passage and, where needed, the paper. Count failures rather than scoring each edge: counts compare cleanly across prompt versions. The accept, reject and edit actions you take in the literature graph are counted separately in the summary, so grading here does not replace reviewing there.",
+      "guidance": "The panel shows up to five labels sampled from the graph as it stands when the review opens (rejected labels left out), each with its relation, reason, quote, citing passage, the path that wrote it (paper reading or citation labeler) and its engagement, plus the last run's counts. Give each sampled label one verdict with a click; the summary counts the verdicts per label path and prompt version, so the grades are also labelled data for the next prompt. The accept, reject and edit actions you take in the literature graph are counted separately in the summary, so grading here does not replace reviewing there.",
+      "item_verdict": {
+        "prefix": "edge:",
+        "label": "Verdict",
+        "question": "The one main problem with this label, or ok.",
+        "options": [
+          {
+            "id": "ok",
+            "label": "OK"
+          },
+          {
+            "id": "wrong_relation",
+            "label": "Wrong relation"
+          },
+          {
+            "id": "weak_reason",
+            "label": "Vague reason"
+          },
+          {
+            "id": "unsupported_quote",
+            "label": "Quote does not show it"
+          },
+          {
+            "id": "wrong_engagement",
+            "label": "Wrong engagement"
+          },
+          {
+            "id": "misattributed",
+            "label": "Passage does not cite this work"
+          }
+        ]
+      },
       "dimensions": [
-        {
-          "id": "sampled",
-          "kind": "count",
-          "label": "Labels checked",
-          "question": "How many of the sampled labels you checked; the other counts are out of this."
-        },
-        {
-          "id": "wrong_relation",
-          "kind": "count",
-          "label": "Wrong relation",
-          "question": "Labels whose relation is wrong for what the passage shows (for example background where the paper uses the work's method, or critiques where it only contrasts)."
-        },
-        {
-          "id": "weak_reason",
-          "kind": "count",
-          "label": "Vague or wrong reason",
-          "question": "Reasons that restate the relation, could fit a different edge, or misstate what the paper takes from, tests against, disputes in or builds on the work."
-        },
-        {
-          "id": "unsupported_quote",
-          "kind": "count",
-          "label": "Quote does not support it",
-          "question": "Labels whose quote, though it is in the passage, does not show the relation or reason claimed."
-        },
-        {
-          "id": "wrong_engagement",
-          "kind": "count",
-          "label": "Wrong engagement",
-          "question": "Labels marked substantive that are passing mentions, or perfunctory or not shown where the paper clearly uses or disputes the work."
-        },
         {
           "id": "specificity",
           "kind": "score",
@@ -285,18 +286,6 @@
             "2": "Mostly right, but many reasons name a topic rather than what is taken, tested or disputed.",
             "4": "Each reason names the specific method, data, result or claim and what the paper does with it; passing mentions are honestly marked as such."
           }
-        },
-        {
-          "id": "unlabelled_edges",
-          "kind": "count",
-          "label": "Important edges unlabelled",
-          "question": "Works the paper clearly leans on that have no label (see the run's unlabelled count and the paper's key citations)."
-        },
-        {
-          "id": "perfunctory_edges",
-          "kind": "count",
-          "label": "Passing mentions in the sample",
-          "question": "Sampled edges that are honestly passing mentions, whatever their label says."
         }
       ]
     }
@@ -343,7 +332,8 @@
       "uninformative_title",
       "unfaithful_summary",
       "wrong_relation",
-      "vague_reason",
+      "weak_reason",
+      "misattributed",
       "unsupported_quote",
       "not_produced",
       "other"

@@ -626,6 +626,79 @@ impl AppState {
         self.paper(id).await
     }
 
+    /// The analysis job's `labels` and `context-labels` tasks: label the
+    /// paper's citation edges, then rewrite the context node when labels
+    /// changed. Their failures are recorded on the tasks; only job tracking
+    /// errors are returned.
+    async fn label_after_analysis(&self, id: &PaperId, provider: AnalysisProvider) -> Result<()> {
+        self.jobs
+            .transition(id, ProcessingStage::Analysis, "labels")
+            .await?;
+        let labels = Box::pin(self.label_paper_edges(
+            id,
+            provider,
+            crate::edge_labels::EdgeLabelRequest::default(),
+        ))
+        .await;
+        self.jobs
+            .task_finished(id, "labels", labels.status.task_status(), labels.task_detail())
+            .await?;
+        // The context node was written before the labels existed; rewrite
+        // it when labels changed, so "why this paper matters" carries them.
+        let (status, detail) = if labels.wrote_labels() && provider != AnalysisProvider::Heuristic {
+            self.jobs
+                .transition(id, ProcessingStage::Analysis, "context-labels")
+                .await?;
+            match Box::pin(self.rewrite_context(id, provider, "context-labels")).await {
+                Ok(()) => (
+                    crate::domain::AnalysisTaskStatus::Completed,
+                    "Rewrote the context with the new citation labels".to_owned(),
+                ),
+                Err(error) => {
+                    tracing::warn!(paper_id = %id, %error, "could not rewrite the context after labelling");
+                    (
+                        crate::domain::AnalysisTaskStatus::Failed,
+                        format!("Failed: {error}; refresh the context to retry"),
+                    )
+                }
+            }
+        } else {
+            (
+                crate::domain::AnalysisTaskStatus::Completed,
+                "Not needed: no citation label was written".to_owned(),
+            )
+        };
+        self.jobs
+            .task_finished(id, "context-labels", status, detail)
+            .await
+    }
+
+    /// Rewrite the context node of a saved analysis in place, inside a job
+    /// that already holds the paper (the analysis job after labelling).
+    async fn rewrite_context(&self, id: &PaperId, provider: AnalysisProvider, task: &str) -> Result<()> {
+        let mut analysis = self.store.load_analysis(id).await?.ok_or_else(|| {
+            Error::InvalidRequest("Analyze this paper before refreshing it".to_owned())
+        })?;
+        let pdf = self.source_path(id).await?;
+        let dossier = self.neighbour_dossier(id).await;
+        let (progress, forwarder) = self.jobs.progress_reporter(id, task);
+        let refreshed = self
+            .analysis
+            .refresh_context(
+                provider,
+                &analysis,
+                &pdf,
+                &self.store.paper_dir(id),
+                dossier,
+                Some(progress),
+            )
+            .await;
+        forwarder.stop().await;
+        crate::analysis::apply_context(&mut analysis, refreshed?);
+        let _guard = self.highlight_write.lock().await;
+        self.store.save_analysis_projection(id, &analysis).await
+    }
+
     #[allow(clippy::too_many_lines)] // Keep reservation, component work, and status restoration together.
     pub async fn refresh_component(
         &self,
@@ -889,18 +962,7 @@ impl AppState {
             .map_err(|error| (ProcessingStage::Persistence, error))?;
         // Label why the paper cites each work. The analysis is saved; this
         // step records its own failure on the task and never fails the job.
-        self.jobs
-            .transition(id, ProcessingStage::Analysis, "labels")
-            .await
-            .map_err(|error| (ProcessingStage::Persistence, error))?;
-        let labels = Box::pin(self.label_paper_edges(id, provider)).await;
-        let status = if labels.status == crate::edge_labels::EdgeLabelStatus::Failed {
-            crate::domain::AnalysisTaskStatus::Failed
-        } else {
-            crate::domain::AnalysisTaskStatus::Completed
-        };
-        self.jobs
-            .task_finished(id, "labels", status, labels.task_detail())
+        Box::pin(self.label_after_analysis(id, provider))
             .await
             .map_err(|error| (ProcessingStage::Persistence, error))?;
         self.jobs

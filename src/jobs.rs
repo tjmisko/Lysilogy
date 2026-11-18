@@ -179,7 +179,9 @@ impl JobTracker {
             // step that failed without failing the job stays failed.
             let finished = matches!(
                 task.status,
-                AnalysisTaskStatus::Completed | AnalysisTaskStatus::Failed
+                AnalysisTaskStatus::Completed
+                    | AnalysisTaskStatus::Warning
+                    | AnalysisTaskStatus::Failed
             ) && task.detail.is_some();
             if finished {
                 continue;
@@ -376,6 +378,10 @@ fn tasks_for(kind: AnalysisJobKind) -> Vec<AnalysisTask> {
                 "labels",
                 "Label why the paper cites each work in the citation graph",
             ),
+            (
+                "context-labels",
+                "Rewrite why the paper matters with the new citation labels",
+            ),
         ]
         .as_slice(),
         AnalysisJobKind::Revision => [
@@ -431,6 +437,7 @@ pub fn render_tasklist(job: &AnalysisJob) -> String {
             AnalysisTaskStatus::Pending => ' ',
             AnalysisTaskStatus::Active => '~',
             AnalysisTaskStatus::Completed => 'x',
+            AnalysisTaskStatus::Warning => '?',
             AnalysisTaskStatus::Failed => '!',
         };
         let _ = write!(
@@ -459,6 +466,7 @@ fn parse_task(line: &str) -> Option<AnalysisTask> {
         (AnalysisTaskStatus::Active, "- [~] "),
         (AnalysisTaskStatus::Completed, "- [x] "),
         (AnalysisTaskStatus::Completed, "- [X] "),
+        (AnalysisTaskStatus::Warning, "- [?] "),
         (AnalysisTaskStatus::Failed, "- [!] "),
     ]
     .into_iter()
@@ -497,7 +505,7 @@ fn progress(tasks: &[AnalysisTask], status: &AnalysisJobStatus) -> u8 {
         .map(|task| match task.status {
             AnalysisTaskStatus::Pending => 0,
             AnalysisTaskStatus::Active | AnalysisTaskStatus::Failed => 50,
-            AnalysisTaskStatus::Completed => 100,
+            AnalysisTaskStatus::Completed | AnalysisTaskStatus::Warning => 100,
         })
         .sum::<u32>();
     u8::try_from((units * 100) / denominator).unwrap_or(100)
@@ -534,9 +542,11 @@ mod tests {
         job.tasks[0].status = AnalysisTaskStatus::Completed;
         job.tasks[1].status = AnalysisTaskStatus::Active;
         job.tasks[1].detail = Some("page 4 of 12".to_owned());
+        job.tasks[4].status = AnalysisTaskStatus::Warning;
+        job.tasks[4].detail = Some("2 edges left unlabelled".to_owned());
         let parsed = parse_tasklist(&render_tasklist(&job));
         assert_eq!(parsed, job.tasks);
-        assert_eq!(progress(&parsed, &job.status), 30);
+        assert_eq!(progress(&parsed, &job.status), 41);
     }
 
     #[tokio::test]

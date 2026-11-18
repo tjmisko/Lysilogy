@@ -18,6 +18,7 @@ const MAX_TEXT_CHARS: usize = 8_000;
 const MAX_ISSUES: usize = 200;
 const MAX_COUNT: u32 = 1_000;
 const MAX_ID_CHARS: usize = 64;
+const MAX_ITEMS: usize = 50;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Rubric {
@@ -46,6 +47,28 @@ pub struct RubricComponent {
     pub dimensions: Vec<RubricDimension>,
     #[serde(default)]
     pub hard_reject: Option<HardReject>,
+    /// One verdict per sampled item (for example per citation label),
+    /// stored as a choice under `{prefix}{item id}` in the grade's values.
+    #[serde(default)]
+    pub item_verdict: Option<ItemVerdict>,
+}
+
+/// A per-item verdict: the reviewer picks one option for each sampled item,
+/// and the summary derives the counts.
+#[derive(Clone, Debug, Deserialize)]
+pub struct ItemVerdict {
+    pub prefix: String,
+    pub label: String,
+    pub options: Vec<RubricOption>,
+}
+
+impl RubricComponent {
+    /// The item id of a per-item verdict key, when `key` is one.
+    #[must_use]
+    pub fn item_id<'k>(&self, key: &'k str) -> Option<&'k str> {
+        let verdict = self.item_verdict.as_ref()?;
+        key.strip_prefix(verdict.prefix.as_str())
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -125,6 +148,19 @@ impl Rubric {
                     return invalid(format!("{}.{} has no options", component.id, dimension.id));
                 }
             }
+            if let Some(verdict) = &component.item_verdict
+                && (verdict.prefix.is_empty()
+                    || verdict.options.is_empty()
+                    || component
+                        .dimensions
+                        .iter()
+                        .any(|dimension| dimension.id.starts_with(&verdict.prefix)))
+            {
+                return invalid(format!(
+                    "{} item verdict needs a prefix no dimension uses, and options",
+                    component.id
+                ));
+            }
         }
         if self.issues.severities.is_empty() {
             return invalid("issues need at least one severity".to_owned());
@@ -149,7 +185,24 @@ impl Rubric {
                 return invalid(format!("{component_id} has no hard reject"));
             }
             check_text(&grade.notes, "component notes")?;
+            let mut items = 0;
             for (dimension_id, value) in &grade.values {
+                if let Some(item) = component.item_id(dimension_id) {
+                    items += 1;
+                    let accepted = component.item_verdict.as_ref().is_some_and(|verdict| {
+                        matches!(value, GradeValue::Choice(choice)
+                            if verdict.options.iter().any(|option| option.id == *choice))
+                    });
+                    if item.trim().is_empty() || item.chars().count() > MAX_ID_CHARS || !accepted {
+                        return invalid(format!(
+                            "{component_id} verdict {dimension_id} does not accept {value:?}"
+                        ));
+                    }
+                    if items > MAX_ITEMS {
+                        return invalid(format!("{component_id} takes at most {MAX_ITEMS} verdicts"));
+                    }
+                    continue;
+                }
                 let Some(dimension) = component
                     .dimensions
                     .iter()

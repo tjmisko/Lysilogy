@@ -61,7 +61,7 @@ export type ImportPdfResponse = {
   source: RemotePdfSource;
 };
 
-export type AnalysisTaskStatus = "pending" | "active" | "completed" | "failed";
+export type AnalysisTaskStatus = "pending" | "active" | "completed" | "warning" | "failed";
 
 export type AnalysisTask = {
   id: string;
@@ -728,6 +728,8 @@ export type LabelledEdge = {
 export type EdgeLabelCounts = {
   edges: number;
   labelled: number;
+  /** Labels that say what role the work plays (not passing mentions or declines). Absent before it was counted. */
+  labelled_with_role?: number;
   unlabelled_with_passages: number;
   unlabelled_without_passages: number;
   by_path: Record<string, number>;
@@ -738,18 +740,36 @@ export type EdgeLabelCounts = {
   rejected: number;
 };
 
+/** How a labelling run ended; `partial` left edges unlabelled (failed calls, budget, call limit). */
+export type EdgeLabelRunStatus = "completed" | "partial" | "skipped" | "failed";
+
+/** What the edge labeler did in one run; fields absent in older runs read as zero. */
+export type EdgeLabelPass = {
+  model_calls?: number;
+  labeled?: number;
+  replaced?: number;
+  failed?: number;
+  first_error?: string | null;
+  over_budget?: number;
+  over_limit?: number;
+  rejected_for_grounding?: number;
+  misattributed?: number;
+  [key: string]: unknown;
+};
+
 /** The record of one labelling run (`edge-labels.json`). Counts beyond these are kept as JSON. */
 export type EdgeLabelRun = {
   generated_at: string | null;
-  status: "completed" | "skipped" | "failed";
+  status: EdgeLabelRunStatus;
   detail: string | null;
   provider: string | null;
   labeler: string | null;
   prompt_version: number;
+  brief_digest?: string | null;
   pipeline_version: string | null;
   local_evidence_error: string | null;
   core: Record<string, unknown> | null;
-  labels: Record<string, unknown> | null;
+  labels: EdgeLabelPass | null;
   counts: EdgeLabelCounts;
   edges: LabelledEdge[];
 };

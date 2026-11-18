@@ -31,12 +31,22 @@ pub struct Summary {
     pub label_actions: Vec<LabelActionSummary>,
 }
 
-/// The citation-label component's grades for one labeler and prompt version.
-#[derive(Clone, Debug, Serialize)]
+/// Citation-label verdicts for one label version: a core model and
+/// pipeline version (`core:…`), an edge labeler and prompt version
+/// (`…@v3+digest`), or `user`.
+#[derive(Clone, Debug, Default, Serialize)]
 pub struct LabelVersionSummary {
     pub label_version: String,
+    /// Reviews that graded at least one label of this version.
     pub reviews: usize,
-    pub component: ComponentSummary,
+    /// Labels given a verdict.
+    pub labels: usize,
+    /// Verdict counts by option id (`ok`, `wrong_relation`, …).
+    pub verdicts: BTreeMap<String, usize>,
+    /// Mean of the component's score dimensions over the reviews whose
+    /// run was written by this edge-labeler version (a review-level score,
+    /// so it is filed under the run's labeler, not under core versions).
+    pub score_mean: Option<f64>,
 }
 
 /// Review actions on AI labels in the graph for one path, model and prompt version.
@@ -99,6 +109,10 @@ pub struct ComponentSummary {
     pub dimensions: BTreeMap<String, DimensionSummary>,
     /// Issue counts by severity.
     pub issues: BTreeMap<String, usize>,
+    /// Items given a per-item verdict (e.g. citation labels checked).
+    pub items: usize,
+    /// Per-item verdict counts by option id.
+    pub verdicts: BTreeMap<String, usize>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -163,37 +177,80 @@ pub fn summarize(rubric: &Rubric, reviews: &[Review]) -> Summary {
     }
 }
 
-/// The edge-label component grouped by the label version its review pinned.
+/// The edge-label verdicts grouped by the version of each graded label, read
+/// from the sample its review pinned, and the review-level score grouped by
+/// the run's edge-labeler version.
 fn summarize_label_versions(rubric: &Rubric, reviews: &[Review]) -> Vec<LabelVersionSummary> {
     let Some(component) = rubric.component(EDGE_LABELS_COMPONENT) else {
         return Vec::new();
     };
-    let mut groups: BTreeMap<String, Vec<&Review>> = BTreeMap::new();
+    let mut groups: BTreeMap<String, LabelVersionSummary> = BTreeMap::new();
+    let mut scores: BTreeMap<String, Vec<u32>> = BTreeMap::new();
     for review in reviews {
-        let graded = review
+        let Some(grade) = review
             .components
             .get(EDGE_LABELS_COMPONENT)
-            .is_some_and(super::ComponentGrade::is_graded);
-        if !graded {
+            .filter(|grade| grade.is_graded())
+        else {
             continue;
-        }
-        let version = review
-            .snapshot
-            .field(super::EDGE_LABELS_FIELD)
+        };
+        let pinned = review.snapshot.field(super::EDGE_LABELS_FIELD);
+        let run_version = pinned
             .and_then(|pinned| pinned.get("label_version"))
             .and_then(Value::as_str)
             .unwrap_or(UNVERSIONED)
             .to_owned();
-        groups.entry(version).or_default().push(review);
+        let item_version = |claim_id: &str| -> String {
+            pinned
+                .and_then(|pinned| pinned.get("sample"))
+                .and_then(Value::as_array)
+                .and_then(|sample| {
+                    sample.iter().find(|edge| {
+                        edge.pointer("/label/claim_id").and_then(Value::as_str) == Some(claim_id)
+                    })
+                })
+                .and_then(|edge| edge.get("label_version"))
+                .and_then(Value::as_str)
+                .map_or_else(|| run_version.clone(), str::to_owned)
+        };
+        let mut seen = BTreeSet::new();
+        for (key, value) in &grade.values {
+            let (Some(claim_id), GradeValue::Choice(verdict)) = (component.item_id(key), value)
+            else {
+                continue;
+            };
+            let version = item_version(claim_id);
+            let group = groups.entry(version.clone()).or_insert_with(|| LabelVersionSummary {
+                label_version: version.clone(),
+                ..LabelVersionSummary::default()
+            });
+            group.labels += 1;
+            *group.verdicts.entry(verdict.clone()).or_default() += 1;
+            if seen.insert(version) {
+                group.reviews += 1;
+            }
+        }
+        let review_scores = component
+            .dimensions
+            .iter()
+            .filter(|dimension| dimension.kind == DimensionKind::Score)
+            .filter_map(|dimension| match grade.values.get(&dimension.id) {
+                Some(GradeValue::Number(score)) => Some(*score),
+                _ => None,
+            });
+        scores.entry(run_version).or_default().extend(review_scores);
     }
-    groups
-        .into_iter()
-        .map(|(label_version, group)| LabelVersionSummary {
-            label_version,
-            reviews: group.len(),
-            component: summarize_component(component, &group),
-        })
-        .collect()
+    for (version, values) in scores {
+        if values.is_empty() {
+            continue;
+        }
+        let group = groups.entry(version.clone()).or_insert_with(|| LabelVersionSummary {
+            label_version: version,
+            ..LabelVersionSummary::default()
+        });
+        group.score_mean = stat(values.into_iter()).mean;
+    }
+    groups.into_values().collect()
 }
 
 /// The rubric component that grades citation labels.
@@ -262,7 +319,19 @@ fn summarize_component(component: &super::RubricComponent, reviews: &[&Review]) 
     {
         *issues.entry(issue.severity.clone()).or_default() += 1;
     }
+    let mut items = 0;
+    let mut verdicts = BTreeMap::new();
+    for grade in &grades {
+        for (key, value) in &grade.values {
+            if let (Some(_), GradeValue::Choice(verdict)) = (component.item_id(key), value) {
+                items += 1;
+                *verdicts.entry(verdict.clone()).or_default() += 1;
+            }
+        }
+    }
     ComponentSummary {
+        items,
+        verdicts,
         graded: grades.len(),
         not_produced: grades.iter().filter(|grade| grade.not_produced).count(),
         hard_rejects: grades.iter().filter(|grade| grade.hard_reject).count(),
@@ -426,22 +495,24 @@ pub fn render_summary(rubric: &Rubric, summary: &Summary) -> String {
 fn render_labels(rubric: &Rubric, summary: &Summary, text: &mut String) {
     let format_mean =
         |mean: Option<f64>| mean.map_or_else(|| "-".to_owned(), |m| format!("{m:.2}"));
+    let verdict_label = |id: &str| {
+        rubric
+            .component(EDGE_LABELS_COMPONENT)
+            .and_then(|component| component.item_verdict.as_ref())
+            .and_then(|verdict| verdict.options.iter().find(|option| option.id == id))
+            .map_or_else(|| id.to_owned(), |option| option.label.clone())
+    };
     for group in &summary.label_versions {
         let _ = writeln!(
             text,
-            "\n== citation labels {} ({} reviews) mean {}",
+            "\n== citation labels {} ({} reviews, {} labels) mean {}",
             group.label_version,
             group.reviews,
-            format_mean(group.component.score_mean)
+            group.labels,
+            format_mean(group.score_mean)
         );
-        if let Some(component) = rubric.component(EDGE_LABELS_COMPONENT) {
-            for dimension in &component.dimensions {
-                if let Some(DimensionSummary::Count { n, total, .. }) =
-                    group.component.dimensions.get(&dimension.id)
-                {
-                    let _ = writeln!(text, "      {:<28} total {total} (n={n})", dimension.label);
-                }
-            }
+        for (verdict, count) in &group.verdicts {
+            let _ = writeln!(text, "      {:<32} {count}", verdict_label(verdict));
         }
     }
     if !summary.label_actions.is_empty() {

@@ -18,7 +18,8 @@ use crate::{
     review::{
         MANIFEST_JSON, Manifest, RUBRIC_JSON, Review, ReviewInput, ReviewSnapshot, ReviewSubject,
         Rubric, load_all_reviews, load_analysis_json, load_paper_reviews, load_review,
-        manifest_match, pin_edge_labels, progress, save_review, snapshot_from_analysis, summarize,
+        EdgeLabelsPin, manifest_match, pin_edge_labels, progress, save_review,
+        snapshot_from_analysis, summarize,
     },
 };
 
@@ -108,7 +109,10 @@ async fn subject(state: &AppState, id: &str) -> Result<ReviewSubject> {
 }
 
 /// The output the paper shows now, with a sample of its citation labels
-/// pinned beside the analysis fields (not part of the snapshot id).
+/// pinned beside the analysis fields (not part of the snapshot id). The
+/// sample comes from the graph's current labels (so accepts, edits and
+/// rejections since the last run show), and from the run's edges only when
+/// there is no graph.
 async fn current_snapshot(state: &AppState, id: &PaperId) -> Result<Option<ReviewSnapshot>> {
     let Some(mut snapshot) = load_analysis_json(&state.store, id)
         .await?
@@ -118,7 +122,18 @@ async fn current_snapshot(state: &AppState, id: &PaperId) -> Result<Option<Revie
         return Ok(None);
     };
     let run = state.load_edge_label_run(id).await?;
-    pin_edge_labels(&mut snapshot, run.as_ref());
+    let current = match (&run, &state.graph) {
+        (Some(_), Some(_)) => match state.paper_edge_labels(id).await {
+            Ok(labels) if labels.status == "ok" => Some(labels.outgoing),
+            Ok(_) => None,
+            Err(error) => {
+                tracing::warn!(paper_id = %id, %error, "could not read current labels for review; using the run's");
+                None
+            }
+        },
+        _ => None,
+    };
+    pin_edge_labels(&mut snapshot, run.as_ref(), current.as_deref());
     Ok(Some(snapshot))
 }
 
@@ -179,6 +194,28 @@ async fn save(
             .into_response());
     }
     let previous = load_review(&state.store, &subject.paper_id, &snapshot.snapshot_id).await?;
+    // The first save pins the labels the panel showed; when the labels
+    // changed between opening the panel and saving, the grades would be
+    // filed against labels the reviewer never saw.
+    if previous.is_none()
+        && let Some(shown) = &input.edge_labels_pin
+    {
+        let current = snapshot
+            .fields
+            .get(crate::review::EDGE_LABELS_FIELD)
+            .map(EdgeLabelsPin::of)
+            .unwrap_or_default();
+        if *shown != current {
+            return Ok((
+                StatusCode::CONFLICT,
+                Json(serde_json::json!({
+                    "error": "stale_labels",
+                    "message": "The citation labels changed since the review opened (a labelling run, or a review in the graph). Reopen the review to grade the labels as they are now.",
+                })),
+            )
+                .into_response());
+        }
+    }
     // The labels graded are the ones pinned at the first save, even if a
     // labelling run or a review in the graph has changed them since.
     let mut snapshot = snapshot;
@@ -339,27 +376,38 @@ mod tests {
         assert_eq!(status, StatusCode::NOT_FOUND);
     }
 
-    fn run_with_label(reason: &str) -> Value {
+    fn run_with_label(reason: &str, generated_at: &str) -> Value {
         json!({
-            "generated_at": "2026-11-18T00:00:00Z",
+            "generated_at": generated_at,
             "status": "completed",
             "labeler": "openrouter:example/model",
-            "prompt_version": 2,
-            "counts": {"edges": 3, "labelled": 2, "unlabelled_with_passages": 1, "perfunctory": 1},
+            "prompt_version": 3,
+            "brief_digest": "abc123def456",
+            "core_model": "openrouter:core/model",
+            "pipeline_version": "core-v9",
+            "counts": {"edges": 4, "labelled": 3, "unlabelled_with_passages": 1, "perfunctory": 1},
             "core": {"unresolved": {"no_matching_entry": 2}},
             "labels": {"over_budget": 1},
             "edges": [
                 {"work_id": "w1", "title": "A reef survey", "mention_count": 2,
                  "label": {"claim_id": "r1", "relation": "uses_method", "reason": reason,
                            "quote": "we use their index", "path": "edge_labeler",
-                           "engagement": "substantive", "review_state": "unreviewed"}},
+                           "engagement": "substantive", "review_state": "unreviewed",
+                           "model": "openrouter:example/model", "prompt_version": 3}},
+                {"work_id": "w3", "title": "Core-read work", "mention_count": 1,
+                 "label": {"claim_id": "r3", "relation": "extends", "reason": "Builds on its model.",
+                           "quote": "we build on the model", "path": "core_relation",
+                           "review_state": "unreviewed", "model": "openrouter:core/model"}},
+                {"work_id": "w4", "title": "Rejected", "mention_count": 1,
+                 "label": {"claim_id": "r4", "relation": "critiques", "reason": "Wrong.",
+                           "path": "edge_labeler", "review_state": "rejected"}},
                 {"work_id": "w2", "title": "Unlabelled", "mention_count": 1, "label": null}
             ]
         })
     }
 
     #[tokio::test]
-    async fn should_pin_the_citation_labels_a_review_graded_and_group_them_by_label_version() {
+    async fn should_pin_the_citation_labels_a_review_graded_and_group_verdicts_by_label_version() {
         let library = tempfile::tempdir().unwrap();
         let data = tempfile::tempdir().unwrap();
         tokio::fs::write(library.path().join("paper.pdf"), b"fixture").await.unwrap();
@@ -379,40 +427,66 @@ mod tests {
         assert!(without["snapshot"]["fields"]["edge_labels"].is_null(), "no run, nothing pinned");
         let snapshot_id = without["snapshot"]["snapshot_id"].clone();
 
-        let write_run = |reason: &str| {
+        let write_run = |reason: &str, at: &str| {
             let path = paper_dir.join(crate::edge_labels::EDGE_LABELS_FILE);
-            let run = run_with_label(reason).to_string();
+            let run = run_with_label(reason, at).to_string();
             async move { tokio::fs::write(path, run).await.unwrap() }
         };
-        write_run("Uses their bleaching index as the outcome.").await;
+        write_run("Uses their bleaching index as the outcome.", "2026-11-18T00:00:00Z").await;
         let (_, opened) = call(&app, "GET", &uri, None).await;
         assert_eq!(opened["snapshot"]["snapshot_id"], snapshot_id, "labels do not change the snapshot id");
         let pinned = &opened["snapshot"]["fields"]["edge_labels"];
-        assert_eq!(pinned["label_version"], "openrouter:example/model @ prompt v2");
-        assert_eq!(pinned["sample"].as_array().map(Vec::len), Some(1), "only labelled edges are sampled");
+        assert_eq!(pinned["label_version"], "openrouter:example/model@v3+abc123def456");
+        let sample = pinned["sample"].as_array().unwrap();
+        assert_eq!(sample.len(), 2, "only labelled, unrejected edges are sampled");
+        let versions: Vec<&str> = sample.iter().map(|edge| edge["label_version"].as_str().unwrap()).collect();
+        assert!(versions.contains(&"core:openrouter:core/model@core-v9"), "{versions:?}");
+        assert!(versions.contains(&"openrouter:example/model@v3+abc123def456"), "{versions:?}");
         assert_eq!(pinned["unresolved_keys"], 2);
         assert_eq!(pinned["left_for_later"], 1);
+        let shown = json!({
+            "generated_at": "2026-11-18T00:00:00Z",
+            "claim_ids": sample.iter().map(|edge| edge["label"]["claim_id"].clone()).collect::<Vec<_>>(),
+        });
 
-        let grades = json!({"snapshot_id": snapshot_id, "components": {"edge_labels": {"values": {
-            "sampled": 1, "wrong_relation": 0, "weak_reason": 1, "specificity": 2}}}});
+        // A labelling run between opening the panel and the first save:
+        // the grades would land on labels the reviewer never saw.
+        write_run("A rewritten reason.", "2026-11-18T01:00:00Z").await;
+        let grades = json!({"snapshot_id": snapshot_id, "edge_labels_pin": shown,
+            "components": {"edge_labels": {"values": {
+                "edge:r1": "weak_reason", "edge:r3": "ok", "specificity": 2}}}});
+        let (status, refused) = call(&app, "PUT", &uri, Some(grades.clone())).await;
+        assert_eq!(status, StatusCode::CONFLICT, "{refused}");
+        assert_eq!(refused["error"], "stale_labels");
+
+        write_run("Uses their bleaching index as the outcome.", "2026-11-18T00:00:00Z").await;
         let (status, saved) = call(&app, "PUT", &uri, Some(grades.clone())).await;
         assert_eq!(status, StatusCode::OK, "{saved}");
-        assert_eq!(
-            saved["snapshot"]["fields"]["edge_labels"]["sample"][0]["label"]["reason"],
-            "Uses their bleaching index as the outcome."
-        );
+        let saved_sample = saved["snapshot"]["fields"]["edge_labels"]["sample"].as_array().unwrap();
+        assert!(saved_sample.iter().any(|edge| edge["label"]["reason"] == "Uses their bleaching index as the outcome."));
 
         // A later labelling run does not move the grades onto other labels.
-        write_run("A rewritten reason.").await;
-        let (_, resaved) = call(&app, "PUT", &uri, Some(grades)).await;
-        assert_eq!(
-            resaved["snapshot"]["fields"]["edge_labels"]["sample"][0]["label"]["reason"],
-            "Uses their bleaching index as the outcome."
-        );
+        write_run("A rewritten reason.", "2026-11-18T02:00:00Z").await;
+        let (status, resaved) = call(&app, "PUT", &uri, Some(grades)).await;
+        assert_eq!(status, StatusCode::OK, "{resaved}");
+        assert!(resaved["snapshot"]["fields"]["edge_labels"]["sample"].as_array().unwrap()
+            .iter().any(|edge| edge["label"]["reason"] == "Uses their bleaching index as the outcome."));
+
+        let bad = json!({"snapshot_id": snapshot_id, "components": {"edge_labels": {"values": {"edge:r1": "maybe"}}}});
+        let (status, _) = call(&app, "PUT", &uri, Some(bad)).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "a verdict outside the options is refused");
+
         let (_, summary) = call(&app, "GET", "/api/reviews/summary", None).await;
-        let group = &summary["label_versions"][0];
-        assert_eq!(group["label_version"], "openrouter:example/model @ prompt v2");
-        assert_eq!(group["component"]["dimensions"]["weak_reason"]["total"], 1);
+        let groups = summary["label_versions"].as_array().unwrap();
+        let group = |version: &str| groups.iter().find(|group| group["label_version"] == version).cloned().unwrap_or(Value::Null);
+        let core = group("core:openrouter:core/model@core-v9");
+        assert_eq!(core["verdicts"]["ok"], 1, "{summary}");
+        assert!(core["score_mean"].is_null(), "the review-level score is not filed under the core version");
+        let labeler = group("openrouter:example/model@v3+abc123def456");
+        assert_eq!(labeler["verdicts"]["weak_reason"], 1, "{summary}");
+        assert_eq!(labeler["score_mean"], 2.0);
+        let component = &summary["groups"][0]["components"]["edge_labels"];
+        assert_eq!((component["items"].as_u64(), component["verdicts"]["ok"].as_u64()), (Some(2), Some(1)));
         assert_eq!(summary["label_actions"], json!([]), "no graph, no actions");
     }
 }
