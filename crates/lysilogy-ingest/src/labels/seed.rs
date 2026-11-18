@@ -11,13 +11,20 @@
 //! `core_relation` claim under [`super::merge_decision`], and hands the
 //! citing sentences of edges without stored mentions to the edge labeler.
 //!
-//! Nothing is dropped silently: every relation ends in exactly one counted
-//! outcome, and every reference key that could not be resolved is listed
-//! with the reason.
+//! A reference key that packs several works (`6, 7, 10`, `A, 2004; B, 2009`)
+//! is split and each part resolved on its own. Quote admission only checked
+//! the quote against the page, so a relation is written on an edge only when
+//! its quote is in that edge's citing text: a stored mention passage, or,
+//! for an edge without stored mentions, a core citing sentence for it. A
+//! shared quote therefore lands only on the edges it actually cites.
+//!
+//! Nothing is dropped silently: every relation ends in a counted outcome
+//! (each key part of a packed key in its own), and every reference key that
+//! could not be resolved is listed with the reason.
 
 use std::collections::{BTreeMap, HashMap};
 
-use lysilogy_core::{Coverage, DocumentVersionId, EntryId, MentionId, WorkId};
+use lysilogy_core::{AssertionId, Coverage, DocumentVersionId, EntryId, MentionId, WorkId};
 use lysilogy_db::evidence::StoredEntry;
 use lysilogy_db::relationship::{LabelPath, NewAiClaim};
 use serde::{Deserialize, Serialize};
@@ -37,8 +44,14 @@ pub const CORE_LABEL_RECORD_KIND: &str = "core_relation_label";
 /// Most unresolved keys listed by name; the counts are always complete.
 const MAX_LISTED_KEYS: usize = 50;
 
-/// Fewest shared title tokens, as a share of the shorter title, for a title match.
+/// Fewest shared title tokens, as a share of the longer title, for a title match.
 const TITLE_MATCH: f64 = 0.8;
+
+/// Fewest shared title tokens (of three letters or more) for a title match.
+const TITLE_MIN_SHARED: usize = 3;
+
+/// Widest numeric range a packed key is expanded over (`[3-5]` is three keys).
+const MAX_KEY_RANGE: usize = 200;
 
 /// One relation from the core reading.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -175,8 +188,12 @@ pub struct Disagreement {
     pub replaced: bool,
 }
 
-/// What seeding did. Every relation lands in exactly one of `invalid`,
-/// `low_confidence`, the `unresolved` counts, `duplicate_edge`, `inserted`,
+/// What seeding did.
+///
+/// Every relation lands in `invalid`, `low_confidence`, or is split into
+/// key parts (`key_parts`, `multi_key` counting the relations with more
+/// than one). Every key part lands in exactly one of the `unresolved`
+/// counts, `not_in_citing_passage`, `duplicate_edge`, `inserted`,
 /// `replaced`, `unchanged` or `kept_existing`.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
@@ -189,6 +206,14 @@ pub struct CoreSeedSummary {
     pub invalid: BTreeMap<String, usize>,
     /// Relations the model marked low confidence: left for the edge labeler.
     pub low_confidence: usize,
+    /// Relations whose reference key named more than one work.
+    pub multi_key: usize,
+    /// Key parts of the relations that passed the checks.
+    pub key_parts: usize,
+    /// Key parts that resolved to an edge whose citing text does not hold
+    /// the quote (the quote is on the page, but not where this work is
+    /// cited): left for the edge labeler.
+    pub not_in_citing_passage: usize,
     /// Relation keys that did not resolve to an edge, by reason.
     pub unresolved: BTreeMap<String, usize>,
     /// Citation keys that did not resolve to an edge, by reason.
@@ -213,8 +238,8 @@ pub struct CoreSeedSummary {
 #[derive(Clone, Debug, Default)]
 pub struct CoreSeedOutcome {
     pub summary: CoreSeedSummary,
-    /// Core citing sentences for edges with no stored mention, by cited Work.
-    pub extra_passages: HashMap<WorkId, Vec<String>>,
+    /// Core citing sentences for edges with no stored mention, by edge.
+    pub extra_passages: HashMap<AssertionId, Vec<String>>,
 }
 
 /// The parts of a stored entry that key matching reads.
@@ -278,6 +303,52 @@ fn normalize_key(key: &str) -> String {
         index += 1;
     }
     kept.join(" ")
+}
+
+/// The works a reference key names, one key per work.
+///
+/// Split on `;` always, and a purely numeric part on `,` with ranges
+/// expanded (`[3, 7-9]` is four keys), the way [`super::cited_together`]
+/// counts a marker. An author-year part such as
+/// `Smith, 2004` is kept whole. Empty and repeated parts are dropped; a key
+/// that names one work (or none) comes back as written, so it is still
+/// counted and reported as the model gave it.
+#[must_use]
+pub fn split_reference_key(key: &str) -> Vec<String> {
+    let mut parts = Vec::new();
+    for part in key.split(';').map(str::trim).filter(|part| !part.is_empty()) {
+        let inner = part
+            .trim_start_matches(['[', '('])
+            .trim_end_matches([']', ')', '.'])
+            .trim();
+        let numeric = inner.chars().any(|character| character.is_ascii_digit())
+            && inner.chars().all(|character| {
+                character.is_ascii_digit() || matches!(character, ',' | '-' | '\u{2013}' | ' ')
+            });
+        if !numeric {
+            parts.push(part.to_owned());
+            continue;
+        }
+        for piece in inner.split(',').map(str::trim).filter(|piece| !piece.is_empty()) {
+            if let Some((first, last)) = piece.split_once(['-', '\u{2013}'])
+                && let (Ok(first), Ok(last)) =
+                    (first.trim().parse::<usize>(), last.trim().parse::<usize>())
+                && last >= first
+                && last - first < MAX_KEY_RANGE
+            {
+                parts.extend((first..=last).map(|number| number.to_string()));
+                continue;
+            }
+            parts.push(piece.to_owned());
+        }
+    }
+    let mut seen = std::collections::HashSet::new();
+    parts.retain(|part| seen.insert(normalize_key(part)));
+    if parts.len() <= 1 {
+        // One work: keep the key as the model wrote it, for the report.
+        return vec![key.trim().to_owned()];
+    }
+    parts
 }
 
 /// The digits of a purely numeric key such as `12` or `[12]`.
@@ -379,16 +450,29 @@ fn title_tokens(title: &str) -> Vec<String> {
     tokens
 }
 
+/// Whether two titles name the same work: at least [`TITLE_MIN_SHARED`]
+/// shared tokens, and the shared tokens at least [`TITLE_MATCH`] of the
+/// longer title, so a short title such as `Deep learning` does not match a
+/// longer one that merely contains its words.
 fn titles_match(left: &str, right: &str) -> bool {
     let (left, right) = (title_tokens(left), title_tokens(right));
-    let shorter = left.len().min(right.len());
-    if shorter < 2 {
+    let longer = left.len().max(right.len());
+    let shared = left.iter().filter(|token| right.contains(token)).count();
+    if shared < TITLE_MIN_SHARED {
         return false;
     }
-    let shared = left.iter().filter(|token| right.contains(token)).count();
     #[allow(clippy::cast_precision_loss)] // Token counts are tiny.
-    let share = shared as f64 / shorter as f64;
+    let share = shared as f64 / longer as f64;
     share >= TITLE_MATCH
+}
+
+/// The year of an entry, from its fields or its text.
+fn entry_year(entry: &KeyedEntry) -> Option<String> {
+    entry
+        .year
+        .as_deref()
+        .and_then(year_in)
+        .or_else(|| year_in(&entry.raw_text))
 }
 
 fn unique(matches: &[usize]) -> Option<std::result::Result<usize, Unresolved>> {
@@ -455,12 +539,7 @@ pub fn match_entry(
             .enumerate()
             .filter(|(_, entry)| entry_surname(entry).as_deref() == Some(surname.as_str()))
             .filter(|(_, entry)| {
-                let entry_year = entry
-                    .year
-                    .as_deref()
-                    .and_then(year_in)
-                    .or_else(|| year_in(&entry.raw_text));
-                entry_year.is_some_and(|entry_year| years_agree(&year, &entry_year))
+                entry_year(entry).is_some_and(|entry_year| years_agree(&year, &entry_year))
             })
             .map(|(index, _)| index)
             .collect();
@@ -494,6 +573,7 @@ pub fn match_entry(
             }
         }
         if let Some(title) = reference.title.as_deref() {
+            let reference_year = reference.year.map(|year| year.to_string());
             let by_title: Vec<usize> = entries
                 .iter()
                 .enumerate()
@@ -502,6 +582,10 @@ pub fn match_entry(
                         .title
                         .as_deref()
                         .is_some_and(|entry_title| titles_match(title, entry_title))
+                })
+                .filter(|(_, entry)| match (&reference_year, entry_year(entry)) {
+                    (Some(left), Some(right)) => right.starts_with(left.as_str()),
+                    _ => true,
                 })
                 .map(|(index, _)| index)
                 .collect();
@@ -524,9 +608,47 @@ fn years_agree(key_year: &str, entry_year: &str) -> bool {
 #[derive(Clone, Debug)]
 pub struct SeedEdge {
     pub cited: WorkId,
-    pub assertion: lysilogy_core::AssertionId,
+    pub assertion: AssertionId,
     /// `(mention id, passage)` for each stored mention.
     pub mentions: Vec<(MentionId, String)>,
+}
+
+/// Whitespace collapsed and case folded, for comparing a quote with a passage.
+fn canonical(text: &str) -> String {
+    text.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
+}
+
+/// Where a core relation's quote sits in the citing text of `edge`.
+///
+/// With stored mentions, the quote must be in one of their passages
+/// (compared with whitespace collapsed and case folded), and the answer is
+/// that mention. Without stored mentions, it must be in one of the core
+/// reading's citing sentences for this edge (`core_contexts`), and the
+/// answer has no mention. `None` when the quote is not in the edge's
+/// citing text: the page held it, but not where this work is cited.
+#[must_use]
+pub fn ground_in_citing_text(
+    edge: &SeedEdge,
+    core_contexts: &[String],
+    quote: &str,
+) -> Option<Option<MentionId>> {
+    let quote = canonical(quote);
+    if quote.is_empty() {
+        return None;
+    }
+    if edge.mentions.is_empty() {
+        return core_contexts
+            .iter()
+            .any(|context| canonical(context).contains(&quote))
+            .then_some(None);
+    }
+    edge.mentions
+        .iter()
+        .find(|(_, passage)| canonical(passage).contains(&quote))
+        .map(|(id, _)| Some(*id))
 }
 
 /// One label seeding wants written, after the merge rule.
@@ -536,24 +658,22 @@ pub enum SeedAction {
     Replace(lysilogy_core::RelationshipClaimId),
 }
 
-/// Resolve a key to an edge: entry, then the entry's accepted Work, then
-/// the paper's edge to that Work.
+/// Resolve a key to an edge: the entry it names, then the paper's edge
+/// asserted from that entry. Edges are keyed by entry, not by cited Work,
+/// so two entries that resolve to one Work stay apart.
 ///
 /// # Errors
 /// Why the key did not lead to an edge.
-pub fn resolve_edge<'e, S: std::hash::BuildHasher, T: std::hash::BuildHasher>(
+pub fn resolve_edge<'e, T: std::hash::BuildHasher>(
     key: &str,
     entries: &[(EntryId, KeyedEntry)],
-    resolved: &HashMap<EntryId, WorkId, S>,
-    edges: &'e HashMap<WorkId, SeedEdge, T>,
+    edges: &'e HashMap<EntryId, SeedEdge, T>,
     references: &[CoreReference],
 ) -> std::result::Result<&'e SeedEdge, Unresolved> {
     let keyed: Vec<KeyedEntry> = entries.iter().map(|(_, entry)| entry.clone()).collect();
     let index = match_entry(key, &keyed, references)?;
-    let entry_id = entries[index].0;
-    resolved
-        .get(&entry_id)
-        .and_then(|work| edges.get(work))
+    edges
+        .get(&entries[index].0)
         .ok_or(Unresolved::EntryNotInGraph)
 }
 
@@ -600,28 +720,22 @@ pub async fn seed_core_labels(
         .iter()
         .map(|entry| (entry.id, KeyedEntry::of(entry)))
         .collect();
-    let resolved: HashMap<EntryId, WorkId> = ctx
+    let edges: HashMap<EntryId, SeedEdge> = ctx
         .evidence
-        .resolved_entries(version)
+        .local_edges_with_entries(citing_work, version)
         .await?
         .into_iter()
-        .map(|(entry, work)| (entry.id, work))
-        .collect();
-    let edges: HashMap<WorkId, SeedEdge> = ctx
-        .evidence
-        .local_edges(citing_work, version)
-        .await?
-        .into_iter()
-        .map(|(cited, assertion, mentions)| {
-            let mentions = mentions
+        .map(|edge| {
+            let mentions = edge
+                .mentions
                 .into_iter()
                 .map(|mention| (mention.id, mention.passage))
                 .collect();
             (
-                cited,
+                edge.entry,
                 SeedEdge {
-                    cited,
-                    assertion,
+                    cited: edge.cited,
+                    assertion: edge.assertion,
                     mentions,
                 },
             )
@@ -632,6 +746,36 @@ pub async fn seed_core_labels(
         .relationships
         .current_claims_by_assertion(&assertions)
         .await?;
+
+    // The core reading's citing sentences by edge: the citing text of an
+    // edge without stored mentions, and what the labeler is shown for it.
+    let mut core_contexts: HashMap<AssertionId, Vec<String>> = HashMap::new();
+    let mut extra_passages: HashMap<AssertionId, Vec<String>> = HashMap::new();
+    for citation in &reading.citations {
+        let context = citation.context.trim();
+        if context.is_empty() {
+            continue;
+        }
+        for part in split_reference_key(&citation.reference_key) {
+            match resolve_edge(&part, &entries, &edges, &reading.references) {
+                Ok(edge) => {
+                    let contexts = core_contexts.entry(edge.assertion).or_default();
+                    if contexts.iter().any(|known| known == context) {
+                        continue;
+                    }
+                    contexts.push(context.to_owned());
+                    if edge.mentions.is_empty() {
+                        extra_passages
+                            .entry(edge.assertion)
+                            .or_default()
+                            .push(context.to_owned());
+                        summary.citation_passages += 1;
+                    }
+                }
+                Err(reason) => note_unresolved(&mut summary, &part, reason, "citation"),
+            }
+        }
+    }
 
     let mut seeded = std::collections::HashSet::new();
     for relation in &reading.relations {
@@ -650,154 +794,132 @@ pub async fn seed_core_labels(
             summary.low_confidence += 1;
             continue;
         }
-        let edge = match resolve_edge(
-            &relation.reference_key,
-            &entries,
-            &resolved,
-            &edges,
-            &reading.references,
-        ) {
-            Ok(edge) => edge,
-            Err(reason) => {
-                note_unresolved(&mut summary, &relation.reference_key, reason, "relation");
+        let parts = split_reference_key(&relation.reference_key);
+        if parts.len() > 1 {
+            summary.multi_key += 1;
+        }
+        for part in parts {
+            summary.key_parts += 1;
+            let edge = match resolve_edge(&part, &entries, &edges, &reading.references) {
+                Ok(edge) => edge,
+                Err(reason) => {
+                    note_unresolved(&mut summary, &part, reason, "relation");
+                    continue;
+                }
+            };
+            let contexts = core_contexts
+                .get(&edge.assertion)
+                .map_or(&[][..], Vec::as_slice);
+            let Some(mention) = ground_in_citing_text(edge, contexts, quote) else {
+                summary.not_in_citing_passage += 1;
+                continue;
+            };
+            if !seeded.insert(edge.assertion) {
+                summary.duplicate_edge += 1;
                 continue;
             }
-        };
-        if !seeded.insert(edge.assertion) {
-            summary.duplicate_edge += 1;
-            continue;
-        }
-        let existing = current.get(&edge.assertion);
-        let decision = merge_decision(
-            existing.map(ExistingLabel::of),
-            LabelPath::CoreRelation,
-            &relation.relation,
-        );
-        let action = match (decision, existing) {
-            (MergeDecision::Keep { disagrees }, Some(existing)) => {
-                summary.kept_existing += 1;
-                if disagrees {
-                    summary.disagreements.push(Disagreement {
-                        cited_work: edge.cited.to_string(),
-                        reference_key: relation.reference_key.clone(),
-                        core_relation: relation.relation.clone(),
-                        existing_relation: existing.relation.clone(),
-                        existing_path: existing.path(),
-                        replaced: false,
-                    });
+            let existing = current.get(&edge.assertion);
+            let decision = merge_decision(
+                existing.map(ExistingLabel::of),
+                LabelPath::CoreRelation,
+                &relation.relation,
+            );
+            let action = match (decision, existing) {
+                (MergeDecision::Keep { disagrees }, Some(existing)) => {
+                    summary.kept_existing += 1;
+                    if disagrees {
+                        summary.disagreements.push(Disagreement {
+                            cited_work: edge.cited.to_string(),
+                            reference_key: part.clone(),
+                            core_relation: relation.relation.clone(),
+                            existing_relation: existing.relation.clone(),
+                            existing_path: existing.path(),
+                            replaced: false,
+                        });
+                    }
+                    continue;
                 }
-                continue;
-            }
-            (MergeDecision::Replace { disagrees }, Some(existing)) => {
-                if disagrees {
-                    summary.disagreements.push(Disagreement {
-                        cited_work: edge.cited.to_string(),
-                        reference_key: relation.reference_key.clone(),
-                        core_relation: relation.relation.clone(),
-                        existing_relation: existing.relation.clone(),
-                        existing_path: existing.path(),
-                        replaced: true,
-                    });
+                (MergeDecision::Replace { disagrees }, Some(existing)) => {
+                    if disagrees {
+                        summary.disagreements.push(Disagreement {
+                            cited_work: edge.cited.to_string(),
+                            reference_key: part.clone(),
+                            core_relation: relation.relation.clone(),
+                            existing_relation: existing.relation.clone(),
+                            existing_path: existing.path(),
+                            replaced: true,
+                        });
+                    }
+                    SeedAction::Replace(existing.id)
                 }
-                SeedAction::Replace(existing.id)
-            }
-            _ => SeedAction::Insert,
-        };
-        let payload = json!({
-            "run_key": reading.run_key,
-            "relation": relation,
-        });
-        let digest = format!(
-            "{:x}",
-            Sha256::digest(
-                json!([relation.relation, relation.why, relation.quote])
-                    .to_string()
-                    .as_bytes()
-            )
-        );
-        let source_key = format!(
-            "{}|{}|{}",
-            reading.run_key,
-            normalize_key(&relation.reference_key),
-            &digest[..16]
-        );
-        if existing.and_then(|claim| claim.source_record).is_some()
-            && let Some((record, _)) = ctx
-                .records
-                .find(CORE_LABEL_RECORD_KIND, &source_key)
-                .await?
-            && existing.and_then(|claim| claim.source_record) == Some(record)
-        {
-            summary.unchanged += 1;
-            continue;
-        }
-        let record = ctx
-            .records
-            .upsert(
-                CORE_LABEL_RECORD_KIND,
-                &source_key,
-                Coverage::Complete,
-                &payload,
-            )
-            .await?;
-        let mention = edge
-            .mentions
-            .iter()
-            .find(|(_, passage)| passage.contains(quote))
-            .map(|(id, _)| *id);
-        let claim = NewAiClaim {
-            assertion: edge.assertion,
-            mention,
-            relation: &relation.relation,
-            reason: relation.why.trim(),
-            quote,
-            model: &reading.model,
-            record,
-            path: LabelPath::CoreRelation,
-            engagement: None,
-            prompt_version: None,
-        };
-        match action {
-            SeedAction::Insert => {
-                if ctx.relationships.insert_ai_claim(&claim).await?.is_some() {
-                    summary.inserted += 1;
-                } else {
-                    summary.unchanged += 1;
-                }
-            }
-            SeedAction::Replace(old) => match ctx.relationships.replace_ai_claim(old, &claim).await
+                _ => SeedAction::Insert,
+            };
+            let payload = json!({
+                "run_key": reading.run_key,
+                "reference_key_part": part,
+                "relation": relation,
+            });
+            let digest = format!(
+                "{:x}",
+                Sha256::digest(
+                    json!([relation.relation, relation.why, relation.quote])
+                        .to_string()
+                        .as_bytes()
+                )
+            );
+            let source_key = format!(
+                "{}|{}|{}",
+                reading.run_key,
+                normalize_key(&part),
+                &digest[..16]
+            );
+            if existing.and_then(|claim| claim.source_record).is_some()
+                && let Some((record, _)) = ctx
+                    .records
+                    .find(CORE_LABEL_RECORD_KIND, &source_key)
+                    .await?
+                && existing.and_then(|claim| claim.source_record) == Some(record)
             {
-                Ok(Some(_)) => summary.replaced += 1,
-                Ok(None) => summary.unchanged += 1,
-                Err(lysilogy_db::DbError::Conflict(_)) => summary.kept_existing += 1,
-                Err(error) => return Err(error.into()),
-            },
-        }
-    }
-
-    let mut extra_passages: HashMap<WorkId, Vec<String>> = HashMap::new();
-    for citation in &reading.citations {
-        let context = citation.context.trim();
-        if context.is_empty() {
-            continue;
-        }
-        match resolve_edge(
-            &citation.reference_key,
-            &entries,
-            &resolved,
-            &edges,
-            &reading.references,
-        ) {
-            Ok(edge) if edge.mentions.is_empty() => {
-                let passages = extra_passages.entry(edge.cited).or_default();
-                if !passages.iter().any(|passage| passage == context) {
-                    passages.push(context.to_owned());
-                    summary.citation_passages += 1;
-                }
+                summary.unchanged += 1;
+                continue;
             }
-            Ok(_) => {}
-            Err(reason) => {
-                note_unresolved(&mut summary, &citation.reference_key, reason, "citation");
+            let record = ctx
+                .records
+                .upsert(
+                    CORE_LABEL_RECORD_KIND,
+                    &source_key,
+                    Coverage::Complete,
+                    &payload,
+                )
+                .await?;
+            let claim = NewAiClaim {
+                assertion: edge.assertion,
+                mention,
+                relation: &relation.relation,
+                reason: relation.why.trim(),
+                quote,
+                model: &reading.model,
+                record,
+                path: LabelPath::CoreRelation,
+                engagement: None,
+                prompt_version: None,
+            };
+            match action {
+                SeedAction::Insert => {
+                    if ctx.relationships.insert_ai_claim(&claim).await?.is_some() {
+                        summary.inserted += 1;
+                    } else {
+                        summary.unchanged += 1;
+                    }
+                }
+                SeedAction::Replace(old) => {
+                    match ctx.relationships.replace_ai_claim(old, &claim).await {
+                        Ok(Some(_)) => summary.replaced += 1,
+                        Ok(None) => summary.unchanged += 1,
+                        Err(lysilogy_db::DbError::Conflict(_)) => summary.kept_existing += 1,
+                        Err(error) => return Err(error.into()),
+                    }
+                }
             }
         }
     }
@@ -929,27 +1051,183 @@ mod tests {
             (second, entry(Some("2"), "[2] Two.", None, None)),
         ];
         let work = WorkId::new();
-        let resolved = HashMap::from([(first, work)]);
         let edges = HashMap::from([(
-            work,
+            first,
             SeedEdge {
                 cited: work,
-                assertion: lysilogy_core::AssertionId::new(),
+                assertion: AssertionId::new(),
                 mentions: Vec::new(),
             },
         )]);
         assert_eq!(
-            resolve_edge("1", &entries, &resolved, &edges, &[]).map(|edge| edge.cited),
+            resolve_edge("1", &entries, &edges, &[]).map(|edge| edge.cited),
             Ok(work)
         );
         assert_eq!(
-            resolve_edge("2", &entries, &resolved, &edges, &[]).map(|edge| edge.cited),
+            resolve_edge("2", &entries, &edges, &[]).map(|edge| edge.cited),
             Err(Unresolved::EntryNotInGraph)
         );
         assert_eq!(
-            resolve_edge("3", &entries, &resolved, &edges, &[]).map(|edge| edge.cited),
+            resolve_edge("3", &entries, &edges, &[]).map(|edge| edge.cited),
             Err(Unresolved::NoMatchingEntry)
         );
+    }
+
+    #[test]
+    fn should_keep_two_entries_for_one_work_on_their_own_edges() {
+        // A preprint and its journal version resolve to one Work: two
+        // assertions, and a key reaches the one its entry was asserted from.
+        let preprint = EntryId::new();
+        let journal = EntryId::new();
+        let entries = vec![
+            (preprint, entry(Some("4"), "[4] Preprint.", None, None)),
+            (journal, entry(Some("5"), "[5] Journal version.", None, None)),
+        ];
+        let work = WorkId::new();
+        let (first, second) = (AssertionId::new(), AssertionId::new());
+        let edges = HashMap::from([
+            (
+                preprint,
+                SeedEdge {
+                    cited: work,
+                    assertion: first,
+                    mentions: vec![(MentionId::new(), "As in [4], it holds.".to_owned())],
+                },
+            ),
+            (
+                journal,
+                SeedEdge {
+                    cited: work,
+                    assertion: second,
+                    mentions: Vec::new(),
+                },
+            ),
+        ]);
+        assert_eq!(
+            resolve_edge("4", &entries, &edges, &[]).map(|edge| edge.assertion),
+            Ok(first)
+        );
+        let journal_edge = resolve_edge("5", &entries, &edges, &[]).unwrap();
+        assert_eq!(journal_edge.assertion, second);
+        assert!(journal_edge.mentions.is_empty(), "the right edge's mentions");
+    }
+
+    #[test]
+    fn should_split_packed_reference_keys_into_one_key_per_work() {
+        assert_eq!(split_reference_key("6, 7, 10"), ["6", "7", "10"]);
+        assert_eq!(split_reference_key("[3-5]"), ["3", "4", "5"]);
+        assert_eq!(split_reference_key("[2\u{2013}3, 9]"), ["2", "3", "9"]);
+        assert_eq!(
+            split_reference_key("Prelec, 2004; Noor, 2009"),
+            ["Prelec, 2004", "Noor, 2009"]
+        );
+        assert_eq!(split_reference_key("Smith, 2004"), ["Smith, 2004"]);
+        assert_eq!(split_reference_key("[12]"), ["[12]"]);
+        assert_eq!(split_reference_key("  "), [""], "an empty key is still counted");
+        assert_eq!(split_reference_key("3; [3]"), ["3; [3]"], "the same work once");
+
+        let entries = vec![
+            entry(Some("6"), "[6] Six.", None, None),
+            entry(Some("7"), "[7] Seven.", None, None),
+            entry(Some("10"), "[10] Ten.", None, None),
+        ];
+        let resolved: Vec<_> = split_reference_key("6, 7, 10")
+            .iter()
+            .map(|part| match_entry(part, &entries, &[]))
+            .collect();
+        assert_eq!(resolved, [Ok(0), Ok(1), Ok(2)], "each baseline resolves");
+        let author_year = vec![
+            entry(None, "Prelec, D. (2004).", Some("Prelec, D."), Some("2004")),
+            entry(None, "Noor, J. (2009).", Some("Noor, J."), Some("2009")),
+        ];
+        let resolved: Vec<_> = split_reference_key("Prelec, 2004; Noor, 2009")
+            .iter()
+            .map(|part| match_entry(part, &author_year, &[]))
+            .collect();
+        assert_eq!(resolved, [Ok(0), Ok(1)], "not only the first author");
+    }
+
+    #[test]
+    fn should_not_match_a_short_title_to_a_longer_one_that_contains_its_words() {
+        assert!(!titles_match(
+            "Deep learning",
+            "Deep residual learning for image recognition"
+        ));
+        assert!(!titles_match(
+            "Deep residual learning",
+            "Deep residual learning for image recognition"
+        ));
+        assert!(titles_match(
+            "Deep residual learning for image recognition.",
+            "Deep Residual Learning for Image Recognition"
+        ));
+        let mut longer = entry(None, "He et al. Deep residual learning.", None, Some("2016"));
+        longer.title = Some("Deep residual learning for image recognition".to_owned());
+        let reference = |title: &str, year| CoreReference {
+            key: "LeCun".to_owned(),
+            title: Some(title.to_owned()),
+            year,
+            ..CoreReference::default()
+        };
+        assert_eq!(
+            match_entry("LeCun", std::slice::from_ref(&longer), &[reference("Deep learning", Some(2015))]),
+            Err(Unresolved::NoMatchingEntry)
+        );
+        assert_eq!(
+            match_entry(
+                "LeCun",
+                std::slice::from_ref(&longer),
+                &[reference("Deep residual learning for image recognition", Some(2015))]
+            ),
+            Err(Unresolved::NoMatchingEntry),
+            "the year must agree when both sides have one"
+        );
+        assert_eq!(
+            match_entry(
+                "LeCun",
+                std::slice::from_ref(&longer),
+                &[reference("Deep residual learning for image recognition", None)]
+            ),
+            Ok(0)
+        );
+    }
+
+    #[test]
+    fn should_ground_a_core_quote_only_in_the_citing_text_of_its_edge() {
+        let mention = MentionId::new();
+        let edge = SeedEdge {
+            cited: WorkId::new(),
+            assertion: AssertionId::new(),
+            mentions: vec![(
+                mention,
+                "Their equilibrium notion  [6] is weaker than ours.".to_owned(),
+            )],
+        };
+        assert_eq!(
+            ground_in_citing_text(&edge, &[], "their equilibrium notion [6] is"),
+            Some(Some(mention)),
+            "whitespace and case are folded"
+        );
+        assert_eq!(
+            ground_in_citing_text(
+                &edge,
+                &["To sum up, the interpretation is inadequate.".to_owned()],
+                "the interpretation is inadequate"
+            ),
+            None,
+            "on the page, but not where this work is cited"
+        );
+        let bare = SeedEdge {
+            mentions: Vec::new(),
+            ..edge
+        };
+        let contexts = vec!["Our estimator follows [9] closely.".to_owned()];
+        assert_eq!(
+            ground_in_citing_text(&bare, &contexts, "estimator follows [9]"),
+            Some(None),
+            "an edge without mentions uses the core citing sentences"
+        );
+        assert_eq!(ground_in_citing_text(&bare, &[], "estimator follows [9]"), None);
     }
 
     #[test]

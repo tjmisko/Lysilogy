@@ -41,10 +41,15 @@ use crate::concurrency::{BoxFuture, join_all};
 
 /// Bump when the prompt or the request shape changes.
 ///
-/// Old cache entries are then not reused. Version 2 briefs the model on the role the work plays, shows
-/// the citing paper's thesis, the cited work's abstract, wider passages and
-/// the citation markers, and asks for `engagement`.
-pub const LABEL_PROMPT_VERSION: u32 = 2;
+/// The cache key also hashes the full prompt and the schema, so an edit to
+/// the brief that forgets the bump still misses the cache; the version is
+/// what reviews and stored labels are grouped by. Version 2 briefs the model
+/// on the role the work plays, shows the citing paper's thesis, the cited
+/// work's abstract, wider passages and the citation markers, and asks for
+/// `engagement`. Version 3 asks first whether the passages cite this work at
+/// all (`cites_this_work`), says where borrowed concepts go, and describes
+/// the honest declines in prose instead of quotable sentences.
+pub const LABEL_PROMPT_VERSION: u32 = 3;
 
 /// Source record kind for cached raw model output.
 pub const LABEL_RECORD_KIND: &str = "relationship_label";
@@ -76,13 +81,14 @@ pub const ENGAGEMENTS: &[&str] = &["substantive", "perfunctory", "not_shown"];
 /// Strict output schema: every property is required and no others are allowed.
 ///
 /// The properties are in the order the model should decide them:
-/// find the evidence, judge engagement, choose the relation, then write the
-/// reason.
+/// check the passages cite this work, find the evidence, judge engagement,
+/// choose the relation, then write the reason.
 pub const LABEL_SCHEMA: &str = r#"{
   "type": "object",
   "additionalProperties": false,
-  "required": ["passage_index", "quote", "engagement", "relation", "reason"],
+  "required": ["cites_this_work", "passage_index", "quote", "engagement", "relation", "reason"],
   "properties": {
+    "cites_this_work": { "type": "boolean" },
     "passage_index": { "type": "integer" },
     "quote": { "type": "string" },
     "engagement": {
@@ -179,6 +185,10 @@ pub struct LabelDraft {
     /// `substantive`, `perfunctory` or `not_shown`; absent in version 1 answers.
     #[serde(default)]
     pub engagement: Option<String>,
+    /// `false` when no passage refers to the cited work (a citation-matching
+    /// error); absent before version 3, which reads as `true`.
+    #[serde(default)]
+    pub cites_this_work: Option<bool>,
 }
 
 /// Why a labeler produced no draft.
@@ -217,6 +227,12 @@ pub enum GroundingRejection {
     InvalidEngagement,
     EmptyReason,
     ReasonTooLong,
+    /// `not_shown` with a relation that claims a role (anything but
+    /// `background` or `other`): the brief says such an answer is `other`.
+    InconsistentEngagement,
+    /// The quote is in a neighbour sentence of a widened passage that cites
+    /// another work, not in the sentence citing this one.
+    QuoteOutsideCitingSentence,
 }
 
 impl GroundingRejection {
@@ -231,6 +247,8 @@ impl GroundingRejection {
             Self::InvalidEngagement => "invalid_engagement",
             Self::EmptyReason => "empty_reason",
             Self::ReasonTooLong => "reason_too_long",
+            Self::InconsistentEngagement => "inconsistent_engagement",
+            Self::QuoteOutsideCitingSentence => "quote_outside_citing_sentence",
         }
     }
 }
@@ -290,7 +308,11 @@ fn clip_chars(text: &str, limit: usize) -> String {
 /// The prompt for one edge: the brief, then the edge's data.
 #[must_use]
 pub fn label_prompt(request: &LabelRequest) -> String {
-    let mut prompt = String::from(LABEL_BRIEF.trim_end());
+    label_prompt_with(LABEL_BRIEF, request)
+}
+
+fn label_prompt_with(brief: &str, request: &LabelRequest) -> String {
+    let mut prompt = String::from(brief.trim_end());
     prompt.push_str("\n\n---\n\nThe arrow to label.\n\n");
     let unknown = "(unknown title)";
     let cited = &request.cited;
@@ -369,11 +391,31 @@ pub fn label_cache_key(request: &LabelRequest) -> String {
 }
 
 fn cache_key_for_version(request: &LabelRequest, version: u32) -> String {
+    cache_key_with(request, version, LABEL_BRIEF, LABEL_SCHEMA)
+}
+
+/// The key hashes the full prompt the model reads (brief and request as
+/// formatted) and the schema, so editing either without bumping the
+/// version cannot reuse answers written under the old text.
+fn cache_key_with(request: &LabelRequest, version: u32, brief: &str, schema: &str) -> String {
     let canonical = json!({
         "prompt_version": version,
+        "prompt_sha": sha_hex(&label_prompt_with(brief, request)),
+        "schema_sha": sha_hex(schema),
         "request": request,
     });
-    format!("{:x}", Sha256::digest(canonical.to_string().as_bytes()))
+    sha_hex(&canonical.to_string())
+}
+
+fn sha_hex(text: &str) -> String {
+    format!("{:x}", Sha256::digest(text.as_bytes()))
+}
+
+/// A short digest of the brief and the schema, stored on each run so label
+/// grades can tell prompt edits apart even within one prompt version.
+#[must_use]
+pub fn label_brief_digest() -> String {
+    sha_hex(&format!("{LABEL_BRIEF}\n{LABEL_SCHEMA}"))[..12].to_owned()
 }
 
 /// Check a draft against the passages it was written from.
@@ -426,6 +468,9 @@ pub fn check_label_text(
     if engagement.is_some_and(|engagement| !ENGAGEMENTS.contains(&engagement)) {
         return Err(GroundingRejection::InvalidEngagement);
     }
+    if engagement == Some("not_shown") && !matches!(relation, "background" | "other") {
+        return Err(GroundingRejection::InconsistentEngagement);
+    }
     let reason = reason.trim();
     if reason.is_empty() {
         return Err(GroundingRejection::EmptyReason);
@@ -434,6 +479,83 @@ pub fn check_label_text(
         return Err(GroundingRejection::ReasonTooLong);
     }
     Ok(())
+}
+
+/// Whether a grounded quote speaks about the cited work.
+///
+/// A widened passage is the citing sentence with a sentence on each side;
+/// `citing` is the citing sentence's byte span inside it. A quote that
+/// overlaps the citing sentence passes. A quote wholly in a neighbour passes
+/// only when that neighbour carries none of `other_markers` (the markers of
+/// the paper's citations of other works), since a neighbour that cites
+/// another work is usually about that work. A passage that was not widened
+/// (`citing` is `None`) is the citing text itself.
+#[must_use]
+pub fn quote_in_citing_sentence(
+    passage: &str,
+    citing: Option<(usize, usize)>,
+    grounded: GroundedQuote,
+    other_markers: &[String],
+) -> bool {
+    let Some((start, end)) = citing else {
+        return true;
+    };
+    if grounded.start < end && grounded.end > start {
+        return true;
+    }
+    let neighbour = if grounded.end <= start {
+        passage.get(..start)
+    } else {
+        passage.get(end..)
+    };
+    let Some(neighbour) = neighbour else {
+        return false;
+    };
+    !other_markers
+        .iter()
+        .filter(|marker| !marker.trim().is_empty())
+        .any(|marker| neighbour.contains(marker.trim()))
+}
+
+/// Why an answer was not written as a label.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Inadmissible {
+    /// The model said no passage refers to the cited work.
+    Misattributed,
+    /// The answer failed a grounding or text check.
+    Rejected(GroundingRejection),
+}
+
+/// The application's admission of one answer for one edge.
+///
+/// The model's own "these passages do not cite this work" first, then
+/// [`ground_quote`], then [`quote_in_citing_sentence`]. Pure, so every
+/// decision is testable without a database.
+///
+/// # Errors
+/// Why the answer is not admitted.
+pub fn admit_draft(
+    passages: &[String],
+    citing_spans: &[Option<(usize, usize)>],
+    other_markers: &[String],
+    draft: &LabelDraft,
+) -> std::result::Result<GroundedQuote, Inadmissible> {
+    if draft.cites_this_work == Some(false) {
+        return Err(Inadmissible::Misattributed);
+    }
+    let grounded = ground_quote(passages, draft).map_err(Inadmissible::Rejected)?;
+    let span = citing_spans.get(grounded.passage_index).copied().flatten();
+    if !quote_in_citing_sentence(
+        &passages[grounded.passage_index],
+        span,
+        grounded,
+        other_markers,
+    ) {
+        return Err(Inadmissible::Rejected(
+            GroundingRejection::QuoteOutsideCitingSentence,
+        ));
+    }
+    Ok(grounded)
 }
 
 fn locate_quote(passages: &[String], named: usize, quote: &str) -> Option<GroundedQuote> {
@@ -539,6 +661,10 @@ pub struct LabelOptions {
     /// replace it under [`merge_decision`]. Off by default: one label per
     /// edge, and the labeler fills only edges without one.
     pub relabel_unreviewed: bool,
+    /// Relabel only the unreviewed edge-labeler labels written under an
+    /// older prompt version (or none recorded), replacing them under
+    /// [`merge_decision`]. Core labels and current-version labels stay.
+    pub relabel_older_prompt: bool,
 }
 
 impl Default for LabelOptions {
@@ -547,6 +673,7 @@ impl Default for LabelOptions {
             limit: 25,
             concurrency: 2,
             relabel_unreviewed: false,
+            relabel_older_prompt: false,
         }
     }
 }
@@ -555,7 +682,8 @@ impl Default for LabelOptions {
 ///
 /// Every edge it saw lands in exactly one of
 /// `already_labeled`, `edges_without_passages`, `over_limit`, `over_budget`,
-/// `failed`, `rejected_for_grounding`, `labeled`, `replaced` or `kept`.
+/// `failed`, `misattributed`, `rejected_for_grounding`, `labeled`,
+/// `replaced`, `kept` or `unchanged` ([`LabelSummary::accounted`]).
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct LabelSummary {
@@ -575,9 +703,18 @@ pub struct LabelSummary {
     pub replaced: usize,
     /// Answers kept out because the edge's label was reviewed meanwhile.
     pub kept: usize,
+    /// Answers that matched the label already current on the edge, so
+    /// nothing was written (a relabel that hit its own cached answer).
+    pub unchanged: usize,
+    /// Answers saying no passage refers to the cited work: a
+    /// citation-matching error, not a label. Nothing is written.
+    pub misattributed: usize,
     pub rejected_for_grounding: usize,
     pub rejections: BTreeMap<String, usize>,
     pub failed: usize,
+    /// The first labeler error of the pass, so a run where every call
+    /// failed says why.
+    pub first_error: Option<String>,
     /// Edges left unlabeled because the call limit was reached.
     pub over_limit: usize,
     /// Edges left unlabeled because the label budget was spent.
@@ -587,6 +724,32 @@ pub struct LabelSummary {
     pub engagement: BTreeMap<String, usize>,
     /// Labels written over a core label that named another relation.
     pub disagreements_with_core: usize,
+}
+
+impl LabelSummary {
+    /// The number of edges in the outcome buckets; equals
+    /// `edges_considered` after a pass.
+    #[must_use]
+    pub const fn accounted(&self) -> usize {
+        self.already_labeled
+            + self.edges_without_passages
+            + self.over_limit
+            + self.over_budget
+            + self.failed
+            + self.misattributed
+            + self.rejected_for_grounding
+            + self.labeled
+            + self.replaced
+            + self.kept
+            + self.unchanged
+    }
+
+    /// Edges the labeler could not finish in this pass: failed calls, the
+    /// budget spent, or the call limit reached.
+    #[must_use]
+    pub const fn left_unlabelled(&self) -> usize {
+        self.failed + self.over_budget + self.over_limit
+    }
 }
 
 /// What the caller knows that the graph does not.
@@ -599,9 +762,9 @@ pub struct LabelBrief {
     /// Wider text around a stored mention, shown in place of its passage.
     /// It must contain the stored passage; otherwise the passage is shown.
     pub surround: Option<Box<Surround>>,
-    /// Citing sentences for edges without stored mentions, by cited Work:
-    /// the core reading's admitted citations.
-    pub extra_passages: HashMap<WorkId, Vec<String>>,
+    /// Citing sentences for edges without stored mentions, by edge: the
+    /// core reading's admitted citations.
+    pub extra_passages: HashMap<AssertionId, Vec<String>>,
 }
 
 /// Wider text around a stored mention.
@@ -620,6 +783,10 @@ struct EdgeJob {
     assertion: AssertionId,
     /// The stored mention behind each passage, `None` for a core citation.
     mentions: Vec<Option<MentionId>>,
+    /// The citing sentence's byte span inside each widened passage.
+    citing_spans: Vec<Option<(usize, usize)>>,
+    /// Markers of the paper's citations of other works.
+    other_markers: Vec<String>,
     request: LabelRequest,
     cache_source_key: String,
     existing: Option<StoredClaim>,
@@ -675,13 +842,33 @@ pub async fn label_edges(
         .current_claims_by_assertion(&assertions)
         .await?;
 
+    let markers_by_edge: HashMap<AssertionId, Vec<String>> = edges
+        .iter()
+        .map(|(_, assertion, mentions)| {
+            let mut markers: Vec<String> = mentions
+                .iter()
+                .filter_map(|mention| mention.marker_text.as_deref())
+                .map(|marker| marker.split_whitespace().collect::<Vec<_>>().join(" "))
+                .filter(|marker| !marker.is_empty())
+                .collect();
+            markers.sort();
+            markers.dedup();
+            (*assertion, markers)
+        })
+        .collect();
+
     let model_key = labeler.model_key();
     let mut cached = Vec::new();
     let mut pending = Vec::new();
     for (cited, assertion, mentions) in edges {
         let existing = current.remove(&assertion);
         if let Some(claim) = &existing {
-            let relabel = options.relabel_unreviewed && !ExistingLabel::of(claim).reviewed;
+            let older = claim.path() == LabelPath::EdgeLabeler
+                && claim
+                    .prompt_version
+                    .is_none_or(|version| i64::from(version) < i64::from(LABEL_PROMPT_VERSION));
+            let relabel = !ExistingLabel::of(claim).reviewed
+                && (options.relabel_unreviewed || (options.relabel_older_prompt && older));
             if !relabel {
                 summary.already_labeled += 1;
                 continue;
@@ -689,7 +876,7 @@ pub async fn label_edges(
         }
         let extra = brief
             .extra_passages
-            .get(&cited)
+            .get(&assertion)
             .map_or(&[][..], Vec::as_slice);
         if mentions
             .iter()
@@ -702,12 +889,24 @@ pub async fn label_edges(
         if mentions.is_empty() {
             summary.edges_from_core_citations += 1;
         }
-        let (request, mention_ids) =
+        let (request, mention_ids, citing_spans) =
             build_request(ctx, brief, citing_title.as_deref(), cited, &mentions, extra).await?;
         let cache_source_key = format!("{model_key}|{}", label_cache_key(&request));
+        let own = markers_by_edge.get(&assertion).map_or(&[][..], Vec::as_slice);
+        let mut other_markers: Vec<String> = markers_by_edge
+            .iter()
+            .filter(|(other, _)| **other != assertion)
+            .flat_map(|(_, markers)| markers.iter())
+            .filter(|marker| !own.contains(marker))
+            .cloned()
+            .collect();
+        other_markers.sort();
+        other_markers.dedup();
         let job = EdgeJob {
             assertion,
             mentions: mention_ids,
+            citing_spans,
+            other_markers,
             request,
             cache_source_key,
             existing,
@@ -755,6 +954,9 @@ pub async fn label_edges(
             CallOutcome::Failed(error) => {
                 tracing::warn!(%error, "relationship labeler failed");
                 summary.failed += 1;
+                if summary.first_error.is_none() {
+                    summary.first_error = Some(clip_chars(&error.to_string(), 300));
+                }
             }
         }
     }
@@ -762,6 +964,11 @@ pub async fn label_edges(
     for item in drafted {
         record_draft(ctx, model_key, item, &mut summary).await?;
     }
+    debug_assert_eq!(
+        summary.accounted(),
+        summary.edges_considered,
+        "every edge lands in exactly one bucket"
+    );
     Ok(summary)
 }
 
@@ -807,9 +1014,18 @@ async fn record_draft(
     summary: &mut LabelSummary,
 ) -> Result<()> {
     let Drafted { job, record, draft } = item;
-    let grounded = match ground_quote(&job.request.passages, &draft) {
+    let grounded = match admit_draft(
+        &job.request.passages,
+        &job.citing_spans,
+        &job.other_markers,
+        &draft,
+    ) {
         Ok(grounded) => grounded,
-        Err(rejection) => {
+        Err(Inadmissible::Misattributed) => {
+            summary.misattributed += 1;
+            return Ok(());
+        }
+        Err(Inadmissible::Rejected(rejection)) => {
             summary.rejected_for_grounding += 1;
             *summary
                 .rejections
@@ -855,7 +1071,10 @@ async fn record_draft(
                     }
                     true
                 }
-                Ok(None) => false,
+                Ok(None) => {
+                    summary.unchanged += 1;
+                    false
+                }
                 Err(lysilogy_db::DbError::Conflict(_)) => {
                     summary.kept += 1;
                     false
@@ -871,6 +1090,8 @@ async fn record_draft(
             let inserted = ctx.relationships.insert_ai_claim(&claim).await?;
             if inserted.is_some() {
                 summary.labeled += 1;
+            } else {
+                summary.unchanged += 1;
             }
             inserted.is_some()
         }
@@ -881,8 +1102,8 @@ async fn record_draft(
     Ok(())
 }
 
-/// The model-facing description of one edge, and the stored mention behind
-/// each passage.
+/// The model-facing description of one edge, the stored mention behind
+/// each passage, and the citing sentence's span in each widened passage.
 async fn build_request(
     ctx: &LabelContext<'_>,
     brief: &LabelBrief,
@@ -890,7 +1111,7 @@ async fn build_request(
     cited: WorkId,
     mentions: &[StoredMention],
     extra: &[String],
-) -> Result<(LabelRequest, Vec<Option<MentionId>>)> {
+) -> Result<(LabelRequest, Vec<Option<MentionId>>, Vec<Option<(usize, usize)>>)> {
     let work = ctx.works.get(cited).await?;
     let entry = match mentions.iter().find_map(|mention| mention.entry) {
         Some(entry_id) => ctx.evidence.entry(entry_id).await?,
@@ -926,7 +1147,12 @@ async fn build_request(
     let entry_text = entry
         .as_ref()
         .map(|entry| entry.raw_text.chars().take(MAX_ENTRY_TEXT_CHARS).collect());
-    let (passages, contexts, mention_ids) = edge_passages(brief, mentions, extra);
+    let EdgePassages {
+        passages,
+        contexts,
+        mentions: mention_ids,
+        citing_spans,
+    } = edge_passages(brief, mentions, extra);
     Ok((
         LabelRequest {
             citing_title: citing_title.map(str::to_owned),
@@ -942,7 +1168,22 @@ async fn build_request(
             contexts,
         },
         mention_ids,
+        citing_spans,
     ))
+}
+
+/// What [`edge_passages`] shows the model for one edge, aligned by index.
+#[derive(Debug, Default)]
+struct EdgePassages {
+    passages: Vec<String>,
+    contexts: Vec<PassageContext>,
+    mentions: Vec<Option<MentionId>>,
+    /// The citing sentence's byte span in a widened passage.
+    citing_spans: Vec<Option<(usize, usize)>>,
+}
+
+fn collapse(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 /// Distinct passages in text order, at most [`MAX_PASSAGES`]: each stored
@@ -952,47 +1193,53 @@ fn edge_passages(
     brief: &LabelBrief,
     mentions: &[StoredMention],
     extra: &[String],
-) -> (Vec<String>, Vec<PassageContext>, Vec<Option<MentionId>>) {
-    let mut passages: Vec<String> = Vec::new();
-    let mut contexts = Vec::new();
-    let mut ids = Vec::new();
+) -> EdgePassages {
+    let mut out = EdgePassages::default();
     for mention in mentions {
-        if passages.len() == MAX_PASSAGES {
+        if out.passages.len() == MAX_PASSAGES {
             break;
         }
-        let stored = mention.passage.trim();
-        if stored.is_empty() || passages.iter().any(|passage| passage.contains(stored)) {
+        let stored = collapse(&mention.passage);
+        if stored.is_empty() || out.passages.iter().any(|passage| passage.contains(&stored)) {
             continue;
         }
         let wide = brief
             .surround
             .as_ref()
             .and_then(|surround| surround(mention))
-            .map(|text| text.split_whitespace().collect::<Vec<_>>().join(" "))
-            .filter(|text| text.contains(stored) && text.len() > stored.len());
-        let citing_sentence = wide.as_ref().map(|_| stored.to_owned());
-        passages.push(wide.unwrap_or_else(|| stored.to_owned()));
-        contexts.push(PassageContext {
+            .map(|text| collapse(&text))
+            .and_then(|text| {
+                let start = text.find(&stored)?;
+                (text.len() > stored.len()).then(|| (text, (start, start + stored.len())))
+            });
+        let (passage, citing_sentence, span) = match wide {
+            Some((text, span)) => (text, Some(stored), Some(span)),
+            None => (stored, None, None),
+        };
+        out.passages.push(passage);
+        out.contexts.push(PassageContext {
             marker: mention.marker_text.clone(),
             cited_together: mention.marker_text.as_deref().map_or(1, cited_together),
             page: mention.page,
             citing_sentence,
         });
-        ids.push(Some(mention.id));
+        out.mentions.push(Some(mention.id));
+        out.citing_spans.push(span);
     }
     for sentence in extra {
-        if passages.len() == MAX_PASSAGES {
+        if out.passages.len() == MAX_PASSAGES {
             break;
         }
-        let sentence = sentence.split_whitespace().collect::<Vec<_>>().join(" ");
-        if sentence.is_empty() || passages.iter().any(|passage| passage.contains(&sentence)) {
+        let sentence = collapse(sentence);
+        if sentence.is_empty() || out.passages.iter().any(|passage| passage.contains(&sentence)) {
             continue;
         }
-        passages.push(sentence);
-        contexts.push(PassageContext::default());
-        ids.push(None);
+        out.passages.push(sentence);
+        out.contexts.push(PassageContext::default());
+        out.mentions.push(None);
+        out.citing_spans.push(None);
     }
-    (passages, contexts, ids)
+    out
 }
 
 type ScriptedFn =
@@ -1061,6 +1308,7 @@ mod tests {
             quote: quote.to_owned(),
             passage_index,
             engagement: Some("substantive".to_owned()),
+            cites_this_work: None,
         }
     }
 
@@ -1320,9 +1568,12 @@ mod tests {
             .iter()
             .map(|passage| mention(passage))
             .collect();
-        let (texts, contexts, ids) = edge_passages(&LabelBrief::default(), &mentions, &[]);
-        assert_eq!(texts, vec!["a", "b", "c", "d", "e", "f"]);
-        assert_eq!((contexts.len(), ids.len()), (6, 6));
+        let out = edge_passages(&LabelBrief::default(), &mentions, &[]);
+        assert_eq!(out.passages, vec!["a", "b", "c", "d", "e", "f"]);
+        assert_eq!(
+            (out.contexts.len(), out.mentions.len(), out.citing_spans.len()),
+            (6, 6, 6)
+        );
     }
 
     static COUNTER: AtomicU64 = AtomicU64::new(0);
@@ -1509,9 +1760,14 @@ mod tests {
                     limit,
                     concurrency: 2,
                     relabel_unreviewed,
+                    relabel_older_prompt: false,
                 },
             )
             .await
+            .map(|summary| {
+                assert_eq!(summary.accounted(), summary.edges_considered, "{summary:?}");
+                summary
+            })
             .expect("label edges")
         }
 
@@ -1552,6 +1808,7 @@ mod tests {
                 quote: "extends the reward modelling approach".to_owned(),
                 passage_index: request.passages.len().saturating_sub(1),
                 engagement: Some("substantive".to_owned()),
+                cites_this_work: None,
             })
         })
     }
@@ -1667,6 +1924,7 @@ mod tests {
                 quote: "a sentence the model invented".to_owned(),
                 passage_index: 0,
                 engagement: Some("substantive".to_owned()),
+                cites_this_work: None,
             })
         });
         let summary = harness.run(&labeler, 25).await;
@@ -1701,6 +1959,7 @@ mod tests {
                 quote: "extends the reward modelling approach".to_owned(),
                 passage_index: 0,
                 engagement: Some("substantive".to_owned()),
+                cites_this_work: None,
             })
         });
         let summary = harness.run(&labeler, 25).await;
@@ -1893,14 +2152,22 @@ mod tests {
         );
         // Property order reaches the provider where serde_json keeps it, so
         // check the text, which is what is sent.
-        let mut order = ["passage_index", "quote", "engagement", "relation", "reason"]
+        let keys = [
+            "cites_this_work",
+            "passage_index",
+            "quote",
+            "engagement",
+            "relation",
+            "reason",
+        ];
+        let mut order = keys
             .map(|key| (LABEL_SCHEMA.find(&format!("\"{key}\": {{")).unwrap(), key))
             .to_vec();
         order.sort_unstable();
         assert_eq!(
             order.iter().map(|(_, key)| *key).collect::<Vec<_>>(),
-            ["passage_index", "quote", "engagement", "relation", "reason"],
-            "evidence first, the reason last"
+            keys,
+            "whether it cites this work, then evidence, the reason last"
         );
     }
 
@@ -1911,6 +2178,128 @@ mod tests {
             cache_key_for_version(&request, LABEL_PROMPT_VERSION - 1),
             label_cache_key(&request)
         );
+    }
+
+    #[test]
+    fn should_change_the_cache_key_when_the_brief_or_schema_text_changes() {
+        let request = sample_request();
+        let base = label_cache_key(&request);
+        assert_eq!(
+            base,
+            cache_key_with(&request, LABEL_PROMPT_VERSION, LABEL_BRIEF, LABEL_SCHEMA)
+        );
+        let edited = format!("{LABEL_BRIEF}\nOne more sentence a reviewer added.");
+        assert_ne!(
+            base,
+            cache_key_with(&request, LABEL_PROMPT_VERSION, &edited, LABEL_SCHEMA),
+            "an edit to the brief without a version bump is not a cache hit"
+        );
+        assert_ne!(
+            base,
+            cache_key_with(&request, LABEL_PROMPT_VERSION, LABEL_BRIEF, "{}"),
+            "nor is an edit to the schema"
+        );
+        assert_eq!(label_brief_digest().len(), 12);
+    }
+
+    #[test]
+    fn should_reject_not_shown_with_a_relation_that_claims_a_role() {
+        let texts = passages(&["We extend the cited method [1] to new tasks."]);
+        let mut label = draft("extend the cited method", 0);
+        label.engagement = Some("not_shown".to_owned());
+        for relation in ["uses_method", "critiques", "extends"] {
+            label.relation = relation.to_owned();
+            assert_eq!(
+                ground_quote(&texts, &label),
+                Err(GroundingRejection::InconsistentEngagement),
+                "{relation}"
+            );
+        }
+        for relation in ["other", "background"] {
+            label.relation = relation.to_owned();
+            assert!(ground_quote(&texts, &label).is_ok(), "{relation}");
+        }
+        assert_eq!(
+            GroundingRejection::InconsistentEngagement.as_str(),
+            "inconsistent_engagement"
+        );
+    }
+
+    #[test]
+    fn should_reject_a_quote_from_a_neighbour_sentence_that_cites_another_work() {
+        let passage = "Smith [3] proposed X. We adopt the estimator of Jones [4].".to_owned();
+        let citing = passage.find("Smith [3] proposed X.").unwrap();
+        let span = Some((citing, citing + "Smith [3] proposed X.".len()));
+        let texts = vec![passage];
+        let mut label = draft("We adopt the estimator of Jones", 0);
+        label.relation = "uses_method".to_owned();
+        let other = vec!["[4]".to_owned()];
+        assert_eq!(
+            admit_draft(&texts, &[span], &other, &label),
+            Err(Inadmissible::Rejected(
+                GroundingRejection::QuoteOutsideCitingSentence
+            )),
+            "the [3] edge does not take a quote about Jones [4]"
+        );
+        assert!(
+            admit_draft(&texts, &[span], &[], &label).is_ok(),
+            "a neighbour that cites no other work may carry the role"
+        );
+        let mut own = draft("Smith [3] proposed X", 0);
+        own.relation = "background".to_owned();
+        assert!(
+            admit_draft(&texts, &[span], &other, &own).is_ok(),
+            "a quote in the citing sentence passes"
+        );
+        let mut straddling = draft("proposed X. We adopt", 0);
+        straddling.relation = "background".to_owned();
+        assert!(
+            admit_draft(&texts, &[span], &other, &straddling).is_ok(),
+            "a quote that overlaps the citing sentence passes"
+        );
+        assert!(
+            admit_draft(&texts, &[None], &other, &label).is_ok(),
+            "a passage that was not widened is the citing text itself"
+        );
+    }
+
+    #[test]
+    fn should_admit_no_label_when_the_model_says_the_passages_cite_another_work() {
+        let texts = passages(&["We extend the cited method [1] to new tasks."]);
+        let mut label = draft("extend the cited method", 0);
+        label.cites_this_work = Some(false);
+        assert_eq!(
+            admit_draft(&texts, &[None], &[], &label),
+            Err(Inadmissible::Misattributed)
+        );
+        label.cites_this_work = Some(true);
+        assert!(admit_draft(&texts, &[None], &[], &label).is_ok());
+        label.cites_this_work = None;
+        assert!(
+            admit_draft(&texts, &[None], &[], &label).is_ok(),
+            "answers before version 3 had no such field"
+        );
+    }
+
+    #[test]
+    fn should_account_for_every_edge_in_exactly_one_bucket() {
+        let summary = LabelSummary {
+            edges_considered: 11,
+            already_labeled: 1,
+            edges_without_passages: 1,
+            over_limit: 1,
+            over_budget: 1,
+            failed: 1,
+            misattributed: 1,
+            rejected_for_grounding: 1,
+            labeled: 1,
+            replaced: 1,
+            kept: 1,
+            unchanged: 1,
+            ..LabelSummary::default()
+        };
+        assert_eq!(summary.accounted(), summary.edges_considered);
+        assert_eq!(summary.left_unlabelled(), 3);
     }
 
     #[test]
@@ -1930,7 +2319,7 @@ mod tests {
             rects: None,
         };
         let mentions = vec![
-            mention("We adopt their index [2].", "[2]"),
+            mention("We adopt their\n index [2].", "[2]"),
             mention("Reefs vary [2, 5, 9].", "[2, 5, 9]"),
         ];
         let brief = LabelBrief {
@@ -1945,7 +2334,12 @@ mod tests {
             "We adopt their index [2].".to_owned(),
             "A sentence the core reading found [2].".to_owned(),
         ];
-        let (texts, contexts, ids) = edge_passages(&brief, &mentions, &extra);
+        let EdgePassages {
+            passages: texts,
+            contexts,
+            mentions: ids,
+            citing_spans,
+        } = edge_passages(&brief, &mentions, &extra);
         assert_eq!(
             texts,
             [
@@ -1956,8 +2350,12 @@ mod tests {
         );
         assert_eq!(
             contexts[0].citing_sentence.as_deref(),
-            Some("We adopt their index [2].")
+            Some("We adopt their index [2]."),
+            "a stored passage with a line break is still found and widened"
         );
+        let (start, end) = citing_spans[0].expect("span of the citing sentence");
+        assert_eq!(&texts[0][start..end], "We adopt their index [2].");
+        assert_eq!(citing_spans[1], None);
         assert_eq!(contexts[1].cited_together, 3);
         assert_eq!(contexts[1].citing_sentence, None);
         assert!(ids[0].is_some() && ids[1].is_some() && ids[2].is_none());
@@ -1980,7 +2378,7 @@ mod tests {
             .await
             .unwrap()
         {
-            let (request, _) = build_request(
+            let (request, _, _) = build_request(
                 &context,
                 &LabelBrief::default(),
                 None,
@@ -2000,6 +2398,7 @@ mod tests {
                 quote: "extends the reward modelling approach".to_owned(),
                 passage_index: 0,
                 engagement: None,
+                cites_this_work: None,
             })
             .unwrap();
             harness
@@ -2065,6 +2464,7 @@ mod tests {
         );
         let counted = summary.inserted
             + summary.duplicate_edge
+            + summary.not_in_citing_passage
             + summary.low_confidence
             + summary.unresolved.values().sum::<usize>()
             + summary.invalid.values().sum::<usize>();
@@ -2098,6 +2498,36 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn should_write_a_core_relation_only_on_edges_whose_passage_holds_its_quote() {
+        let _guard = LOCK.lock().await;
+        let Some(harness) = Harness::new(3).await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        // On the page (quote admission passed it) but not in any passage
+        // that cites work 1: nothing is written, and it is counted.
+        let mut elsewhere = core_relation("1", "critiques", "high");
+        elsewhere.quote = "To sum up, the interpretation is inadequate.".to_owned();
+        let outcome = harness.seed(&reading("run-1", vec![elsewhere])).await;
+        assert_eq!(outcome.summary.not_in_citing_passage, 1);
+        assert_eq!(outcome.summary.inserted, 0);
+        assert_eq!(harness.claim_count().await, 0, "nothing is inserted");
+
+        // A packed key: each part is resolved, and the shared quote lands
+        // on every edge whose passage holds it.
+        let packed = harness
+            .seed(&reading(
+                "run-2",
+                vec![core_relation("1, 2-3", "compares", "high")],
+            ))
+            .await;
+        let summary = &packed.summary;
+        assert_eq!((summary.multi_key, summary.key_parts), (1, 3));
+        assert_eq!(summary.inserted, 3, "{summary:?}");
+        assert_eq!(harness.claim_count().await, 3);
+    }
+
+    #[tokio::test]
     async fn should_record_disagreement_between_core_relation_and_labeler() {
         let _guard = LOCK.lock().await;
         let Some(harness) = Harness::new(2).await else {
@@ -2117,6 +2547,7 @@ mod tests {
                 quote: "extends the reward modelling approach".to_owned(),
                 passage_index: request.passages.len().saturating_sub(1),
                 engagement: Some("perfunctory".to_owned()),
+                cites_this_work: None,
             })
         });
         let plain = harness.run(&background, 25).await;

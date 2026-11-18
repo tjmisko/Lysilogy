@@ -342,8 +342,24 @@ impl EvidenceRepository {
         citing: WorkId,
         version: DocumentVersionId,
     ) -> Result<Vec<(WorkId, AssertionId, Vec<StoredMention>)>> {
+        Ok(self
+            .local_edges_with_entries(citing, version)
+            .await?
+            .into_iter()
+            .map(|edge| (edge.cited, edge.assertion, edge.mentions))
+            .collect())
+    }
+
+    /// [`Self::local_edges`] with the bibliography entry each edge was
+    /// asserted from, so two entries that resolve to one Work (a preprint
+    /// and its journal version) stay two edges.
+    pub async fn local_edges_with_entries(
+        &self,
+        citing: WorkId,
+        version: DocumentVersionId,
+    ) -> Result<Vec<LocalEdge>> {
         let assertions = sqlx::query(
-            "select a.id, a.cited_work_id from graph.citation_assertion a \
+            "select a.id, a.cited_work_id, a.entry_id from graph.citation_assertion a \
              join source.bibliography_entry e on e.id = a.entry_id \
              where a.citing_work_id = $1 and e.citing_version_id = $2 \
                and a.status in ('asserted', 'accepted') \
@@ -357,6 +373,7 @@ impl EvidenceRepository {
         for row in &assertions {
             let assertion = AssertionId::from_uuid(row.try_get("id")?);
             let cited = WorkId::from_uuid(row.try_get("cited_work_id")?);
+            let entry = EntryId::from_uuid(row.try_get("entry_id")?);
             let mention_rows = sqlx::query(&format!(
                 "select {MENTION_COLUMNS} from graph.citation_mention m \
                  where m.assertion_id = $1 and m.document_version_id = $2 \
@@ -370,10 +387,25 @@ impl EvidenceRepository {
                 .iter()
                 .map(mention_from_row)
                 .collect::<Result<Vec<_>>>()?;
-            edges.push((cited, assertion, mentions));
+            edges.push(LocalEdge {
+                entry,
+                cited,
+                assertion,
+                mentions,
+            });
         }
         Ok(edges)
     }
+}
+
+/// One local citation edge with the entry it was asserted from.
+#[derive(Clone, Debug)]
+pub struct LocalEdge {
+    pub entry: EntryId,
+    pub cited: WorkId,
+    pub assertion: AssertionId,
+    /// Stored mentions, in text order.
+    pub mentions: Vec<StoredMention>,
 }
 
 fn parse_state<T>(value: &str) -> Result<T>
