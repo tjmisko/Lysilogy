@@ -582,7 +582,7 @@ async fn run(cli: Cli) -> Result<()> {
             .map_err(|error| Error::InvalidRequest(format!("invalid default address: {error}")))?,
         web: PathBuf::from("web/dist"),
     }) {
-        Command::Serve { bind, web } => serve(state, bind, &web).await,
+        Command::Serve { bind, web } => Box::pin(serve(state, bind, &web)).await,
         Command::Scan => {
             let library = state.refresh().await?;
             let ready = library
@@ -598,7 +598,9 @@ async fn run(cli: Cli) -> Result<()> {
             );
             Ok(())
         }
-        Command::Audit { query, all, json } => audit_command(&state, query, all, json).await,
+        Command::Audit { query, all, json } => {
+            Box::pin(audit_command(&state, query, all, json)).await
+        }
         Command::Extract {
             query,
             pdf,
@@ -657,7 +659,8 @@ async fn run(cli: Cli) -> Result<()> {
                 checkpoints: None,
             };
             let ledger = lysilogy::analysis::spend::SpendLedger::with_defaults();
-            let record = lysilogy::paper_artifacts::run::extract(&options, &ledger).await?;
+            let record =
+                Box::pin(lysilogy::paper_artifacts::run::extract(&options, &ledger)).await?;
             print_extract_summary(&record, &options.output);
             if record.succeeded() {
                 Ok(())
@@ -697,7 +700,7 @@ async fn run(cli: Cli) -> Result<()> {
         } => {
             let id = resolve_paper(&state, &query).await?;
             println!("Analyzing {id} with {provider}…");
-            let view = state.analyze_now(&id, provider, force).await?;
+            let view = Box::pin(state.analyze_now(&id, provider, force)).await?;
             let analysis = view.analysis.ok_or_else(|| {
                 Error::Task("analysis completed without a stored artifact".to_owned())
             })?;
@@ -777,7 +780,7 @@ async fn run(cli: Cli) -> Result<()> {
             Ok(())
         }
         Command::ResolveReference { reference, json } => {
-            resolve_reference_command(&reference, json).await
+            Box::pin(resolve_reference_command(&reference, json)).await
         }
         Command::Lit {
             paper,
@@ -816,7 +819,16 @@ async fn run(cli: Cli) -> Result<()> {
             paper,
             all,
             fetch_metrics,
-        } => prominence_command(&state, &cli.library, paper.as_deref(), all, fetch_metrics).await,
+        } => {
+            Box::pin(prominence_command(
+                &state,
+                &cli.library,
+                paper.as_deref(),
+                all,
+                fetch_metrics,
+            ))
+            .await
+        }
         Command::Fetch {
             work,
             cited_by,
@@ -829,9 +841,16 @@ async fn run(cli: Cli) -> Result<()> {
                 model_fallback: model_fallback.map(LabelSidecar::provider),
             };
             match (work, cited_by) {
-                (Some(work), None) => fetch_work_command(&state, &work, options).await,
+                (Some(work), None) => Box::pin(fetch_work_command(&state, &work, options)).await,
                 (None, Some(paper)) => {
-                    fetch_cited_by_command(&state, &cli.library, &paper, limit, options).await
+                    Box::pin(fetch_cited_by_command(
+                        &state,
+                        &cli.library,
+                        &paper,
+                        limit,
+                        options,
+                    ))
+                    .await
                 }
                 _ => Err(Error::InvalidRequest(
                     "give exactly one of <work> or --cited-by".to_owned(),
@@ -852,10 +871,12 @@ async fn run(cli: Cli) -> Result<()> {
                 refresh,
                 local: !no_local,
             };
-            expand_command(&state, &cli.library, &work, paper, options).await
+            Box::pin(expand_command(&state, &cli.library, &work, paper, options)).await
         }
-        Command::Provenance { command } => provenance_command(&state, &cli.library, command).await,
-        Command::Ramp { command } => ramp_command(&state, &cli.library, command).await,
+        Command::Provenance { command } => {
+            Box::pin(provenance_command(&state, &cli.library, command)).await
+        }
+        Command::Ramp { command } => Box::pin(ramp_command(&state, &cli.library, command)).await,
         Command::RefreshStructure {
             query,
             provider,
@@ -890,7 +911,7 @@ async fn run(cli: Cli) -> Result<()> {
             provider,
             force,
             limit,
-        } => ingest(&state, provider, force, limit).await,
+        } => Box::pin(ingest(&state, provider, force, limit)).await,
         Command::Experiment {
             queries,
             experiment,
@@ -898,21 +919,45 @@ async fn run(cli: Cli) -> Result<()> {
             repeat,
             concurrency,
         } => {
-            experiment_campaign(&state, &queries, &experiment, provider, repeat, concurrency).await
+            Box::pin(experiment_campaign(
+                &state,
+                &queries,
+                &experiment,
+                provider,
+                repeat,
+                concurrency,
+            ))
+            .await
         }
-        Command::ExperimentReport { output } => experiment_report_command(&state, output).await,
+        Command::ExperimentReport { output } => {
+            Box::pin(experiment_report_command(&state, output)).await
+        }
         Command::ExperimentPrepare {
             queries,
             experiment,
             provider,
             repeat,
-        } => prepare_experiment_campaign(&state, &queries, &experiment, provider, repeat).await,
+        } => {
+            Box::pin(prepare_experiment_campaign(
+                &state,
+                &queries,
+                &experiment,
+                provider,
+                repeat,
+            ))
+            .await
+        }
         Command::ExperimentImport {
             query,
             run,
             arm_a,
             arm_b,
-        } => import_experiment_command(&state, &query, &run, &arm_a, &arm_b).await,
+        } => {
+            Box::pin(import_experiment_command(
+                &state, &query, &run, &arm_a, &arm_b,
+            ))
+            .await
+        }
         Command::ExperimentJudge { query, run, input } => {
             let id = resolve_paper(&state, &query).await?;
             let bytes = tokio::fs::read(&input)

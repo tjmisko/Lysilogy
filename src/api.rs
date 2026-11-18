@@ -309,8 +309,11 @@ impl AppState {
 
     pub async fn library(&self) -> LibraryResponse {
         let catalog = self.catalog.read().await;
-        let extras = self.extra_libraries.read().await;
         let papers = catalog.overviews();
+        let root_name = directory_name(catalog.root());
+        let root_path = catalog.root().display().to_string();
+        drop(catalog);
+        let extras = self.extra_libraries.read().await.clone();
         let count_in = |prefix: &str| {
             papers
                 .iter()
@@ -328,8 +331,8 @@ impl AppState {
             .collect::<Vec<_>>();
         let mut directories = vec![LibraryDirectory {
             id: "primary".to_owned(),
-            name: directory_name(catalog.root()),
-            path: catalog.root().display().to_string(),
+            name: root_name.clone(),
+            path: root_path,
             primary: true,
             available: true,
             papers: papers.len() - extra_papers.iter().sum::<usize>(),
@@ -345,7 +348,7 @@ impl AppState {
             }
         }));
         LibraryResponse {
-            name: directory_name(catalog.root()),
+            name: root_name,
             papers,
             directories,
         }
