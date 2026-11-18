@@ -35,6 +35,7 @@ use super::{
     features::Features,
     objects::{self, ChunkObjects, MergeStats},
     resources::{self, PageResources},
+    title,
 };
 use crate::{
     Error, Result,
@@ -1081,9 +1082,7 @@ async fn plan_call(
     if call.fields.iter().any(|field| field == "identity")
         && let Some(title) = likely_title(resources)
     {
-        parts.push(ContentPart::Text(format!(
-            "Authoritative title from the largest heading on page 1: {title}. Return this exact string as `identity.title`; never use a cite-as or accepted-for-publication title."
-        )));
+        parts.push(ContentPart::Text(title_hint(&title)));
     }
     if call.include_draft
         && let Some(current) = draft_subset(&draft, &call.fields)
@@ -1300,30 +1299,20 @@ fn merge_properties(base: &mut Value, extra: &str) {
     }
 }
 
-/// The sectioning policy plus a page-count budget, for `{{sections}}`.
-/// The largest text line on page 1, a deterministic title candidate.
+/// The deterministic title candidate from the first layout page.
 fn likely_title(resources: &PageResources) -> Option<String> {
-    let page = resources.paper.layout.pages.first()?;
-    let mut lines = std::collections::BTreeMap::<u32, (f32, Vec<&str>)>::new();
-    for token in &page.tokens {
-        let Some(rect) = token.rects.first() else {
-            continue;
-        };
-        let entry = lines.entry(token.line).or_insert((0.0, Vec::new()));
-        entry.0 = entry.0.max(rect.y_max - rect.y_min);
-        entry.1.push(&token.text);
-    }
-    lines
-        .into_values()
-        .filter_map(|(height, words)| {
-            let title = words.join(" ");
-            let lowered = title.to_lowercase();
-            (!lowered.contains("cite") && !lowered.contains("accepted for publication"))
-                .then_some((height, title))
-        })
-        .max_by(|left, right| left.0.total_cmp(&right.0))
-        .map(|(_, title)| title)
-        .filter(|title| !title.trim().is_empty())
+    title::likely_title(resources.paper.layout.pages.first()?)
+}
+
+/// How the title candidate is offered to the model: as a guess to check
+/// against the printed heading, never as the answer.
+fn title_hint(title: &str) -> String {
+    format!(
+        "A deterministic guess at the title, taken from the largest horizontal text near the top of page 1: \"{title}\". \
+         It is usually right, but layout heuristics can pick up a journal banner, a logo, a running head, or only part of a long title. \
+         If it matches the title heading printed on the first page, use it as `identity.title`, completing it if the printed title runs longer. \
+         If it does not match, ignore it and read the title from the page."
+    )
 }
 
 /// The current draft values for the fields a call asks for.
@@ -1337,6 +1326,7 @@ fn draft_subset(draft: &serde_json::Map<String, Value>, fields: &[String]) -> Op
     (!subset.is_empty()).then_some(Value::Object(subset))
 }
 
+/// The sectioning policy plus a page-count budget, for `{{sections}}`.
 fn sections_guidance(page_count: usize) -> String {
     let pages = page_count.max(1);
     let lower = pages.div_ceil(4);
@@ -1983,6 +1973,15 @@ mod tests {
         let kept = keep_requested_kinds(objects, &["figure", "equation"]);
         assert_eq!(kept.len(), 2);
         assert_eq!(kept[1]["kind"], "equation");
+    }
+
+    #[test]
+    fn should_offer_the_title_candidate_as_a_hint_that_may_be_wrong() {
+        let hint = title_hint("Attention Is All You Need");
+        assert!(hint.contains("\"Attention Is All You Need\""));
+        assert!(hint.contains("If it does not match, ignore it"));
+        assert!(!hint.to_lowercase().contains("authoritative"));
+        assert!(!hint.contains("exact string"));
     }
 
     #[test]
