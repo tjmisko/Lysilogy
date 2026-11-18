@@ -29,6 +29,7 @@ pub mod ramps;
 pub mod reader_tools;
 pub mod relevance;
 mod remote;
+pub mod review;
 pub mod source_index;
 pub mod store;
 pub mod walk;

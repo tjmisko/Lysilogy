@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "id": "review-set-v1",
+  "note": "Every identifier, venue detail and URL here was written from memory without network access and is UNVERIFIED. scripts/review/fetch_papers.py checks that each download is a real PDF; check the bibliographic details before citing them. Set verified to true on an entry once you have checked it.",
+  "papers": [
+    {
+      "id": "vaswani2017",
+      "field": "ai",
+      "title": "Attention Is All You Need",
+      "authors": ["Ashish Vaswani", "Noam Shazeer", "Niki Parmar", "Jakob Uszkoreit", "Llion Jones", "Aidan N. Gomez", "Lukasz Kaiser", "Illia Polosukhin"],
+      "year": 2017,
+      "venue": "Advances in Neural Information Processing Systems 30 (NIPS 2017)",
+      "arxiv": "1706.03762",
+      "doi": null,
+      "urls": ["https://arxiv.org/pdf/1706.03762"],
+      "filename": "vaswani2017-attention-is-all-you-need.pdf",
+      "oracle": null,
+      "verified": false,
+      "neighbours": [
+        { "id": "bahdanau2014", "relation": "predecessor", "title": "Neural Machine Translation by Jointly Learning to Align and Translate", "authors": ["Dzmitry Bahdanau", "Kyunghyun Cho", "Yoshua Bengio"], "year": 2014, "arxiv": "1409.0473", "urls": ["https://arxiv.org/pdf/1409.0473"], "why": "Introduced attention on top of a recurrent encoder-decoder; the Transformer keeps the attention and drops the recurrence." },
+        { "id": "sutskever2014", "relation": "predecessor", "title": "Sequence to Sequence Learning with Neural Networks", "authors": ["Ilya Sutskever", "Oriol Vinyals", "Quoc V. Le"], "year": 2014, "arxiv": "1409.3215", "urls": ["https://arxiv.org/pdf/1409.3215"], "why": "The recurrent sequence-to-sequence baseline the Transformer was built to replace." },
+        { "id": "gehring2017", "relation": "contemporary", "title": "Convolutional Sequence to Sequence Learning", "authors": ["Jonas Gehring", "Michael Auli", "David Grangier", "Denis Yarats", "Yann N. Dauphin"], "year": 2017, "arxiv": "1705.03122", "urls": ["https://arxiv.org/pdf/1705.03122"], "why": "The competing non-recurrent design from the same months; the Transformer's results tables compare against it." },
+        { "id": "devlin2018", "relation": "successor", "title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding", "authors": ["Jacob Devlin", "Ming-Wei Chang", "Kenton Lee", "Kristina Toutanova"], "year": 2018, "arxiv": "1810.04805", "urls": ["https://arxiv.org/pdf/1810.04805"], "why": "Took the Transformer encoder into large-scale pre-training, which is how most readers met the architecture." },
+        { "id": "radford2018", "relation": "successor", "title": "Improving Language Understanding by Generative Pre-Training", "authors": ["Alec Radford", "Karthik Narasimhan", "Tim Salimans", "Ilya Sutskever"], "year": 2018, "arxiv": null, "urls": ["https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf"], "why": "The first GPT: the Transformer decoder as a pre-trained language model." }
+      ]
+    },
+    {
+      "id": "he2015",
+      "field": "ai",
+      "title": "Deep Residual Learning for Image Recognition",
+      "authors": ["Kaiming He", "Xiangyu Zhang", "Shaoqing Ren", "Jian Sun"],
+      "year": 2015,
+      "venue": "IEEE Conference on Computer Vision and Pattern Recognition (CVPR 2016); arXiv December 2015",
+      "arxiv": "1512.03385",
+      "doi": "10.1109/CVPR.2016.90",
+      "urls": ["https://arxiv.org/pdf/1512.03385"],
+      "filename": "he2015-deep-residual-learning.pdf",
+      "oracle": null,
+      "verified": false,
+      "neighbours": [
+        { "id": "simonyan2014", "relation": "predecessor", "title": "Very Deep Convolutional Networks for Large-Scale Image Recognition", "authors": ["Karen Simonyan", "Andrew Zisserman"], "year": 2014, "arxiv": "1409.1556", "urls": ["https://arxiv.org/pdf/1409.1556"], "why": "VGG showed depth helps up to about 19 layers; ResNet's starting point is why going deeper stopped helping." },
+        { "id": "srivastava2015", "relation": "predecessor", "title": "Highway Networks", "authors": ["Rupesh Kumar Srivastava", "Klaus Greff", "Jürgen Schmidhuber"], "year": 2015, "arxiv": "1505.00387", "urls": ["https://arxiv.org/pdf/1505.00387"], "why": "Gated shortcut connections for very deep networks months earlier; ResNet's identity shortcuts are the ungated special case." },
+        { "id": "ioffe2015", "relation": "enabling", "title": "Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift", "authors": ["Sergey Ioffe", "Christian Szegedy"], "year": 2015, "arxiv": "1502.03167", "urls": ["https://arxiv.org/pdf/1502.03167"], "why": "ResNet relies on batch normalisation and argues the degradation problem is not vanishing gradients because of it." },
+        { "id": "he2016identity", "relation": "successor", "title": "Identity Mappings in Deep Residual Networks", "authors": ["Kaiming He", "Xiangyu Zhang", "Shaoqing Ren", "Jian Sun"], "year": 2016, "arxiv": "1603.05027", "urls": ["https://arxiv.org/pdf/1603.05027"], "why": "The authors' own follow-up explaining why clean identity paths matter and moving to pre-activation blocks." },
+        { "id": "veit2016", "relation": "interpretation", "title": "Residual Networks Behave Like Ensembles of Relatively Shallow Networks", "authors": ["Andreas Veit", "Michael Wilber", "Serge Belongie"], "year": 2016, "arxiv": "1605.06431", "urls": ["https://arxiv.org/pdf/1605.06431"], "why": "Challenges the 'very deep' reading: most gradient flows through short paths." }
+      ]
+    },
+    {
+      "id": "amodei2016",
+      "field": "ai",
+      "title": "Concrete Problems in AI Safety",
+      "authors": ["Dario Amodei", "Chris Olah", "Jacob Steinhardt", "Paul Christiano", "John Schulman", "Dan Mané"],
+      "year": 2016,
+      "venue": "arXiv preprint",
+      "arxiv": "1606.06565",
+      "doi": null,
+      "urls": ["https://arxiv.org/pdf/1606.06565"],
+      "filename": "amodei2016-concrete-problems-in-ai-safety.pdf",
+      "oracle": "eval/spike/ground-truth/oracles/amodei2016.json",
+      "verified": false,
+      "neighbours": [
+        { "id": "russell2015", "relation": "predecessor", "title": "Research Priorities for Robust and Beneficial Artificial Intelligence", "authors": ["Stuart Russell", "Daniel Dewey", "Max Tegmark"], "year": 2015, "arxiv": "1602.03506", "urls": ["https://arxiv.org/pdf/1602.03506"], "why": "The broad research agenda that Concrete Problems narrowed into five machine-learning problems." },
+        { "id": "christiano2017", "relation": "successor", "title": "Deep Reinforcement Learning from Human Preferences", "authors": ["Paul Christiano", "Jan Leike", "Tom B. Brown", "Miljan Martic", "Shane Legg", "Dario Amodei"], "year": 2017, "arxiv": "1706.03741", "urls": ["https://arxiv.org/pdf/1706.03741"], "why": "A direct attack on the scalable-oversight problem the paper names; the root of RLHF. Also an oracle in eval/spike." },
+        { "id": "leike2017", "relation": "successor", "title": "AI Safety Gridworlds", "authors": ["Jan Leike", "Miljan Martic", "Victoria Krakovna", "Pedro A. Ortega", "Tom Everitt", "Andrew Lefrancq", "Laurent Orseau", "Shane Legg"], "year": 2017, "arxiv": "1711.09883", "urls": ["https://arxiv.org/pdf/1711.09883"], "why": "Turns several of the paper's problems (side effects, safe exploration, distributional shift) into test environments." },
+        { "id": "hubinger2019", "relation": "successor", "title": "Risks from Learned Optimization in Advanced Machine Learning Systems", "authors": ["Evan Hubinger", "Chris van Merwijk", "Vladimir Mikulik", "Joar Skalse", "Scott Garrabrant"], "year": 2019, "arxiv": "1906.01820", "urls": ["https://arxiv.org/pdf/1906.01820"], "why": "Adds a failure mode the 2016 taxonomy lacks: inner misalignment. Also an oracle in eval/spike." },
+        { "id": "hendrycks2021", "relation": "successor", "title": "Unsolved Problems in ML Safety", "authors": ["Dan Hendrycks", "Nicholas Carlini", "John Schulman", "Jacob Steinhardt"], "year": 2021, "arxiv": "2109.13916", "urls": ["https://arxiv.org/pdf/2109.13916"], "why": "A deliberate five-years-later update of the agenda, with two of the original authors." }
+      ]
+    },
+    {
+      "id": "kaplan2020",
+      "field": "ai",
+      "title": "Scaling Laws for Neural Language Models",
+      "authors": ["Jared Kaplan", "Sam McCandlish", "Tom Henighan", "Tom B. Brown", "Benjamin Chess", "Rewon Child", "Scott Gray", "Alec Radford", "Jeffrey Wu", "Dario Amodei"],
+      "year": 2020,
+      "venue": "arXiv preprint",
+      "arxiv": "2001.08361",
+      "doi": null,
+      "urls": ["https://arxiv.org/pdf/2001.08361"],
+      "filename": "kaplan2020-scaling-laws.pdf",
+      "oracle": "eval/spike/ground-truth/oracles/kaplan2020.json",
+      "verified": false,
+      "neighbours": [
+        { "id": "hestness2017", "relation": "predecessor", "title": "Deep Learning Scaling is Predictable, Empirically", "authors": ["Joel Hestness", "Sharan Narang", "Newsha Ardalani", "Gregory Diamos", "Heewoo Jun", "Hassan Kianinejad", "Md. Mostofa Ali Patwary", "Yang Yang", "Yanqi Zhou"], "year": 2017, "arxiv": "1712.00409", "urls": ["https://arxiv.org/pdf/1712.00409"], "why": "Earlier power-law fits of loss against data and model size across several domains." },
+        { "id": "brown2020", "relation": "successor", "title": "Language Models are Few-Shot Learners", "authors": ["Tom B. Brown", "Benjamin Mann", "Nick Ryder", "Melanie Subbiah"], "year": 2020, "arxiv": "2005.14165", "urls": ["https://arxiv.org/pdf/2005.14165"], "why": "GPT-3: the large model whose sizing these laws were used to justify." },
+        { "id": "henighan2020", "relation": "successor", "title": "Scaling Laws for Autoregressive Generative Modeling", "authors": ["Tom Henighan", "Jared Kaplan", "Mor Katz", "Mark Chen"], "year": 2020, "arxiv": "2010.14701", "urls": ["https://arxiv.org/pdf/2010.14701"], "why": "Extends the same fits to images, video and mathematics." },
+        { "id": "hoffmann2022", "relation": "critique", "title": "Training Compute-Optimal Large Language Models", "authors": ["Jordan Hoffmann", "Sebastian Borgeaud", "Arthur Mensch", "Elena Buchatskaya"], "year": 2022, "arxiv": "2203.15556", "urls": ["https://arxiv.org/pdf/2203.15556"], "why": "Chinchilla: revises the compute-optimal split between parameters and tokens, largely because of learning-rate schedule choices in Kaplan et al." }
+      ]
+    },
+    {
+      "id": "card1990",
+      "field": "economics",
+      "title": "The Impact of the Mariel Boatlift on the Miami Labor Market",
+      "authors": ["David Card"],
+      "year": 1990,
+      "venue": "Industrial and Labor Relations Review 43(2): 245-257",
+      "arxiv": null,
+      "doi": "10.1177/001979399004300205",
+      "urls": ["https://www.nber.org/system/files/working_papers/w3069/w3069.pdf", "https://davidcard.berkeley.edu/papers/mariel-impact.pdf"],
+      "filename": "card1990-mariel-boatlift.pdf",
+      "oracle": null,
+      "verified": false,
+      "notes": "Sole-authored, although it is often remembered as a co-authored study. The NBER working paper (w3069, 1989) is the likely open copy and may differ slightly from the journal version.",
+      "neighbours": [
+        { "id": "borjas2017", "relation": "critique", "title": "The Wage Impact of the Marielitos: A Reappraisal", "authors": ["George J. Borjas"], "year": 2017, "doi": "10.1177/0019793917692945", "urls": ["https://www.nber.org/system/files/working_papers/w21588/w21588.pdf"], "why": "Reanalyses the boatlift for non-Hispanic men without a high-school diploma and finds large wage declines." },
+        { "id": "peri2019", "relation": "critique", "title": "The Labor Market Effects of a Refugee Wave: Synthetic Control Method Meets the Mariel Boatlift", "authors": ["Giovanni Peri", "Vasil Yasenov"], "year": 2019, "doi": "10.3368/jhr.54.2.0217.8561R1", "urls": ["https://www.nber.org/system/files/working_papers/w21801/w21801.pdf"], "why": "Rebuilds the comparison group with synthetic control and finds no significant wage effect, siding with Card." },
+        { "id": "clemens2019", "relation": "critique", "title": "The Labor Market Effects of Refugee Waves: Reconciling Conflicting Results", "authors": ["Michael A. Clemens", "Jennifer Hunt"], "year": 2019, "doi": "10.1177/0019793918824597", "urls": ["https://www.nber.org/system/files/working_papers/w23433/w23433.pdf"], "why": "Argues the Borjas result is driven by a change in the survey's sample composition around 1980." },
+        { "id": "card2001", "relation": "successor", "title": "Immigrant Inflows, Native Outflows, and the Local Labor Market Impacts of Higher Immigration", "authors": ["David Card"], "year": 2001, "doi": "10.1086/209979", "urls": [], "why": "Card's own generalisation from one natural experiment to cross-city variation in immigrant inflows." }
+      ]
+    },
+    {
+      "id": "card_krueger1994",
+      "field": "economics",
+      "title": "Minimum Wages and Employment: A Case Study of the Fast-Food Industry in New Jersey and Pennsylvania",
+      "authors": ["David Card", "Alan B. Krueger"],
+      "year": 1994,
+      "venue": "American Economic Review 84(4): 772-793",
+      "arxiv": null,
+      "doi": null,
+      "jstor": "2118030",
+      "urls": ["https://www.nber.org/system/files/working_papers/w4509/w4509.pdf"],
+      "filename": "card-krueger1994-minimum-wages.pdf",
+      "oracle": null,
+      "verified": false,
+      "notes": "The NBER working paper (w4509, 1993) is the likely open copy.",
+      "neighbours": [
+        { "id": "katz1992", "relation": "predecessor", "title": "The Effect of the Minimum Wage on the Fast-Food Industry", "authors": ["Lawrence F. Katz", "Alan B. Krueger"], "year": 1992, "doi": "10.1177/001979399204600102", "urls": [], "why": "The same survey design applied to Texas fast-food restaurants two years earlier." },
+        { "id": "neumark2000", "relation": "critique", "title": "Minimum Wages and Employment: A Case Study of the Fast-Food Industry in New Jersey and Pennsylvania: Comment", "authors": ["David Neumark", "William Wascher"], "year": 2000, "doi": "10.1257/aer.90.5.1362", "urls": [], "why": "Uses payroll records instead of telephone surveys and finds employment fell in New Jersey." },
+        { "id": "card2000reply", "relation": "reply", "title": "Minimum Wages and Employment: A Case Study of the Fast-Food Industry in New Jersey and Pennsylvania: Reply", "authors": ["David Card", "Alan B. Krueger"], "year": 2000, "doi": "10.1257/aer.90.5.1397", "urls": [], "why": "The authors' reply using BLS administrative data." },
+        { "id": "dube2010", "relation": "successor", "title": "Minimum Wage Effects Across State Borders: Estimates Using Contiguous Counties", "authors": ["Arindrajit Dube", "T. William Lester", "Michael Reich"], "year": 2010, "doi": "10.1162/REST_a_00039", "urls": [], "why": "Generalises the border comparison to every contiguous county pair in the US." },
+        { "id": "cengiz2019", "relation": "successor", "title": "The Effect of Minimum Wages on Low-Wage Jobs", "authors": ["Doruk Cengiz", "Arindrajit Dube", "Attila Lindner", "Ben Zipperer"], "year": 2019, "doi": "10.1093/qje/qjz014", "urls": [], "why": "A bunching estimator across 138 state minimum-wage changes; the modern version of the question." }
+      ]
+    },
+    {
+      "id": "akerlof1970",
+      "field": "economics",
+      "title": "The Market for \"Lemons\": Quality Uncertainty and the Market Mechanism",
+      "authors": ["George A. Akerlof"],
+      "year": 1970,
+      "venue": "Quarterly Journal of Economics 84(3): 488-500",
+      "arxiv": null,
+      "doi": "10.2307/1879431",
+      "urls": [],
+      "filename": "akerlof1970-market-for-lemons.pdf",
+      "oracle": null,
+      "verified": false,
+      "notes": "No known stable open-access copy; fetch through a library and drop it in by hand.",
+      "neighbours": [
+        { "id": "arrow1963", "relation": "predecessor", "title": "Uncertainty and the Welfare Economics of Medical Care", "authors": ["Kenneth J. Arrow"], "year": 1963, "doi": null, "urls": [], "why": "Earlier treatment of information asymmetry and non-market institutions in health care." },
+        { "id": "spence1973", "relation": "successor", "title": "Job Market Signaling", "authors": ["Michael Spence"], "year": 1973, "doi": "10.2307/1882010", "urls": [], "why": "How the informed side can escape the lemons problem by sending a costly signal." },
+        { "id": "rothschild1976", "relation": "successor", "title": "Equilibrium in Competitive Insurance Markets: An Essay on the Economics of Imperfect Information", "authors": ["Michael Rothschild", "Joseph Stiglitz"], "year": 1976, "doi": "10.2307/1885326", "urls": [], "why": "Screening by the uninformed side; insurance markets as the canonical application." },
+        { "id": "bond1982", "relation": "test", "title": "A Direct Test of the \"Lemons\" Model: The Market for Used Pickup Trucks", "authors": ["Eric W. Bond"], "year": 1982, "doi": null, "urls": [], "why": "An early empirical test that finds little evidence of lemons in used trucks." },
+        { "id": "einav2011", "relation": "survey", "title": "Selection in Insurance Markets: Theory and Empirics in Pictures", "authors": ["Liran Einav", "Amy Finkelstein"], "year": 2011, "doi": "10.1257/jep.25.1.115", "urls": [], "why": "A readable modern account of how adverse selection is measured." }
+      ]
+    },
+    {
+      "id": "autor2013",
+      "field": "economics",
+      "title": "The China Syndrome: Local Labor Market Effects of Import Competition in the United States",
+      "authors": ["David H. Autor", "David Dorn", "Gordon H. Hanson"],
+      "year": 2013,
+      "venue": "American Economic Review 103(6): 2121-2168",
+      "arxiv": null,
+      "doi": "10.1257/aer.103.6.2121",
+      "urls": ["https://www.nber.org/system/files/working_papers/w18054/w18054.pdf"],
+      "filename": "autor2013-china-syndrome.pdf",
+      "oracle": "eval/spike/ground-truth/oracles/autor2013.json",
+      "verified": false,
+      "neighbours": [
+        { "id": "topalova2010", "relation": "predecessor", "title": "Factor Immobility and Regional Impacts of Trade Liberalization: Evidence on Poverty from India", "authors": ["Petia Topalova"], "year": 2010, "doi": "10.1257/app.2.4.1", "urls": [], "why": "The regional-exposure design (industry mix times national tariff change) that the paper adapts." },
+        { "id": "pierce2016", "relation": "companion", "title": "The Surprisingly Swift Decline of US Manufacturing Employment", "authors": ["Justin R. Pierce", "Peter K. Schott"], "year": 2016, "doi": "10.1257/aer.20131578", "urls": [], "why": "Attributes the same decline to China's permanent normal trade relations, using a policy rather than an import measure." },
+        { "id": "acemoglu2016", "relation": "successor", "title": "Import Competition and the Great US Employment Sag of the 2000s", "authors": ["Daron Acemoglu", "David Autor", "David Dorn", "Gordon H. Hanson", "Brendan Price"], "year": 2016, "doi": "10.1086/682384", "urls": [], "why": "Adds input-output linkages and puts a national number on jobs lost to Chinese imports." },
+        { "id": "autor2016", "relation": "survey", "title": "The China Shock: Learning from Labor-Market Adjustment to Large Changes in Trade", "authors": ["David H. Autor", "David Dorn", "Gordon H. Hanson"], "year": 2016, "doi": "10.1146/annurev-economics-080315-015041", "urls": [], "why": "The authors' own review of what the China-shock literature found." },
+        { "id": "goldsmith2020", "relation": "critique", "title": "Bartik Instruments: What, When, Why, and How", "authors": ["Paul Goldsmith-Pinkham", "Isaac Sorkin", "Henry Swift"], "year": 2020, "doi": "10.1257/aer.20181047", "urls": [], "why": "Methodological scrutiny of shift-share instruments like the one the paper uses." }
+      ]
+    },
+    {
+      "id": "angrist_krueger1991",
+      "field": "economics",
+      "title": "Does Compulsory School Attendance Affect Schooling and Earnings?",
+      "authors": ["Joshua D. Angrist", "Alan B. Krueger"],
+      "year": 1991,
+      "venue": "Quarterly Journal of Economics 106(4): 979-1014",
+      "arxiv": null,
+      "doi": "10.2307/2937954",
+      "urls": ["https://www.nber.org/system/files/working_papers/w3572/w3572.pdf"],
+      "filename": "angrist-krueger1991-compulsory-schooling.pdf",
+      "oracle": null,
+      "verified": false,
+      "notes": "The NBER working paper (w3572, 1990) is the likely open copy.",
+      "neighbours": [
+        { "id": "griliches1977", "relation": "predecessor", "title": "Estimating the Returns to Schooling: Some Econometric Problems", "authors": ["Zvi Griliches"], "year": 1977, "doi": "10.2307/1913285", "urls": [], "why": "States the ability-bias problem that quarter-of-birth instruments were meant to solve." },
+        { "id": "bound1995", "relation": "critique", "title": "Problems with Instrumental Variables Estimation When the Correlation Between the Instruments and the Endogenous Explanatory Variable is Weak", "authors": ["John Bound", "David A. Jaeger", "Regina M. Baker"], "year": 1995, "doi": "10.1080/01621459.1995.10476536", "urls": [], "why": "Shows that randomly generated quarters of birth reproduce estimates close to the paper's: the weak-instrument critique." },
+        { "id": "staiger1997", "relation": "successor", "title": "Instrumental Variables Regression with Weak Instruments", "authors": ["Douglas Staiger", "James H. Stock"], "year": 1997, "doi": "10.2307/2171753", "urls": [], "why": "The econometric theory, and the first-stage F rule of thumb, that came out of the critique." },
+        { "id": "card1999", "relation": "survey", "title": "The Causal Effect of Education on Earnings", "authors": ["David Card"], "year": 1999, "doi": "10.1016/S1573-4463(99)03011-4", "urls": [], "why": "Places the quarter-of-birth estimates among the other natural-experiment estimates of returns to schooling." },
+        { "id": "buckles2013", "relation": "critique", "title": "Season of Birth and Later Outcomes: Old Questions, New Answers", "authors": ["Kasey S. Buckles", "Daniel M. Hungerman"], "year": 2013, "doi": "10.1162/REST_a_00314", "urls": [], "why": "Mothers' characteristics vary by season of birth, which threatens the exclusion restriction." }
+      ]
+    }
+  ]
+}
