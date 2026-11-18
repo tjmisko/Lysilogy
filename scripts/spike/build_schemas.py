@@ -79,7 +79,7 @@ sections = arr(obj(
     source_span=obj(start_text=s("A short verbatim phrase from where the unit begins."), start_page=i(),
                     end_text=s("A short verbatim phrase from where the unit ends."), end_page=i()),
     summary=s("One or two sentences that synthesize the whole unit.")),
-    "Coherent topic-based reading units, usually 1-2 pages and generally 1-5 pages of content. "
+    "Coherent topic-based reading units, usually 2-3 pages and generally 1-5 pages of content. "
     "Keep related headings, variants, and examples together. Increasing PDF order, non-overlapping spans. Never a list of the paper's own headings.")
 references = arr(obj(key=s("The in-text marker, e.g. '12' or 'Smith et al., 2020'."),
                    title=s(null=True), authors=arr(s()), year=i(null=True), venue=s(null=True), doi=s(null=True),

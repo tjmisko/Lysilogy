@@ -147,6 +147,30 @@ mod tests {
     }
 
     #[test]
+    fn should_state_the_same_typical_unit_size_in_the_sections_schema_and_policy() {
+        let policy = include_str!("../prompts/sectioning.md");
+        assert!(policy.contains("usually 2\u{2013}3 pages"), "policy changed");
+        for (name, text) in [
+            ("core", CORE_SCHEMA),
+            ("field-sections", SECTIONS_SCHEMA),
+            ("paper-artifacts", PAPER_ARTIFACTS_SCHEMA),
+        ] {
+            let schema: Value = serde_json::from_str(text).expect("schema");
+            let description = schema["properties"]["sections"]["description"]
+                .as_str()
+                .unwrap_or_default();
+            assert!(description.contains("usually 2-3 pages"), "{name}");
+        }
+    }
+
+    #[test]
+    fn should_keep_the_same_section_unit_shape_in_the_core_and_fanout_schemas() {
+        let core: Value = serde_json::from_str(CORE_SCHEMA).expect("schema");
+        let field: Value = serde_json::from_str(SECTIONS_SCHEMA).expect("schema");
+        assert_eq!(core["properties"]["sections"], field["properties"]["sections"]);
+    }
+
+    #[test]
     fn should_use_the_citation_graph_vocabulary_when_labelling_relations() {
         let schema: Value = serde_json::from_str(PAPER_ARTIFACTS_SCHEMA).expect("schema");
         let kinds = &schema["properties"]["relations"]["items"]["properties"]["relation"]["enum"];
