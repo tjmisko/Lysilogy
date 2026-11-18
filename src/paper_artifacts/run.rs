@@ -18,44 +18,61 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::{
-    checkpoint::{self, CallInputs, Checkpoint},
-    ABSTRACT_SCHEMA, ANALYSIS_SCHEMA, CARD_SCHEMA, CHECK_SCHEMA, CITATIONS_SCHEMA,
-    GLOSSARY_SCHEMA, IDENTITY_SCHEMA, OBJECTS_SCHEMA, QUESTION_SCHEMA, REFERENCES_SCHEMA,
-    RELATIONS_SCHEMA, REPAIR_SCHEMA, SECTIONS_SCHEMA, SUPERCUT_SCHEMA, TYPE_SCHEMA,
+    ABSTRACT_SCHEMA, ANALYSIS_SCHEMA, CARD_SCHEMA, CHECK_SCHEMA, CITATIONS_SCHEMA, CONTEXT_SCHEMA,
+    GLOSSARY_SCHEMA, IDENTITY_SCHEMA, OBJECTS_SCHEMA, OUTLINE_SCHEMA, QUESTION_SCHEMA,
+    REFERENCES_SCHEMA, RELATIONS_SCHEMA, REPAIR_SCHEMA, SECTIONS_GROUPED_SCHEMA, SECTIONS_SCHEMA,
+    SUPERCUT_SCHEMA, TYPE_SCHEMA,
     admission::{
         CheckCounts, LOCAL_REPAIR_SIMILARITY, QuoteSite, SiteKind, SourceText, Verdict,
         apply_removals, check, quote_sites,
     },
+    checkpoint::{self, CallInputs, Checkpoint},
     config::{
         Call, Effort, Input, InputFormat, Models, Repair as RepairMode, RunConfig,
         SelfCheck as SelfCheckMode, Verify, scope_pages,
     },
+    context,
     core_fields::CORE_FIELDS,
     corrections::{self, CheckResponse, Correction, CorrectionOutcome},
+    dossier::{self, Dossier},
     features::Features,
     objects::{self, ChunkObjects, MergeStats},
+    outline,
+    pipeline::{PipelineInputs, pipeline_version},
+    plausibility,
     resources::{self, PageResources},
+    structure::{self, OutlineAdmission},
+    title,
+    verification::{StageStatus, Verification},
 };
 use crate::{
     Error, Result,
+    abstracts::AbstractAgreement,
     analysis::{
         LocalCliAnalyzer,
         openrouter::{self, ChatRequest, ContentPart, CostSource, ProgressSink, ReasoningEffort},
         spend::SpendLedger,
     },
-    domain::AnalysisProvider,
+    domain::{AnalysisProvider, ContextCounts, QualityWarning, QualityWarningKind},
     extract::PdfExtractor,
     store::write_atomic,
 };
 
 const FIELDS_PROMPT: &str = include_str!("../../prompts/paper-fields.md");
+/// How quotes are checked and what may not be invented, after the paper, for
+/// the calls that extract rather than judge.
+const EXTRACTION_RULES: &str = include_str!("../../prompts/extraction-rules.md");
 const SECTIONS_POLICY: &str = include_str!("../../prompts/sectioning.md");
+const SECTIONS_FROM_OUTLINE: &str = include_str!("../../prompts/sectioning-outline.md");
+const SECTIONS_FROM_PAGES: &str = include_str!("../../prompts/sectioning-pages.md");
+const OUTLINE_PROMPT: &str = include_str!("../../prompts/outline.md");
 const OBJECTS_PROMPT: &str = include_str!("../../prompts/paper-objects.md");
 const CHECK_PROMPT: &str = include_str!("../../prompts/paper-artifacts-check.md");
 const REPAIR_PROMPT: &str = include_str!("../../prompts/paper-artifacts-repair.md");
+const CONTEXT_PROMPT: &str = include_str!("../../prompts/context.md");
 
 /// Bump when the record shape changes.
-const RECORD_VERSION: u16 = 5;
+const RECORD_VERSION: u16 = 9;
 
 /// Object chunks in flight at once.
 const CHUNK_CONCURRENCY: usize = 3;
@@ -73,6 +90,8 @@ const CHECK_MAX_TOKENS: u32 = 49_152;
 const OBJECTS_MAX_TOKENS: u32 = 32_768;
 const REPAIR_MAX_TOKENS: u32 = 32_768;
 const FEATURE_MAX_TOKENS: u32 = 24_576;
+/// The context node reasons at high effort before a short answer.
+const CONTEXT_MAX_TOKENS: u32 = 49_152;
 
 /// How many times a call is tried when the provider drops or cuts the answer.
 const CALL_ATTEMPTS: u32 = 2;
@@ -87,6 +106,10 @@ const RAW_PREVIEW_CHARS: usize = 2_000;
 pub struct ExtractOptions {
     pub pdf: PathBuf,
     pub model: String,
+    /// A stronger model for judgment calls: the self-check, and plan calls
+    /// that name the `strong` tier when the plan sets none. `None` uses
+    /// `model` throughout.
+    pub judgment_model: Option<String>,
     /// 1 or 2; pass 2 is the self-check.
     pub passes: u8,
     pub dpi: u32,
@@ -116,6 +139,13 @@ pub struct ExtractOptions {
     /// Where answered calls are saved and replayed from, so a retry does not
     /// pay for them again. `None` runs every call fresh.
     pub checkpoints: Option<PathBuf>,
+    /// What Lysilogy knows locally about the works around the paper, for the
+    /// context node. Empty when the paper is not in the citation graph.
+    pub dossier: Dossier,
+    /// Fields from an earlier run that the plan's calls build on, merged into
+    /// the draft before the first call: the core fields when only the context
+    /// is refreshed. `None` starts from nothing.
+    pub seed: Option<Value>,
 }
 
 /// How the core record's fields are asked for.
@@ -254,13 +284,59 @@ pub struct ExtractRecord {
     pub admission: Vec<SiteOutcome>,
     pub admission_counts: BTreeMap<String, usize>,
     pub artifacts: Option<Value>,
+    /// The stronger model used for judgment calls, when one was configured.
+    pub judgment_model: Option<String>,
+    /// Providers asked, in order; empty when `OpenRouter` chose freely.
+    pub providers: Vec<String>,
+    /// The spend cap no further call could start past.
+    pub paper_budget_usd: f64,
+    /// Model, providers and a digest of every prompt, schema and plan setting
+    /// the run used, so a later review can be tied to what produced it.
+    pub pipeline_version: String,
+    /// Which verification stages ran, were skipped, or failed.
+    pub verification: Verification,
+    /// Plan calls asked a second time because the first answer looked
+    /// degenerate.
+    pub plausibility_retries: Vec<PlausibilityRetry>,
+    /// Deterministic sanity checks the final record failed, including any
+    /// verification stage that did not run.
+    pub warnings: Vec<QualityWarning>,
+    /// What settling the context node's answer kept and downgraded; `None`
+    /// when the plan has no context call or it returned nothing.
+    pub context: Option<ContextCounts>,
+    /// The model's abstract against the deterministic extraction; `None`
+    /// when the plan does not ask for the abstract.
+    pub abstract_agreement: Option<AbstractAgreement>,
+    /// What admitting the outline answer kept and dropped; `None` when the
+    /// plan has no outline call or it returned nothing.
+    pub outline_admission: Option<OutlineAdmission>,
 }
 
 impl ExtractRecord {
+    /// Artifacts, no failed call, and every verification stage that was
+    /// meant to run did.
     #[must_use]
     pub const fn succeeded(&self) -> bool {
-        self.artifacts.is_some() && self.failures.is_empty()
+        self.artifacts.is_some() && self.failures.is_empty() && self.verification.complete()
     }
+
+    /// Artifacts exist but are not a clean success: a call failed or a
+    /// verification stage was skipped. Show them, flagged.
+    #[must_use]
+    pub const fn degraded(&self) -> bool {
+        self.artifacts.is_some() && !self.succeeded()
+    }
+}
+
+/// A plan call asked again because its first answer failed a plausibility
+/// gate that usually means a degenerate answer.
+#[derive(Clone, Debug, Serialize)]
+pub struct PlausibilityRetry {
+    pub call: String,
+    /// What the first answer failed.
+    pub warnings: Vec<QualityWarning>,
+    /// Whether the second answer was better and replaced the first.
+    pub kept_retry: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -309,6 +385,8 @@ struct Session<'a> {
     providers: Vec<String>,
     progress: Option<ProgressSink>,
     checkpoints: Option<PathBuf>,
+    /// The neighbour dossier the context node reads.
+    dossier: Dossier,
     state: Mutex<SessionState>,
 }
 
@@ -320,6 +398,8 @@ struct SessionState {
     failures: Vec<Failure>,
     recovered: Vec<Failure>,
     budget_stopped: Option<String>,
+    /// Every stage the budget kept from starting, in order.
+    skipped: Vec<String>,
 }
 
 impl<'a> Session<'a> {
@@ -338,8 +418,14 @@ impl<'a> Session<'a> {
             providers,
             progress: None,
             checkpoints: None,
+            dossier: Dossier::default(),
             state: Mutex::new(SessionState::default()),
         }
+    }
+
+    fn with_dossier(mut self, dossier: Dossier) -> Self {
+        self.dossier = dossier;
+        self
     }
 
     fn with_progress(mut self, progress: Option<ProgressSink>) -> Self {
@@ -414,9 +500,7 @@ impl<'a> Session<'a> {
                 analyzer,
                 provider,
                 directory,
-            } => {
-                Box::pin(analyzer.plan_completion(*provider, directory, request)).await
-            }
+            } => Box::pin(analyzer.plan_completion(*provider, directory, request)).await,
         }
     }
 
@@ -560,8 +644,16 @@ impl<'a> Session<'a> {
             guard.spent_usd, self.paper_budget_usd
         );
         guard.budget_stopped.get_or_insert(reason);
+        if !guard.skipped.iter().any(|skipped| skipped == stage) {
+            guard.skipped.push(stage.to_owned());
+        }
         drop(guard);
         false
+    }
+
+    /// Whether the budget kept `stage` from starting.
+    fn was_skipped(&self, stage: &str) -> bool {
+        self.state().skipped.iter().any(|skipped| skipped == stage)
     }
 
     fn record_call(
@@ -651,7 +743,6 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
         options.dpi,
     )
     .await?;
-    let text = text_parts(&resources);
     let source = SourceText::new(&resources.paper.pages);
     let session = Session::new(
         backend,
@@ -661,37 +752,139 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
         options.providers.clone(),
     )
     .with_progress(options.progress.clone())
-    .with_checkpoints(options.checkpoints.clone());
+    .with_checkpoints(options.checkpoints.clone())
+    .with_dossier(options.dossier.clone());
 
-    let plan = options.plan.clone().unwrap_or_else(|| {
+    let mut plan = options.plan.clone().unwrap_or_else(|| {
         let mut plan = default_pipeline(options.core_mode, options.features);
         if options.passes == 1 {
             plan.verify.self_check = SelfCheckMode::None;
         }
         plan
     });
-    let (core, object_chunks, object_merge) =
-        run_plan(&session, &resources, &plan, options.object_pages).await;
+    // A plan that names no model tier runs on the requested model.
+    plan.models
+        .cheap
+        .get_or_insert_with(|| options.model.clone());
+    if let Some(judge) = &options.judgment_model {
+        plan.models.strong.get_or_insert_with(|| judge.clone());
+    }
+    let model_label = match &session.backend {
+        Backend::OpenRouter { .. } => options.model.clone(),
+        Backend::Plan { .. } => session.backend_label(),
+    };
+    let version = pipeline_version(&PipelineInputs {
+        model: &model_label,
+        judgment_model: options.judgment_model.as_deref(),
+        providers: &options.providers,
+        texts: &pipeline_texts(&plan, options.reasoning),
+    });
+    let PlanRun {
+        draft: core,
+        chunks: object_chunks,
+        merge: object_merge,
+        retries: plausibility_retries,
+        warnings: structure_warnings,
+        outline_admission,
+    } = run_plan_from(
+        &session,
+        &resources,
+        &plan,
+        options.object_pages,
+        options.seed.as_ref(),
+    )
+    .await;
     let pass1_check = core.as_ref().map(|draft| check(&source, draft));
 
     let mut draft = core.clone();
     let self_check_enabled = plan.verify.self_check == SelfCheckMode::Full;
     let repair_model = plan.verify.repair == RepairMode::Model;
-    let hide_objects = plan
-        .calls
-        .iter()
-        .any(|call| !object_kinds(call).is_empty());
+    let hide_objects = plan.calls.iter().any(|call| !object_kinds(call).is_empty());
     let schema = plan_schema(&plan);
+    let judge = options.judgment_model.as_deref().unwrap_or(&options.model);
+    // The self-check reads the paper as the plan calls did, so their cached
+    // prefix serves it; page images are left out, because it checks text.
+    let text = if plan.input.format == InputFormat::Raw && !plan.input.images {
+        rendered_parts(&resources, &plan.input, None).await?
+    } else {
+        text_parts(&resources)
+    };
     let check_pass = match draft.as_mut() {
         Some(current) if self_check_enabled => {
-            self_check(current, &text, &source, &session, hide_objects, &schema).await?
+            let view = CheckView {
+                text: &text,
+                source: &source,
+                hide_objects,
+                schema: &schema,
+                model: judge,
+            };
+            self_check(current, &view, &session).await?
         }
-        _ => SelfCheck::default(),
+        None if self_check_enabled => SelfCheck {
+            status: StageStatus::NotNeeded,
+            ..SelfCheck::default()
+        },
+        Some(_) | None => SelfCheck::default(),
     };
-    let admission = match draft.as_mut() {
+    let (admission, repair_status) = match draft.as_mut() {
         Some(current) => admit(current, &source, &resources, &session, repair_model).await,
-        None => Vec::new(),
+        None => (Vec::new(), StageStatus::NotNeeded),
     };
+    let verification = Verification {
+        self_check: check_pass.status,
+        admission: if draft.is_some() {
+            StageStatus::Ran
+        } else {
+            StageStatus::NotNeeded
+        },
+        repair: repair_status,
+    };
+    let mut warnings = verification.warnings();
+    warnings.extend(structure_warnings);
+    // The context's quotes have been admitted; check its dossier ids and
+    // move claims whose support failed to the background class.
+    let context_counts = draft
+        .as_mut()
+        .and_then(|current| context::settle(current, &options.dossier));
+    if let Some(counts) = &context_counts {
+        warnings.extend(context_warning(counts));
+    }
+    let fields = plan_fields(&plan);
+    let abstract_agreement =
+        draft
+            .as_ref()
+            .filter(|_| fields.contains("abstract"))
+            .map(|current| {
+                crate::abstracts::agreement(
+                    current.pointer("/abstract/text").and_then(Value::as_str),
+                    &crate::abstracts::extract(&resources.paper),
+                )
+            });
+    if let Some(agreement) = abstract_agreement
+        .as_ref()
+        .filter(|agreement| agreement.disagrees())
+    {
+        warnings.push(QualityWarning {
+            kind: QualityWarningKind::AbstractDisagreement,
+            field: "abstract".to_owned(),
+            message: format!(
+                "The model's abstract and the deterministic extraction share little text (token F1 {:.2}); one of them is wrong.",
+                agreement.token_f1.unwrap_or_default()
+            ),
+        });
+    }
+    if let Some(current) = draft.as_mut() {
+        // The self-check may only flag structure, but settle again so the
+        // stored outline and units are consistent whatever it changed.
+        warnings.extend(structure::settle_draft(current, &resources.paper.pages));
+    }
+    if let Some(current) = &draft {
+        warnings.extend(plausibility::check(
+            current,
+            &fields,
+            &resources.paper.pages,
+        ));
+    }
     let mut admission_counts = BTreeMap::new();
     for outcome in &admission {
         let key = serde_json::to_value(outcome.status)?
@@ -702,6 +895,7 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
     }
 
     let session = session.into_state();
+    warnings.extend(call_warnings(&plan, &session.failures, &session.skipped));
     let reasoning_trace = write_reasoning_traces(&options.output, &session.reasoning).await?;
     let totals = Totals {
         calls: session.calls.len(),
@@ -746,9 +940,72 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
         admission,
         admission_counts,
         artifacts: draft,
+        judgment_model: options.judgment_model.clone(),
+        providers: options.providers.clone(),
+        paper_budget_usd: options.paper_budget_usd,
+        pipeline_version: version,
+        verification,
+        plausibility_retries,
+        warnings,
+        context: context_counts,
+        abstract_agreement,
+        outline_admission,
     };
     write_record(&options.output, &record).await?;
     Ok(record)
+}
+
+/// One warning per field that a failed or budget-skipped plan call was
+/// meant to fill, so a record with a missing outline or context does not
+/// read as clean. Verification stages report through [`Verification`], and a
+/// failed plausibility retry leaves the first answer standing, so neither is
+/// counted here.
+fn call_warnings(plan: &RunConfig, failures: &[Failure], skipped: &[String]) -> Vec<QualityWarning> {
+    let mut warnings = Vec::new();
+    for call in &plan.calls {
+        let objects = !object_kinds(call).is_empty();
+        let owns = |stage: &str| {
+            stage == call.name || (objects && stage == "extract.objects")
+        };
+        let failure = failures.iter().find(|failure| owns(&failure.stage));
+        let (kind, why) = if let Some(failure) = failure {
+            (
+                QualityWarningKind::CallFailed,
+                format!("failed ({})", failure.error),
+            )
+        } else if skipped.iter().any(|stage| owns(stage)) {
+            (
+                QualityWarningKind::CallSkipped,
+                "was not run because the paper budget was spent".to_owned(),
+            )
+        } else {
+            continue;
+        };
+        for field in &call.fields {
+            warnings.push(QualityWarning {
+                kind,
+                field: field.clone(),
+                message: format!(
+                    "The `{}` model call {why}, so `{field}` is missing or incomplete.",
+                    call.name
+                ),
+            });
+        }
+    }
+    warnings
+}
+
+/// A warning when settling the context moved claims to the background class.
+fn context_warning(counts: &ContextCounts) -> Option<QualityWarning> {
+    let downgraded = counts.downgraded_quote_not_found + counts.downgraded_unknown_work;
+    (downgraded > 0).then(|| QualityWarning {
+        kind: QualityWarningKind::ContextClaimsDowngraded,
+        field: context::FIELD.to_owned(),
+        message: format!(
+            "{downgraded} context claim(s) are shown as unverified background: {} quoted the paper but no quote was found, {} cited a work not in the dossier.",
+            counts.downgraded_quote_not_found, counts.downgraded_unknown_work
+        ),
+    })
 }
 
 /// Write one JSON line per call's reasoning beside the result, for later reading.
@@ -794,45 +1051,96 @@ struct SelfCheck {
     corrections: Vec<Correction>,
     outcomes: Vec<CorrectionOutcome>,
     counts: Option<CheckCounts>,
+    status: StageStatus,
 }
+
+/// What the self-check reads and which model answers it.
+struct CheckView<'a> {
+    text: &'a [ContentPart],
+    source: &'a SourceText<'a>,
+    hide_objects: bool,
+    schema: &'a Value,
+    model: &'a str,
+}
+
+/// The stage name of the self-check call.
+const CHECK_STAGE: &str = "extract.pass2";
 
 /// Pass 2: the model may only correct or flag the draft.
 async fn self_check(
     draft: &mut Value,
-    text: &[ContentPart],
-    source: &SourceText<'_>,
+    check_view: &CheckView<'_>,
     session: &Session<'_>,
-    hide_objects: bool,
-    schema: &Value,
 ) -> Result<SelfCheck> {
+    let CheckView {
+        text,
+        source,
+        hide_objects,
+        schema,
+        model,
+    } = *check_view;
     // Objects are verified against the page images elsewhere; the text-only
     // self-check spends nothing on them.
     let mut view = draft.clone();
-    if hide_objects && let Some(fields) = view.as_object_mut() {
-        fields.remove("objects");
+    if let Some(fields) = view.as_object_mut() {
+        if hide_objects {
+            fields.remove("objects");
+        }
+        // The context is judgment, not extraction, and is checked against
+        // the dossier and quote admission instead.
+        fields.remove(context::FIELD);
     }
-    let parts = vec![
+    // The paper comes first, after the same preamble the plan calls use, so
+    // a provider's prefix cache can serve the paper bytes; the draft, which
+    // differs on every run, comes last.
+    let mut parts = vec![ContentPart::Text(FIELDS_PROMPT.to_owned())];
+    parts.extend(text.iter().cloned());
+    parts.extend([
         ContentPart::Text(CHECK_PROMPT.to_owned()),
+        ContentPart::Text(EXTRACTION_RULES.to_owned()),
         ContentPart::Text(format!(
             "Draft:\n```json\n{}\n```",
             serde_json::to_string(&view)?
         )),
-        ContentPart::Text("Paper:".to_owned()),
-    ];
-    let mut parts = parts;
-    parts.extend(text.iter().cloned());
+    ]);
     let Some(response) = session
-        .call::<CheckResponse>("extract.pass2", &parts, CHECK_SCHEMA, CHECK_MAX_TOKENS)
+        .call_with::<CheckResponse>(
+            CHECK_STAGE,
+            None,
+            &parts,
+            CHECK_SCHEMA,
+            CHECK_MAX_TOKENS,
+            model,
+            session.reasoning,
+        )
         .await
     else {
-        return Ok(SelfCheck::default());
+        let status = if session.was_skipped(CHECK_STAGE) {
+            StageStatus::SkippedBudget
+        } else {
+            StageStatus::Failed
+        };
+        return Ok(SelfCheck {
+            status,
+            ..SelfCheck::default()
+        });
     };
-    let outcomes =
-        corrections::apply_with_schema(draft, &response.corrections, source, Some(schema));
+    // The outline and the grouping are settled deterministically; patches to
+    // them are recorded as flags.
+    let mut guarded = structure::guard_corrections(&response.corrections, draft);
+    for correction in &mut guarded {
+        let path = correction.path.as_str();
+        if path == "/context" || path.starts_with("/context/") {
+            correction.action = corrections::Action::Flag;
+            correction.value_json = None;
+        }
+    }
+    let outcomes = corrections::apply_with_schema(draft, &guarded, source, Some(schema));
     Ok(SelfCheck {
-        corrections: response.corrections,
+        corrections: guarded,
         outcomes,
         counts: Some(check(source, draft)),
+        status: StageStatus::Ran,
     })
 }
 
@@ -881,6 +1189,7 @@ fn unit_schema(name: &str) -> Option<&'static str> {
         "abstract" => ABSTRACT_SCHEMA,
         "card" => CARD_SCHEMA,
         "question" => QUESTION_SCHEMA,
+        "outline" => OUTLINE_SCHEMA,
         "sections" => SECTIONS_SCHEMA,
         "references" => REFERENCES_SCHEMA,
         "citations" => CITATIONS_SCHEMA,
@@ -889,11 +1198,20 @@ fn unit_schema(name: &str) -> Option<&'static str> {
         "supercut" => SUPERCUT_SCHEMA,
         "analysis" => ANALYSIS_SCHEMA,
         "glossary" => GLOSSARY_SCHEMA,
+        "context" => CONTEXT_SCHEMA,
         _ => return None,
     })
 }
 
-fn unit_instruction(name: &str, page_count: usize) -> String {
+/// How the logical units are asked for: as ranges of a usable outline, or
+/// as page spans when the paper has no usable outline.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum SectionsMode {
+    Outline,
+    Pages,
+}
+
+fn unit_instruction(name: &str, main_pages: usize, mode: SectionsMode) -> String {
     let instruction = CORE_FIELDS
         .iter()
         .find(|field| field.name == name)
@@ -907,15 +1225,19 @@ fn unit_instruction(name: &str, page_count: usize) -> String {
                 "supercut" => "Return the `supercut` field: the argument as ordered source and connector segments.",
                 "analysis" => "Return the `analysis` fields: claims, method, key numbers, limitations, open questions, headline results, and the read signal.",
                 "glossary" => "Return the `notation` and `glossary` fields.",
+                "context" => CONTEXT_PROMPT,
                 _ => "",
             },
             |field| field.instruction,
         );
-    instruction.replace("{{sections}}", &sections_guidance(page_count))
+    instruction
+        .replace("{{sections}}", &sections_guidance(main_pages, mode))
+        .replace("{{outline}}", OUTLINE_PROMPT)
 }
 
-/// The union schema for the fields one call asks for.
-fn call_schema(call: &super::config::Call) -> Value {
+/// The union schema for the fields one call asks for. Logical units drawn
+/// from an outline are asked for as ranges only.
+fn call_schema(call: &super::config::Call, mode: SectionsMode) -> Value {
     let mut schema = serde_json::json!({
         "type": "object",
         "additionalProperties": false,
@@ -923,7 +1245,11 @@ fn call_schema(call: &super::config::Call) -> Value {
         "properties": {}
     });
     for field in &call.fields {
-        if let Some(text) = unit_schema(field) {
+        let text = match (field.as_str(), mode) {
+            ("sections", SectionsMode::Outline) => Some(SECTIONS_GROUPED_SCHEMA),
+            _ => unit_schema(field),
+        };
+        if let Some(text) = text {
             merge_properties(&mut schema, text);
         }
     }
@@ -948,18 +1274,92 @@ fn plan_schema(plan: &RunConfig) -> Value {
     schema
 }
 
-/// Run the configured calls in dependency order, independent calls together.
+/// Every field a plan asks for.
+fn plan_fields(plan: &RunConfig) -> BTreeSet<String> {
+    plan.calls
+        .iter()
+        .flat_map(|call| call.fields.iter().cloned())
+        .collect()
+}
+
+/// Every text that shapes what the model is asked, in a stable order, for
+/// the pipeline version: prompts, per-field instructions and schemas, the
+/// calls, and the verification settings.
+fn pipeline_texts(plan: &RunConfig, reasoning: ReasoningEffort) -> Vec<String> {
+    let mut texts = vec![
+        FIELDS_PROMPT.to_owned(),
+        sections_guidance(1, SectionsMode::Outline),
+        sections_guidance(1, SectionsMode::Pages),
+        EXTRACTION_RULES.to_owned(),
+        OUTLINE_PROMPT.to_owned(),
+        SECTIONS_GROUPED_SCHEMA.to_owned(),
+        title_hint("{title}"),
+        format!("{:?}", plan.input),
+        format!("{:?}", plan.models),
+        format!("{:?}", plan.verify),
+        reasoning.label().to_owned(),
+    ];
+    for call in &plan.calls {
+        texts.push(format!("{call:?}"));
+        if !object_kinds(call).is_empty() {
+            texts.push(OBJECTS_PROMPT.to_owned());
+        }
+        for field in &call.fields {
+            texts.push(unit_instruction(field, 1, SectionsMode::Pages));
+            texts.push(unit_schema(field).unwrap_or_default().to_owned());
+        }
+    }
+    if plan.verify.self_check == SelfCheckMode::Full {
+        texts.extend([CHECK_PROMPT.to_owned(), CHECK_SCHEMA.to_owned()]);
+    }
+    if plan.verify.repair == RepairMode::Model {
+        texts.extend([REPAIR_PROMPT.to_owned(), REPAIR_SCHEMA.to_owned()]);
+    }
+    texts
+}
+
+/// What running a plan produced.
+struct PlanRun {
+    draft: Option<Value>,
+    chunks: Vec<ChunkRecord>,
+    merge: Option<MergeStats>,
+    retries: Vec<PlausibilityRetry>,
+    /// What settling the outline and the grouping repaired.
+    warnings: Vec<QualityWarning>,
+    /// What admitting the kept outline answer dropped.
+    outline_admission: Option<OutlineAdmission>,
+}
+
+/// Run the plan from an empty draft.
+#[cfg(test)]
 async fn run_plan(
     session: &Session<'_>,
     resources: &PageResources,
     plan: &RunConfig,
     object_pages: usize,
-) -> (Option<Value>, Vec<ChunkRecord>, Option<MergeStats>) {
+) -> PlanRun {
+    run_plan_from(session, resources, plan, object_pages, None).await
+}
+
+/// Run the configured calls in dependency order, independent calls together,
+/// over a draft that starts with the fields of `seed`. A call whose answer
+/// fails a degenerate-answer gate is asked once more, told what looked wrong,
+/// and the better answer is kept.
+async fn run_plan_from(
+    session: &Session<'_>,
+    resources: &PageResources,
+    plan: &RunConfig,
+    object_pages: usize,
+    seed: Option<&Value>,
+) -> PlanRun {
     let dependencies = plan.dependencies();
     let mut completed = BTreeSet::new();
-    let mut draft = serde_json::Map::new();
+    let mut draft = seed.and_then(Value::as_object).cloned().unwrap_or_default();
     let mut chunks = Vec::new();
     let mut merge = None;
+    let mut retries = Vec::new();
+    let mut warnings = Vec::new();
+    let mut outline_admission = None;
     while completed.len() < plan.calls.len() {
         let ready: Vec<&Call> = plan
             .calls
@@ -977,11 +1377,28 @@ async fn run_plan(
         for batch in ready.chunks(PLAN_CONCURRENCY) {
             let results = futures_util::future::join_all(batch.iter().map(|call| {
                 let draft = draft.clone();
-                plan_call(session, resources, plan, call, object_pages, draft)
+                plan_call(session, resources, plan, call, object_pages, draft, None)
             }))
             .await;
-            for result in results {
+            for (call, mut result) in batch.iter().zip(results) {
+                let retry = retry_if_degenerate(
+                    session,
+                    resources,
+                    plan,
+                    call,
+                    object_pages,
+                    &draft,
+                    &mut result,
+                )
+                .await;
+                if let Some(retry) = retry {
+                    retries.push(retry);
+                }
                 completed.insert(result.name);
+                warnings.extend(result.warnings);
+                if result.outline.is_some() {
+                    outline_admission = result.outline;
+                }
                 if let Some(value) = result.value {
                     merge_fields(&mut draft, &value);
                 }
@@ -993,7 +1410,78 @@ async fn run_plan(
         }
     }
     let draft = (!draft.is_empty()).then_some(Value::Object(draft));
-    (draft, chunks, merge)
+    PlanRun {
+        draft,
+        chunks,
+        merge,
+        retries,
+        warnings,
+        outline_admission,
+    }
+}
+
+/// Ask `call` once more when its answer fails a degenerate-answer gate, and
+/// keep the retry only when it fails fewer gates. A failed retry is not a
+/// run failure: the first answer stands.
+async fn retry_if_degenerate(
+    session: &Session<'_>,
+    resources: &PageResources,
+    plan: &RunConfig,
+    call: &Call,
+    object_pages: usize,
+    draft: &serde_json::Map<String, Value>,
+    result: &mut PlanCallResult,
+) -> Option<PlausibilityRetry> {
+    let fields = call.fields.iter().cloned().collect::<BTreeSet<_>>();
+    let pages = &resources.paper.pages;
+    let warnings = plausibility::degenerate(result.value.as_ref()?, &fields, pages);
+    if warnings.is_empty() {
+        return None;
+    }
+    let note = retry_note(&warnings);
+    let retry = plan_call(
+        session,
+        resources,
+        plan,
+        call,
+        object_pages,
+        draft.clone(),
+        Some(&note),
+    )
+    .await;
+    session.recover(&retry_stage(call));
+    let kept_retry = retry.value.as_ref().is_some_and(|value| {
+        plausibility::degenerate(value, &fields, pages).len() < warnings.len()
+    });
+    if kept_retry {
+        result.value = retry.value;
+        result.warnings = retry.warnings;
+        result.outline = retry.outline;
+    }
+    Some(PlausibilityRetry {
+        call: call.name.clone(),
+        warnings,
+        kept_retry,
+    })
+}
+
+/// The stage, and failure tag, of a call's plausibility retry.
+fn retry_stage(call: &Call) -> String {
+    format!("{}.retry", call.name)
+}
+
+/// What a retried call is told about its first answer.
+fn retry_note(warnings: &[QualityWarning]) -> String {
+    let problems = warnings
+        .iter()
+        .map(|warning| format!("- {}", warning.message))
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!(
+        "An earlier answer to this same request was checked against the page text and looked incomplete:\n{problems}\n\
+         Answer the whole request again from the paper. These checks are rough, so if the paper really is shaped this way, say so through your answer rather than inventing structure; \
+         but usually it means part of the paper was skipped."
+    )
 }
 
 /// One plan call's merged fragment and bookkeeping.
@@ -1002,6 +1490,10 @@ struct PlanCallResult {
     value: Option<Value>,
     chunks: Vec<ChunkRecord>,
     merge: Option<MergeStats>,
+    /// What settling this answer's outline or grouping repaired.
+    warnings: Vec<QualityWarning>,
+    /// What admitting this answer's outline dropped, when it had one.
+    outline: Option<OutlineAdmission>,
 }
 
 impl PlanCallResult {
@@ -1011,6 +1503,8 @@ impl PlanCallResult {
             value: None,
             chunks: Vec::new(),
             merge: None,
+            warnings: Vec::new(),
+            outline: None,
         }
     }
 }
@@ -1041,6 +1535,7 @@ async fn plan_call(
     call: &Call,
     object_pages: usize,
     draft: serde_json::Map<String, Value>,
+    retry_note: Option<&str>,
 ) -> PlanCallResult {
     let kinds = object_kinds(call);
     if !kinds.is_empty() {
@@ -1058,16 +1553,36 @@ async fn plan_call(
             value: Some(serde_json::json!({"objects": inventory})),
             chunks,
             merge: Some(merge),
+            warnings: Vec::new(),
+            outline: None,
         };
     }
-    let schema = call_schema(call);
+    let pages = &resources.paper.pages;
+    // Logical units are grouped from the outline when an earlier call left
+    // a usable one in the draft.
+    let grouping_outline = call
+        .fields
+        .iter()
+        .any(|field| field == "sections")
+        .then(|| structure::usable_outline(draft.get("outline"), pages))
+        .flatten();
+    let mode = if grouping_outline.is_some() {
+        SectionsMode::Outline
+    } else {
+        SectionsMode::Pages
+    };
+    let schema = call_schema(call, mode);
     let Ok(schema) = serde_json::to_string(&schema) else {
         return PlanCallResult::failed(&call.name);
     };
+    let main_pages = grouping_outline.as_ref().map_or_else(
+        || plausibility::main_text_pages(pages),
+        |entries| outline::body_pages(entries, pages.len()),
+    );
     let instruction = call
         .fields
         .iter()
-        .map(|field| unit_instruction(field, resources.paper.pages.len()))
+        .map(|field| unit_instruction(field, main_pages, mode))
         .collect::<Vec<_>>()
         .join("\n");
     let mut parts = vec![ContentPart::Text(FIELDS_PROMPT.to_owned())];
@@ -1081,9 +1596,7 @@ async fn plan_call(
     if call.fields.iter().any(|field| field == "identity")
         && let Some(title) = likely_title(resources)
     {
-        parts.push(ContentPart::Text(format!(
-            "Authoritative title from the largest heading on page 1: {title}. Return this exact string as `identity.title`; never use a cite-as or accepted-for-publication title."
-        )));
+        parts.push(ContentPart::Text(title_hint(&title)));
     }
     if call.include_draft
         && let Some(current) = draft_subset(&draft, &call.fields)
@@ -1092,14 +1605,40 @@ async fn plan_call(
             "The current draft for these fields is:\n{current}\nMerge and adjust this draft to the target range; do not start over."
         )));
     }
-    drop(draft);
+    if call.fields.iter().any(|field| field == "outline") {
+        let candidates = outline::candidates(pages, &resources.paper.layout);
+        parts.push(ContentPart::Text(outline::render_candidates(&candidates)));
+    }
+    if let Some(entries) = &grouping_outline {
+        parts.push(ContentPart::Text(outline::render_outline(entries)));
+    }
+    let judgment = call.fields.iter().all(|field| field == context::FIELD);
+    if call.fields.iter().any(|field| field == context::FIELD) {
+        parts.push(ContentPart::Text(context::dates(
+            &draft,
+            &session.dossier,
+            resources.paper.metadata.year,
+            Utc::now().date_naive(),
+        )));
+        if let Some(brief) = context::core_brief(&draft) {
+            parts.push(ContentPart::Text(brief));
+        }
+        parts.push(ContentPart::Text(dossier::render(&session.dossier)));
+    }
+    if !judgment {
+        parts.push(ContentPart::Text(EXTRACTION_RULES.to_owned()));
+    }
     parts.push(ContentPart::Text(instruction));
+    if let Some(note) = retry_note {
+        parts.push(ContentPart::Text(note.to_owned()));
+    }
     let model = plan.model_for(call);
     let max_tokens = plan_max_tokens(call, resources.paper.pages.len());
-    let value = session
+    let stage = retry_note.map_or_else(|| call.name.clone(), |_| retry_stage(call));
+    let mut value = session
         .call_with::<Value>(
-            &call.name,
-            None,
+            &stage,
+            retry_note.map(|_| stage.as_str()),
             &parts,
             &schema,
             max_tokens,
@@ -1107,32 +1646,56 @@ async fn plan_call(
             call.effort.reasoning(),
         )
         .await;
+    let settled = value
+        .as_mut()
+        .map(|value| structure::settle_fragment(value, &draft, pages))
+        .unwrap_or_default();
     PlanCallResult {
         name: call.name.clone(),
         value,
         chunks: Vec::new(),
         merge: None,
+        warnings: settled.warnings,
+        outline: settled.outline,
     }
 }
 
-/// The reader's default pipeline: one combined core call plus any opted-in
+/// The reader's default pipeline: one combined core call, the outline call
+/// beside it, the logical-units call after the outline, and any opted-in
 /// features, over the raw page text the experiments used.
 #[must_use]
 pub fn default_pipeline(core_mode: CoreMode, features: Features) -> RunConfig {
+    let call = |name: &str, fields: Vec<String>, requires: Vec<String>| Call {
+        name: name.to_owned(),
+        fields,
+        effort: Effort::Low,
+        model: None,
+        max_tokens: None,
+        include_draft: false,
+        scope: None,
+        requires,
+    };
     let mut calls = match core_mode {
-        CoreMode::Combined => vec![Call {
-            name: "core".to_owned(),
-            fields: CORE_FIELDS
-                .iter()
-                .map(|field| field.name.to_owned())
-                .collect(),
-            effort: Effort::Low,
-            model: None,
-            max_tokens: None,
-            include_draft: false,
-            scope: None,
-            requires: Vec::new(),
-        }],
+        // One call for every field but the structure, and the outline call
+        // beside it; the logical units are grouped once the outline is in.
+        CoreMode::Combined => vec![
+            call(
+                "core",
+                CORE_FIELDS
+                    .iter()
+                    .map(|field| field.name)
+                    .filter(|name| !matches!(*name, "outline" | "sections"))
+                    .map(str::to_owned)
+                    .collect(),
+                Vec::new(),
+            ),
+            call("outline", vec!["outline".to_owned()], Vec::new()),
+            call(
+                "sections",
+                vec!["sections".to_owned()],
+                vec!["outline".to_owned()],
+            ),
+        ],
         CoreMode::Fanout => {
             let mut calls = Vec::new();
             let mut requires = Vec::new();
@@ -1180,10 +1743,64 @@ pub fn default_pipeline(core_mode: CoreMode, features: Features) -> RunConfig {
     if features.glossary {
         calls.push(feature("glossary", vec!["glossary".to_owned()]));
     }
+    if features.context {
+        calls.push(context_call(&calls));
+    }
     RunConfig {
         input: Input::default(),
         calls,
         verify: Verify::default(),
+        models: Models::default(),
+    }
+}
+
+/// The context node: judgment work, so it asks for the strong tier at high
+/// effort, and it waits only for the calls that write what it reads (the
+/// identity, thesis, position, relations and references), so it can run
+/// beside the logical units.
+fn context_call(calls: &[Call]) -> Call {
+    const READS: [&str; 6] = [
+        "identity",
+        "type",
+        "card",
+        "question",
+        "relations",
+        "references",
+    ];
+    Call {
+        name: context::FIELD.to_owned(),
+        fields: vec![context::FIELD.to_owned()],
+        effort: Effort::High,
+        model: Some("strong".to_owned()),
+        max_tokens: Some(CONTEXT_MAX_TOKENS),
+        include_draft: false,
+        scope: None,
+        requires: calls
+            .iter()
+            .filter(|call| {
+                call.fields
+                    .iter()
+                    .any(|field| READS.contains(&field.as_str()))
+            })
+            .map(|call| call.name.clone())
+            .collect(),
+    }
+}
+
+/// The context node alone: what a context refresh runs.
+///
+/// It runs over a draft seeded with an earlier run's core fields. There is no
+/// self-check, because the context is judgment rather than extraction; its
+/// quotes are still admitted and repaired.
+#[must_use]
+pub fn context_pipeline() -> RunConfig {
+    RunConfig {
+        input: Input::default(),
+        calls: vec![context_call(&[])],
+        verify: Verify {
+            self_check: SelfCheckMode::None,
+            repair: RepairMode::Model,
+        },
         models: Models::default(),
     }
 }
@@ -1300,30 +1917,18 @@ fn merge_properties(base: &mut Value, extra: &str) {
     }
 }
 
-/// The sectioning policy plus a page-count budget, for `{{sections}}`.
-/// The largest text line on page 1, a deterministic title candidate.
+/// The deterministic title candidate from the first layout page.
 fn likely_title(resources: &PageResources) -> Option<String> {
-    let page = resources.paper.layout.pages.first()?;
-    let mut lines = std::collections::BTreeMap::<u32, (f32, Vec<&str>)>::new();
-    for token in &page.tokens {
-        let Some(rect) = token.rects.first() else {
-            continue;
-        };
-        let entry = lines.entry(token.line).or_insert((0.0, Vec::new()));
-        entry.0 = entry.0.max(rect.y_max - rect.y_min);
-        entry.1.push(&token.text);
-    }
-    lines
-        .into_values()
-        .filter_map(|(height, words)| {
-            let title = words.join(" ");
-            let lowered = title.to_lowercase();
-            (!lowered.contains("cite") && !lowered.contains("accepted for publication"))
-                .then_some((height, title))
-        })
-        .max_by(|left, right| left.0.total_cmp(&right.0))
-        .map(|(_, title)| title)
-        .filter(|title| !title.trim().is_empty())
+    title::likely_title(resources.paper.layout.pages.first()?)
+}
+
+/// How the title candidate is offered to the model: as a guess to check
+/// against the printed heading, never as the answer.
+fn title_hint(title: &str) -> String {
+    format!(
+        "Read the title from the title heading on page 1. For comparison, a layout heuristic picked this line as the largest text near the top: \"{title}\". \
+         It is often wrong (it can be a journal banner, an arXiv stamp, a running head or part of a long title), so use it only if it is the same text as the printed title heading."
+    )
 }
 
 /// The current draft values for the fields a call asks for.
@@ -1337,12 +1942,20 @@ fn draft_subset(draft: &serde_json::Map<String, Value>, fields: &[String]) -> Op
     (!subset.is_empty()).then_some(Value::Object(subset))
 }
 
-fn sections_guidance(page_count: usize) -> String {
-    let pages = page_count.max(1);
-    let lower = pages.div_ceil(4);
+/// The sectioning policy, how units are marked in this mode, and a rough
+/// unit count for calibration, for `{{sections}}`. The count is drawn from
+/// the main-text pages only, so a long bibliography or appendix does not
+/// push the model to cut the argument finer.
+fn sections_guidance(main_pages: usize, mode: SectionsMode) -> String {
+    let pages = main_pages.max(1);
+    let lower = pages.div_ceil(5);
     let upper = pages.div_ceil(2).max(lower);
+    let marking = match mode {
+        SectionsMode::Outline => SECTIONS_FROM_OUTLINE,
+        SectionsMode::Pages => SECTIONS_FROM_PAGES,
+    };
     format!(
-        "{SECTIONS_POLICY}\nThis PDF contains {pages} pages. A useful map is usually about {lower}\u{2013}{upper} substantive reading units, so each unit covers roughly 2\u{2013}3 pages of content. Prefer the smaller number: merge adjacent units that answer the same question before splitting a topic. References, appendices, and adjacent articles are not part of the main-text budget. This is a planning guide, not a quota or a reason to drop content."
+        "{SECTIONS_POLICY}\n{marking}\nThe paper's main text runs to about {pages} pages, before the references and appendices. For calibration only: papers of this length usually have somewhere between {lower} and {upper} main-text units. Do not merge or split to hit this number; the question each unit answers decides."
     )
 }
 
@@ -1517,7 +2130,7 @@ async fn admit(
     resources: &PageResources,
     session: &Session<'_>,
     repair_model: bool,
-) -> Vec<SiteOutcome> {
+) -> (Vec<SiteOutcome>, StageStatus) {
     let mut outcomes = Vec::new();
     let mut failing = Vec::<(usize, QuoteSite)>::new();
     for site in quote_sites(draft) {
@@ -1555,8 +2168,20 @@ async fn admit(
         }
         outcomes.push(outcome);
     }
-    if !failing.is_empty() && repair_model {
+    let repair_status = if !repair_model {
+        StageStatus::Disabled
+    } else if failing.is_empty() {
+        StageStatus::NotNeeded
+    } else {
         let repairs = request_repairs(&failing, &outcomes, resources, session).await;
+        let status = if repairs.is_some() {
+            StageStatus::Ran
+        } else if session.was_skipped(REPAIR_STAGE) {
+            StageStatus::SkippedBudget
+        } else {
+            StageStatus::Failed
+        };
+        let repairs = repairs.unwrap_or_default();
         for (index, site) in &failing {
             let outcome = &mut outcomes[*index];
             let repair = repairs.get(&format!("q{index}"));
@@ -1588,7 +2213,8 @@ async fn admit(
                 _ => {}
             }
         }
-    }
+        status
+    };
     let removals = failing
         .iter()
         .filter(|(index, _)| {
@@ -1600,15 +2226,18 @@ async fn admit(
         .map(|(_, site)| site.removal.clone())
         .collect::<Vec<_>>();
     apply_removals(draft, &removals);
-    outcomes
+    (outcomes, repair_status)
 }
+
+/// The stage name of the quote repair call.
+const REPAIR_STAGE: &str = "extract.repair";
 
 async fn request_repairs(
     failing: &[(usize, QuoteSite)],
     outcomes: &[SiteOutcome],
     resources: &PageResources,
     session: &Session<'_>,
-) -> BTreeMap<String, Repair> {
+) -> Option<BTreeMap<String, Repair>> {
     let items = failing
         .iter()
         .map(|(index, site)| {
@@ -1645,7 +2274,7 @@ async fn request_repairs(
             }),
     );
     session
-        .call::<RepairResponse>("extract.repair", &parts, REPAIR_SCHEMA, REPAIR_MAX_TOKENS)
+        .call::<RepairResponse>(REPAIR_STAGE, &parts, REPAIR_SCHEMA, REPAIR_MAX_TOKENS)
         .await
         .map(|response| {
             response
@@ -1654,7 +2283,6 @@ async fn request_repairs(
                 .map(|repair| (repair.id.clone(), repair))
                 .collect()
         })
-        .unwrap_or_default()
 }
 
 fn set_quote(draft: &mut Value, site: &QuoteSite, quote: &str, page: u32) {
@@ -1736,7 +2364,8 @@ mod tests {
         let source = SourceText::new(&resources.paper.pages);
         let session = session(&ledger, 0.0);
         let mut value = draft();
-        let outcomes = admit(&mut value, &source, &resources, &session, true).await;
+        let (outcomes, repair) = admit(&mut value, &source, &resources, &session, true).await;
+        assert_eq!(repair, StageStatus::SkippedBudget);
         let statuses = outcomes
             .iter()
             .map(|outcome| (outcome.pointer.as_str(), outcome.status))
@@ -1775,8 +2404,9 @@ mod tests {
         let session = session(&ledger, 1.0);
         let mut value =
             json!({"objects": [{"caption": "Table 1: Accuracy after pruning.", "page": 2}]});
-        let outcomes = admit(&mut value, &source, &resources, &session, true).await;
+        let (outcomes, repair) = admit(&mut value, &source, &resources, &session, true).await;
         assert_eq!(outcomes.len(), 1);
+        assert_eq!(repair, StageStatus::NotNeeded);
         assert!(session.state().calls.is_empty() && session.state().failures.is_empty());
         assert!(session.state().budget_stopped.is_none());
     }
@@ -1937,6 +2567,12 @@ mod tests {
     fn should_scope_the_abstract_call_in_a_fanout_pipeline() {
         let plan = default_pipeline(CoreMode::Fanout, Features::default());
         assert_eq!(plan.calls.len(), CORE_FIELDS.len());
+        let sections = plan
+            .calls
+            .iter()
+            .find(|call| call.name == "sections")
+            .expect("sections");
+        assert_eq!(sections.requires, vec!["outline"]);
         let abstract_call = plan
             .calls
             .iter()
@@ -1960,6 +2596,7 @@ mod tests {
                 "abstract",
                 "card",
                 "question",
+                "outline",
                 "sections",
                 "references",
                 "citations",
@@ -1986,11 +2623,79 @@ mod tests {
     }
 
     #[test]
-    fn should_state_a_page_budget_in_the_section_guidance() {
-        let guidance = sections_guidance(8);
-        assert!(guidance.contains("This PDF contains 8 pages"));
-        assert!(guidance.contains("2\u{2013}4 substantive reading units"));
-        assert!(guidance.starts_with(SECTIONS_POLICY));
+    fn should_offer_the_title_candidate_as_a_hint_that_may_be_wrong() {
+        let hint = title_hint("Attention Is All You Need");
+        assert!(hint.contains("\"Attention Is All You Need\""));
+        assert!(hint.starts_with("Read the title from the title heading on page 1"));
+        assert!(hint.contains("It is often wrong"));
+        assert!(!hint.contains("usually right"), "the hint must not prime the guess");
+        assert!(!hint.to_lowercase().contains("authoritative"));
+    }
+
+    #[test]
+    fn should_give_a_unit_count_for_calibration_only_from_the_main_text() {
+        for mode in [SectionsMode::Outline, SectionsMode::Pages] {
+            let guidance = sections_guidance(10, mode);
+            assert!(guidance.contains("about 10 pages, before the references"));
+            assert!(guidance.contains("between 2 and 5 main-text units"));
+            assert!(guidance.contains("Do not merge or split to hit this number"));
+            assert!(!guidance.contains("Prefer the smaller number"));
+            assert!(guidance.starts_with(SECTIONS_POLICY));
+        }
+        assert!(sections_guidance(8, SectionsMode::Outline).contains(SECTIONS_FROM_OUTLINE));
+        assert!(sections_guidance(8, SectionsMode::Pages).contains(SECTIONS_FROM_PAGES));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_put_the_paper_before_the_draft_in_the_self_check() {
+        use std::os::unix::fs::PermissionsExt;
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let script = directory.path().join("stub-codex");
+        std::fs::write(
+            &script,
+            format!(
+                r#"#!/bin/sh
+cat > "{prompt}"
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--output-last-message" ]; then shift; output="$1"; fi
+  shift
+done
+printf '%s' '{{"corrections":[]}}' > "$output"
+"#,
+                prompt = directory.path().join("prompt.txt").display(),
+            ),
+        )
+        .expect("stub script");
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700))
+            .expect("executable");
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let session = checkpointed_session(&cli, directory.path());
+        let resources = resources();
+        let text = text_parts(&resources);
+        let source = SourceText::new(&resources.paper.pages);
+        let schema = json!({});
+        let view = CheckView {
+            text: &text,
+            source: &source,
+            hide_objects: false,
+            schema: &schema,
+            model: "m",
+        };
+        let mut current = draft();
+        let checked = self_check(&mut current, &view, &session)
+            .await
+            .expect("self-check");
+        assert_eq!(checked.status, StageStatus::Ran);
+        let prompt = std::fs::read_to_string(directory.path().join("prompt.txt")).expect("prompt");
+        let preamble = prompt.find(FIELDS_PROMPT.trim()).expect("preamble");
+        let paper = prompt.find("<<page 1>>").expect("paper");
+        let task = prompt.find("You are checking a draft record").expect("task");
+        let draft = prompt.find("Draft:").expect("draft");
+        assert!(
+            preamble < paper && paper < task && task < draft,
+            "the shared prefix (preamble, paper) comes first and the draft last"
+        );
     }
 
     #[test]
@@ -2001,6 +2706,7 @@ mod tests {
             "abstract",
             "card",
             "question",
+            "outline",
             "sections",
             "references",
             "citations",
@@ -2067,7 +2773,7 @@ mod tests {
             scope: None,
             requires: Vec::new(),
         };
-        let schema = call_schema(&call);
+        let schema = call_schema(&call, SectionsMode::Pages);
         assert!(schema["properties"].get("references").is_some());
         assert!(schema["properties"].get("citations").is_some());
         assert!(schema["properties"].get("sections").is_none());
@@ -2123,6 +2829,7 @@ mod tests {
             let options = ExtractOptions {
                 pdf: directory.path().join("missing.pdf"),
                 model: openrouter::DEFAULT_MODEL.to_owned(),
+                judgment_model: None,
                 passes,
                 dpi: resources::DEFAULT_DPI,
                 work_directory: directory.path().join("work"),
@@ -2137,6 +2844,8 @@ mod tests {
                 plan: None,
                 progress: None,
                 checkpoints: None,
+                dossier: Dossier::default(),
+                seed: None,
             };
             assert!(matches!(
                 extract(&options, &ledger).await,
@@ -2188,7 +2897,7 @@ esac
             ]}"#,
         )
         .expect("plan");
-        let (draft, _, _) = run_plan(&session, &resources(), &plan, 6).await;
+        let PlanRun { draft, .. } = run_plan(&session, &resources(), &plan, 6).await;
         let draft = draft.expect("merged draft");
         assert!(draft.get("supercut").is_some_and(Value::is_array));
         assert!(draft.get("glossary").is_some_and(Value::is_array));
@@ -2228,10 +2937,7 @@ printf '%s' '{answer}' > "$output"
     }
 
     #[cfg(unix)]
-    fn checkpointed_session<'a>(
-        cli: &'a LocalCliAnalyzer,
-        directory: &Path,
-    ) -> Session<'a> {
+    fn checkpointed_session<'a>(cli: &'a LocalCliAnalyzer, directory: &Path) -> Session<'a> {
         Session::new(
             Backend::Plan {
                 analyzer: cli,
@@ -2266,11 +2972,13 @@ printf '%s' '{answer}' > "$output"
         let plan = two_call_plan();
 
         let first = checkpointed_session(&cli, directory.path());
-        let (draft, _, _) = run_plan(&first, &resources(), &plan, 6).await;
+        let PlanRun { draft, .. } = run_plan(&first, &resources(), &plan, 6).await;
         assert_eq!(invocations(&log), 2);
 
         let second = checkpointed_session(&cli, directory.path());
-        let (replayed, _, _) = run_plan(&second, &resources(), &plan, 6).await;
+        let PlanRun {
+            draft: replayed, ..
+        } = run_plan(&second, &resources(), &plan, 6).await;
         assert_eq!(invocations(&log), 2, "the retry should not call the model");
         assert_eq!(replayed, draft);
         let state = second.into_state();
@@ -2290,8 +2998,8 @@ printf '%s' '{answer}' > "$output"
         let directory = tempfile::tempdir().expect("temporary directory");
         let (script, log) = counting_stub(directory.path(), r#"{"supercut":[]}"#);
         let cli = LocalCliAnalyzer::with_commands(&script, &script);
-        let plan = RunConfig::parse(r#"{"calls":[{"name":"cut","fields":["supercut"]}]}"#)
-            .expect("plan");
+        let plan =
+            RunConfig::parse(r#"{"calls":[{"name":"cut","fields":["supercut"]}]}"#).expect("plan");
 
         let session = checkpointed_session(&cli, directory.path());
         run_plan(&session, &resources(), &plan, 6).await;
@@ -2310,11 +3018,11 @@ printf '%s' '{answer}' > "$output"
         let directory = tempfile::tempdir().expect("temporary directory");
         let (script, log) = counting_stub(directory.path(), "not json");
         let cli = LocalCliAnalyzer::with_commands(&script, &script);
-        let plan = RunConfig::parse(r#"{"calls":[{"name":"cut","fields":["supercut"]}]}"#)
-            .expect("plan");
+        let plan =
+            RunConfig::parse(r#"{"calls":[{"name":"cut","fields":["supercut"]}]}"#).expect("plan");
 
         let session = checkpointed_session(&cli, directory.path());
-        let (draft, _, _) = run_plan(&session, &resources(), &plan, 6).await;
+        let PlanRun { draft, .. } = run_plan(&session, &resources(), &plan, 6).await;
         assert!(draft.is_none());
         let failed = invocations(&log);
 
@@ -2329,8 +3037,8 @@ printf '%s' '{answer}' > "$output"
         let directory = tempfile::tempdir().expect("temporary directory");
         let (script, log) = counting_stub(directory.path(), r#"{"supercut":[]}"#);
         let cli = LocalCliAnalyzer::with_commands(&script, &script);
-        let plan = RunConfig::parse(r#"{"calls":[{"name":"cut","fields":["supercut"]}]}"#)
-            .expect("plan");
+        let plan =
+            RunConfig::parse(r#"{"calls":[{"name":"cut","fields":["supercut"]}]}"#).expect("plan");
         for _ in 0..2 {
             let session = checkpointed_session(&cli, directory.path()).with_checkpoints(None);
             run_plan(&session, &resources(), &plan, 6).await;
@@ -2339,22 +3047,856 @@ printf '%s' '{answer}' > "$output"
         assert!(!directory.path().join("checkpoints").exists());
     }
 
+    /// A stub plan harness for the whole pipeline: the self-check finds
+    /// nothing, the fixture prints no headings so the outline is empty, a
+    /// plausibility retry gets a full section map, and the first sections
+    /// answer maps only page 1 of the two-page fixture.
+    #[cfg(unix)]
+    fn pipeline_stub(directory: &Path) -> PathBuf {
+        use std::os::unix::fs::PermissionsExt;
+        let script = directory.join("stub-codex");
+        let identity = r#""identity":{"title":"Paragraph Continuation","authors":[{"name":"A. Author","affiliation":null}]},"abstract":{"text":null,"page":null},"references":[]"#;
+        std::fs::write(
+            &script,
+            format!(
+                r#"#!/bin/sh
+prompt=$(cat)
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--output-last-message" ]; then shift; output="$1"; fi
+  shift
+done
+case "$prompt" in
+  *"You are checking a draft record"*) printf '%s' '{{"corrections":[]}}' > "$output" ;;
+  *"Heading candidates"*) printf '%s' '{{"outline":[]}}' > "$output" ;;
+  *"looked incomplete"*) printf '%s' '{{"sections":[{{"title":"Setup","kind":"methods","pages":{{"start":1,"end":1}}}},{{"title":"Comparison","kind":"results","pages":{{"start":2,"end":2}}}}]}}' > "$output" ;;
+  *"logical reading units"*) printf '%s' '{{"sections":[{{"title":"Front matter","kind":"other","pages":{{"start":1,"end":1}}}}]}}' > "$output" ;;
+  *) printf '%s' '{{{identity}}}' > "$output" ;;
+esac
+"#
+            ),
+        )
+        .expect("stub script");
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700))
+            .expect("executable");
+        script
+    }
+
+    #[cfg(unix)]
+    fn pipeline_options(directory: &Path, passes: u8, budget: f64) -> ExtractOptions {
+        ExtractOptions {
+            pdf: Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("tests/fixtures/paragraph-continuation.pdf"),
+            model: openrouter::DEFAULT_MODEL.to_owned(),
+            judgment_model: None,
+            passes,
+            dpi: 40,
+            work_directory: directory.join("work"),
+            output: directory.join("record.json"),
+            paper_budget_usd: budget,
+            timeout: Duration::from_secs(30),
+            features: Features::default(),
+            object_pages: 6,
+            reasoning: ReasoningEffort::Low,
+            core_mode: CoreMode::Combined,
+            providers: vec!["deepinfra".to_owned()],
+            plan: None,
+            progress: None,
+            checkpoints: Some(directory.join("checkpoints")),
+            dossier: Dossier::default(),
+            seed: None,
+        }
+    }
+
+    #[cfg(unix)]
+    fn plan_backend<'a>(cli: &'a LocalCliAnalyzer, directory: &Path) -> Backend<'a> {
+        Backend::Plan {
+            analyzer: cli,
+            provider: AnalysisProvider::Codex,
+            directory: directory.to_path_buf(),
+        }
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_retry_a_degenerate_section_map_and_keep_the_better_answer() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let script = pipeline_stub(directory.path());
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let options = pipeline_options(directory.path(), 2, 1.0);
+        let record = extract_with(&options, plan_backend(&cli, directory.path()))
+            .await
+            .expect("record");
+        assert_eq!(record.record_version, RECORD_VERSION);
+        assert_eq!(record.plausibility_retries.len(), 1);
+        let retry = &record.plausibility_retries[0];
+        assert_eq!(retry.call, "sections");
+        assert!(retry.kept_retry);
+        assert_eq!(
+            retry.warnings[0].kind,
+            crate::domain::QualityWarningKind::SectionsLowCoverage
+        );
+        let artifacts = record.artifacts.as_ref().expect("artifacts");
+        assert_eq!(artifacts["sections"].as_array().map(Vec::len), Some(2));
+        assert_eq!(
+            artifacts["outline"],
+            json!([]),
+            "the fixture prints no headings"
+        );
+        assert!(artifacts["sections"][0]["outline_first"].is_null());
+        assert_eq!(record.verification.self_check, StageStatus::Ran);
+        assert_eq!(record.verification.admission, StageStatus::Ran);
+        assert!(record.warnings.is_empty(), "{:#?}", record.warnings);
+        assert!(record.succeeded() && !record.degraded());
+        assert!(
+            record.pipeline_version.starts_with("plan:Codex@deepinfra#"),
+            "{}",
+            record.pipeline_version
+        );
+        let saved: Value =
+            serde_json::from_slice(&std::fs::read(&options.output).expect("record file"))
+                .expect("record JSON");
+        assert_eq!(saved["pipeline_version"], record.pipeline_version.as_str());
+        assert_eq!(saved["verification"]["self_check"], "ran");
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_mark_a_record_degraded_when_the_budget_skips_the_self_check() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let script = pipeline_stub(directory.path());
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        // A single-pass run saves the core answers; the two-pass run replays
+        // them for free and then has no budget left for the self-check.
+        let first = pipeline_options(directory.path(), 1, 1.0);
+        let record = extract_with(&first, plan_backend(&cli, directory.path()))
+            .await
+            .expect("record");
+        assert_eq!(record.verification.self_check, StageStatus::Disabled);
+        assert!(record.succeeded());
+
+        let second = pipeline_options(directory.path(), 2, 0.0);
+        let record = extract_with(&second, plan_backend(&cli, directory.path()))
+            .await
+            .expect("record");
+        assert!(record.artifacts.is_some());
+        assert_eq!(record.verification.self_check, StageStatus::SkippedBudget);
+        assert!(record.failures.is_empty(), "a budget stop is not a failure");
+        assert!(record.degraded() && !record.succeeded());
+        assert!(
+            record.warnings.iter().any(|warning| warning.kind
+                == crate::domain::QualityWarningKind::VerificationSkipped
+                && warning.field == "self_check"),
+            "{:#?}",
+            record.warnings
+        );
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_report_a_self_check_that_returned_no_usable_answer_as_failed() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let (script, _) = counting_stub(directory.path(), "not json");
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let session = Session::new(
+            plan_backend(&cli, directory.path()),
+            openrouter::DEFAULT_MODEL,
+            1.0,
+            ReasoningEffort::Low,
+            Vec::new(),
+        );
+        let resources = resources();
+        let source = SourceText::new(&resources.paper.pages);
+        let text = text_parts(&resources);
+        let schema = json!({});
+        let view = CheckView {
+            text: &text,
+            source: &source,
+            hide_objects: false,
+            schema: &schema,
+            model: openrouter::DEFAULT_MODEL,
+        };
+        let mut draft = json!({});
+        let result = self_check(&mut draft, &view, &session)
+            .await
+            .expect("check");
+        assert_eq!(result.status, StageStatus::Failed);
+
+        let broke = Session::new(
+            plan_backend(&cli, directory.path()),
+            openrouter::DEFAULT_MODEL,
+            0.0,
+            ReasoningEffort::Low,
+            Vec::new(),
+        );
+        let result = self_check(&mut draft, &view, &broke).await.expect("check");
+        assert_eq!(result.status, StageStatus::SkippedBudget);
+    }
+
+    /// A four-page numbered paper: abstract, five numbered sections with one
+    /// subsection, and references.
+    fn numbered_resources() -> PageResources {
+        let texts = [
+            "Sparse Models Under Noise\nAbstract\nWe show that pruning preserves accuracy.\n1 Introduction\nPruning is an old idea with many uses today.",
+            "2 Method\nWe prune the smallest weights in each layer first.\n2.1 Schedules\nThe schedule removes weights gradually during training.",
+            "3 Experiments\nWe train on three standard benchmarks for vision.\n4 Results\nPruning half the weights costs one point of accuracy.",
+            "5 Conclusion\nPruning is cheap and it works well in practice.\nReferences\n[1] A. Author. A paper on pruning. Journal of Pruning, 2019.",
+        ];
+        let mut resources = resources();
+        resources.paper.pages = texts
+            .iter()
+            .enumerate()
+            .map(|(index, text)| ExtractedPage {
+                number: u32::try_from(index + 1).expect("page"),
+                text: (*text).to_owned(),
+            })
+            .collect();
+        resources
+    }
+
+    /// The model's outline for `numbered_resources`, out of order, with one
+    /// invented heading and a wrong page.
+    const NUMBERED_OUTLINE: &str = r#"{"outline":[
+        {"number":null,"title":"Abstract","level":1,"page":1,"role":"front_matter"},
+        {"number":"2","title":"Method","level":1,"page":2,"role":"main"},
+        {"number":"1","title":"Introduction","level":1,"page":1,"role":"main"},
+        {"number":"2.1","title":"Schedules","level":2,"page":2,"role":"main"},
+        {"number":"3","title":"Experiments","level":1,"page":2,"role":"main"},
+        {"number":"4","title":"Results","level":1,"page":3,"role":"main"},
+        {"number":"6","title":"Future Work","level":1,"page":4,"role":"main"},
+        {"number":"5","title":"Conclusion","level":1,"page":4,"role":"main"},
+        {"number":null,"title":"References","level":1,"page":4,"role":"references"}]}"#;
+
+    /// A stub that answers the outline call and the logical-units call, and
+    /// logs every prompt it is sent.
+    #[cfg(unix)]
+    fn structure_stub(directory: &Path, outline: &str, sections: &str) -> (PathBuf, PathBuf) {
+        use std::os::unix::fs::PermissionsExt;
+        let script = directory.join("stub-codex");
+        let log = directory.join("prompts.log");
+        let compact = |text: &str| text.split_whitespace().collect::<Vec<_>>().join(" ");
+        std::fs::write(
+            &script,
+            format!(
+                r#"#!/bin/sh
+prompt=$(cat)
+printf '%s\n=====\n' "$prompt" >> "{log}"
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--output-last-message" ]; then shift; output="$1"; fi
+  shift
+done
+case "$prompt" in
+  *"Heading candidates"*) printf '%s' '{outline}' > "$output" ;;
+  *"logical reading units"*) printf '%s' '{sections}' > "$output" ;;
+  *) printf '{{}}' > "$output" ;;
+esac
+"#,
+                log = log.display(),
+                outline = compact(outline),
+                sections = compact(sections),
+            ),
+        )
+        .expect("stub script");
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700))
+            .expect("executable");
+        (script, log)
+    }
+
+    #[cfg(unix)]
+    fn structure_plan() -> RunConfig {
+        RunConfig::parse(
+            r#"{"calls":[
+                {"name":"outline","fields":["outline"]},
+                {"name":"sections","fields":["sections"],"requires":["outline"]}
+            ]}"#,
+        )
+        .expect("plan")
+    }
+
+    #[cfg(unix)]
+    fn stub_session<'a>(cli: &'a LocalCliAnalyzer, directory: &Path) -> Session<'a> {
+        Session::new(
+            Backend::Plan {
+                analyzer: cli,
+                provider: AnalysisProvider::Codex,
+                directory: directory.to_path_buf(),
+            },
+            openrouter::DEFAULT_MODEL,
+            1.0,
+            ReasoningEffort::Low,
+            Vec::new(),
+        )
+    }
+
+    fn ranges(draft: &Value) -> Vec<(u64, u64)> {
+        draft["sections"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .map(|unit| {
+                (
+                    unit["outline_first"].as_u64().unwrap_or(99),
+                    unit["outline_last"].as_u64().unwrap_or(99),
+                )
+            })
+            .collect()
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_group_logical_units_from_the_admitted_outline_of_a_numbered_paper() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let sections = r#"{"sections":[
+            {"title":"Pruning keeps accuracy","kind":"background","family":"context","outline_first":1,"outline_last":1,
+             "summary":"Why pruning matters.","question":"Why prune?"},
+            {"title":"Gradual magnitude pruning","kind":"methods","family":"method","outline_first":2,"outline_last":3,
+             "summary":"Smallest weights go first, on a schedule.","question":"How are weights removed?"},
+            {"title":"Half the weights cost one point","kind":"results","family":"evidence","outline_first":4,"outline_last":6,
+             "summary":"Benchmarks show a one-point loss.","question":"What does pruning cost?"},
+            {"title":"References","kind":"references","family":"reference","outline_first":7,"outline_last":7,
+             "summary":"The bibliography.","question":"What is cited?"}]}"#;
+        let (script, log) = structure_stub(directory.path(), NUMBERED_OUTLINE, sections);
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let session = stub_session(&cli, directory.path());
+        let resources = numbered_resources();
+        let run = run_plan(&session, &resources, &structure_plan(), 6).await;
+        let draft = run.draft.expect("draft");
+
+        let anchors = draft["outline"]
+            .as_array()
+            .expect("outline")
+            .iter()
+            .map(|entry| entry["anchor"].as_str().unwrap_or_default().to_owned())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            anchors,
+            [
+                "Abstract",
+                "1 Introduction",
+                "2 Method",
+                "2.1 Schedules",
+                "3 Experiments",
+                "4 Results",
+                "5 Conclusion",
+                "References"
+            ],
+            "ordered, the invented heading dropped, the wrong page corrected"
+        );
+        assert_eq!(draft["outline"][4]["page"], 3);
+        assert_eq!(ranges(&draft), [(1, 1), (2, 3), (4, 6), (7, 7)]);
+        assert_eq!(draft["sections"][1]["pages"], json!({"start": 2, "end": 2}));
+        assert_eq!(draft["sections"][2]["pages"], json!({"start": 3, "end": 4}));
+        assert_eq!(
+            draft["sections"][2]["source_span"]["start_text"],
+            "3 Experiments"
+        );
+        let dropped = run
+            .warnings
+            .iter()
+            .map(|warning| (warning.kind, warning.message.contains("\"Future Work\"")))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            dropped,
+            [(QualityWarningKind::OutlineEntriesDropped, true)],
+            "the invented heading is reported, not dropped silently"
+        );
+        let admission = run.outline_admission.as_ref().expect("outline admission");
+        assert_eq!((admission.returned, admission.kept), (9, 8));
+        let fields = plan_fields(&structure_plan());
+        let warnings = plausibility::check(&draft, &fields, &resources.paper.pages);
+        assert!(warnings.is_empty(), "{warnings:#?}");
+
+        let prompts = std::fs::read_to_string(log).expect("log");
+        assert!(
+            prompts.contains("- page 1: \"1 Introduction\" [numbered]"),
+            "{prompts}"
+        );
+        assert!(prompts.contains("[1] page 1: 1 Introduction"));
+        assert!(prompts.contains("[3] page 2:   2.1 Schedules"));
+        assert!(prompts.contains(SECTIONS_FROM_OUTLINE.trim()));
+        assert!(!prompts.contains(SECTIONS_FROM_PAGES.trim()));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_keep_page_span_units_for_a_paper_without_headings() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let sections = r#"{"sections":[{"title":"Pruning keeps accuracy","kind":"results","family":"evidence",
+            "outline_first":null,"outline_last":null,"pages":{"start":1,"end":2},
+            "source_span":{"start_text":"We show that pruning preserves accuracy.","start_page":1,
+                           "end_text":"Pruning half the weights costs one point.","end_page":2},
+            "summary":"One point of accuracy for half the weights.","question":"Does pruning hurt?"}]}"#;
+        let (script, log) = structure_stub(directory.path(), r#"{"outline":[]}"#, sections);
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let session = stub_session(&cli, directory.path());
+        let resources = resources();
+        let run = run_plan(&session, &resources, &structure_plan(), 6).await;
+        let draft = run.draft.expect("draft");
+        assert_eq!(draft["outline"], json!([]));
+        assert_eq!(draft["sections"][0]["pages"], json!({"start": 1, "end": 2}));
+        assert!(draft["sections"][0]["outline_first"].is_null());
+        assert!(run.warnings.is_empty());
+        let fields = plan_fields(&structure_plan());
+        assert!(plausibility::check(&draft, &fields, &resources.paper.pages).is_empty());
+        let prompts = std::fs::read_to_string(log).expect("log");
+        assert!(prompts.contains("none were found"));
+        assert!(prompts.contains(SECTIONS_FROM_PAGES.trim()));
+        assert!(!prompts.contains(SECTIONS_FROM_OUTLINE.trim()));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_repair_a_grouping_with_a_gap_and_an_overlap() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        // Entry 3 (2.1 Schedules) is in both of the first two units, entry 6
+        // (5 Conclusion) is in none, and the references unit runs past the end.
+        let sections = r#"{"sections":[
+            {"title":"Results","kind":"results","family":"evidence","outline_first":3,"outline_last":5,
+             "summary":"s","question":"q"},
+            {"title":"Setup","kind":"methods","family":"method","outline_first":1,"outline_last":3,
+             "summary":"s","question":"q"},
+            {"title":"Bibliography","kind":"references","family":"reference","outline_first":7,"outline_last":12,
+             "summary":"s","question":"q"}]}"#;
+        let (script, _) = structure_stub(directory.path(), NUMBERED_OUTLINE, sections);
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let session = stub_session(&cli, directory.path());
+        let run = run_plan(&session, &numbered_resources(), &structure_plan(), 6).await;
+        let draft = run.draft.expect("draft");
+        assert_eq!(ranges(&draft), [(1, 3), (4, 6)]);
+        assert_eq!(draft["sections"][0]["title"], "Setup");
+        let repairs = run
+            .warnings
+            .iter()
+            .filter(|warning| warning.kind != QualityWarningKind::OutlineEntriesDropped)
+            .collect::<Vec<_>>();
+        assert_eq!(repairs.len(), 1);
+        let message = &repairs[0].message;
+        assert_eq!(
+            repairs[0].kind,
+            crate::domain::QualityWarningKind::SectionsGroupingRepaired
+        );
+        assert!(message.contains("Bibliography"), "{message}");
+        assert!(message.contains("Clipped \"Results\""), "{message}");
+        assert!(message.contains("\"5 Conclusion\""), "{message}");
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_record_self_check_patches_to_the_grouping_as_flags() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let evidence = r#"[{"quote":"We show that pruning preserves accuracy.","page":1}]"#;
+        let answer = format!(
+            r#"{{"corrections":[
+                {{"path":"/sections/0/pages","action":"replace","value_json":"{{\"start\":1,\"end\":1}}","reason":"r","evidence":{evidence}}},
+                {{"path":"/sections/0/title","action":"replace","value_json":"\"Pruning preserves accuracy\"","reason":"r","evidence":{evidence}}}
+            ]}}"#
+        )
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+        let (script, _) = counting_stub(directory.path(), &answer);
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let session = stub_session(&cli, directory.path());
+        let resources = resources();
+        let source = SourceText::new(&resources.paper.pages);
+        let text = text_parts(&resources);
+        let schema = plan_schema(&structure_plan());
+        let view = CheckView {
+            text: &text,
+            source: &source,
+            hide_objects: false,
+            schema: &schema,
+            model: openrouter::DEFAULT_MODEL,
+        };
+        let mut draft = json!({"outline": [], "sections": [{
+            "title": "Results", "kind": "results", "family": "evidence",
+            "outline_first": 0, "outline_last": 1, "pages": {"start": 1, "end": 2},
+            "source_span": {"start_text": "a", "start_page": 1, "end_text": "b", "end_page": 2},
+            "summary": "s", "question": "q"}]});
+        let result = self_check(&mut draft, &view, &session)
+            .await
+            .expect("check");
+        assert_eq!(result.status, StageStatus::Ran);
+        assert_eq!(result.corrections[0].action, corrections::Action::Flag);
+        assert_eq!(draft["sections"][0]["pages"], json!({"start": 1, "end": 2}));
+        assert_eq!(draft["sections"][0]["title"], "Pruning preserves accuracy");
+    }
+
+    /// The context node's stub answer: a verbatim paper claim, a paper claim
+    /// whose quote is not in the fixture, a dossier claim citing a known
+    /// record, a dossier claim citing an invented one, and a background claim.
+    const CONTEXT_ANSWER: &str = r#"{"context":{
+        "lead":[
+            {"text":"It compares a single-view estimator with a standard baseline.","basis":"paper",
+             "evidence":[{"quote":"We compare our single-view estimator to the","page":1}],"work_ids":[]},
+            {"text":"It claims optimality.","basis":"paper",
+             "evidence":[{"quote":"Our estimator is provably optimal for every camera ever built.","page":1}],"work_ids":[]}],
+        "before":[
+            {"text":"UmeTrack was the multi-view tracker to beat.","basis":"dossier","evidence":[],"work_ids":["wumetrack"]},
+            {"text":"An earlier tracker did the same.","basis":"dossier","evidence":[],"work_ids":["wnowhere"]}],
+        "contribution":[{"text":"One view turns out to be enough.","basis":"background","evidence":[],"work_ids":[]}],
+        "after":[],
+        "read_alongside":[{"work_id":"wumetrack","title":"umetrack","authors":null,"year":null,
+                           "relation":"predecessor","why":"The baseline it beats.","basis":"dossier"}],
+        "reception_note":"Too recent to say how it was received."}}"#;
+
+    /// A stub for the whole pipeline with the context node: every call has a
+    /// usable answer and every prompt is logged.
+    #[cfg(unix)]
+    fn context_stub(directory: &Path) -> (PathBuf, PathBuf) {
+        use std::os::unix::fs::PermissionsExt;
+        let script = directory.join("stub-codex");
+        let log = directory.join("prompts.log");
+        let compact = |text: &str| text.split_whitespace().collect::<Vec<_>>().join(" ");
+        let core = r#"{"identity":{"title":"Paragraph Continuation","authors":[{"name":"A. Author","affiliation":null}]},"card":{"thesis":{"text":"One view is enough to beat the baseline.","evidence":[],"confidence":"high"}},"abstract":{"text":null,"page":null},"references":[]}"#;
+        let sections = r#"{"sections":[{"title":"Setup","kind":"methods","pages":{"start":1,"end":1}},{"title":"Comparison","kind":"results","pages":{"start":2,"end":2}}]}"#;
+        let body = r#"#!/bin/sh
+prompt=$(cat)
+printf '%s\n=====\n' "$prompt" >> "LOG"
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--output-last-message" ]; then shift; output="$1"; fi
+  shift
+done
+case "$prompt" in
+  *"You are checking a draft record"*) printf '%s' '{"corrections":[]}' > "$output" ;;
+  *"Some quotes in a record"*) printf '%s' '{"repairs":[]}' > "$output" ;;
+  *"why this paper matters"*) printf '%s' 'CONTEXT' > "$output" ;;
+  *"Heading candidates"*) printf '%s' '{"outline":[]}' > "$output" ;;
+  *"logical reading units"*) printf '%s' 'SECTIONS' > "$output" ;;
+  *) printf '%s' 'CORE' > "$output" ;;
+esac
+"#
+        .replace("LOG", &log.display().to_string())
+        .replace("CONTEXT", &compact(CONTEXT_ANSWER))
+        .replace("SECTIONS", sections)
+        .replace("CORE", core);
+        std::fs::write(&script, body).expect("stub script");
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700))
+            .expect("executable");
+        (script, log)
+    }
+
+    fn umetrack_dossier() -> Dossier {
+        Dossier {
+            subject: None,
+            references: vec![dossier::DossierWork {
+                id: "wumetrack".to_owned(),
+                title: Some("UmeTrack: Unified multi-view hand tracking".to_owned()),
+                year: Some(2022),
+                cited_by_count: Some(120),
+                ..dossier::DossierWork::default()
+            }],
+            citing: Vec::new(),
+            status: crate::domain::DossierStatus::Ok,
+        }
+    }
+
+    #[cfg(unix)]
+    async fn run_with_context(directory: &Path, dossier: Dossier) -> (ExtractRecord, String) {
+        let (script, log) = context_stub(directory);
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let mut options = pipeline_options(directory, 2, 1.0);
+        options.plan = Some(core_pipeline(Features::parse("context").expect("features")));
+        options.dossier = dossier;
+        let record = extract_with(&options, plan_backend(&cli, directory))
+            .await
+            .expect("record");
+        (record, std::fs::read_to_string(log).expect("log"))
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_downgrade_a_paper_claim_whose_quote_is_not_verbatim() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let (record, _) = run_with_context(directory.path(), umetrack_dossier()).await;
+        assert!(record.failures.is_empty(), "{:#?}", record.failures);
+        assert!(record.succeeded(), "{:#?}", record.verification);
+        let context = &record.artifacts.as_ref().expect("artifacts")["context"];
+        assert_eq!(context["lead"][0]["basis"], "paper");
+        assert_eq!(context["lead"][0]["evidence"][0]["page"], 1);
+        assert_eq!(context["lead"][1]["basis"], "background");
+        assert_eq!(context["lead"][1]["downgraded"], "quote_not_found");
+        assert_eq!(context["lead"][1]["evidence"], json!([]));
+        assert!(
+            record
+                .admission
+                .iter()
+                .any(|site| site.pointer == "/context/lead/1/evidence/0/quote"
+                    && site.status == SiteStatus::Dropped),
+            "the failing quote went through the ordinary admission"
+        );
+        assert_eq!(record.verification.repair, StageStatus::Ran);
+        let counts = record.context.as_ref().expect("context counts");
+        assert_eq!(counts.downgraded_quote_not_found, 1);
+        assert_eq!(counts.paper_claims, 1);
+        assert!(
+            record
+                .warnings
+                .iter()
+                .any(|warning| warning.kind == QualityWarningKind::ContextClaimsDowngraded)
+        );
+        assert_eq!(
+            context["reception_note"],
+            "Too recent to say how it was received."
+        );
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_downgrade_a_dossier_claim_that_cites_an_unknown_work() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let (record, prompts) = run_with_context(directory.path(), umetrack_dossier()).await;
+        let context = &record.artifacts.as_ref().expect("artifacts")["context"];
+        assert_eq!(context["before"][0]["basis"], "dossier");
+        assert_eq!(context["before"][0]["work_ids"], json!(["wumetrack"]));
+        assert_eq!(context["before"][1]["basis"], "background");
+        assert_eq!(context["before"][1]["downgraded"], "unknown_work");
+        assert_eq!(context["before"][1]["work_ids"], json!([]));
+        assert_eq!(
+            context["contribution"][0]["basis"], "background",
+            "background is shown, not withheld"
+        );
+        assert_eq!(
+            context["read_alongside"][0]["title"],
+            "UmeTrack: Unified multi-view hand tracking"
+        );
+        assert_eq!(context["read_alongside"][0]["year"], 2022);
+        let counts = record.context.as_ref().expect("context counts");
+        assert_eq!(counts.dossier_works, 1);
+        assert_eq!(counts.dossier_claims, 1);
+        assert_eq!(counts.background_claims, 3);
+        assert_eq!(counts.downgraded_unknown_work, 1);
+        assert_eq!(counts.unknown_work_ids, 1);
+
+        let context_prompt = prompts
+            .split("=====")
+            .find(|prompt| prompt.contains("why this paper matters"))
+            .expect("context prompt");
+        assert!(
+            context_prompt
+                .contains("- [wumetrack] UmeTrack: Unified multi-view hand tracking (2022)")
+        );
+        assert!(context_prompt.contains("\"thesis\":\"One view is enough to beat the baseline.\""));
+        assert!(
+            context_prompt.contains("<<page 1>>"),
+            "the paper itself is in the prompt"
+        );
+        let checks = prompts
+            .split("=====")
+            .filter(|prompt| prompt.contains("You are checking a draft record"))
+            .collect::<Vec<_>>();
+        assert_eq!(checks.len(), 1);
+        assert!(
+            !checks[0].contains("multi-view tracker to beat"),
+            "the self-check does not see the context"
+        );
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_run_the_context_node_with_an_empty_dossier() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let (record, prompts) = run_with_context(directory.path(), Dossier::default()).await;
+        assert!(record.succeeded(), "{:#?}", record.failures);
+        let context = &record.artifacts.as_ref().expect("artifacts")["context"];
+        assert_eq!(context["lead"][0]["basis"], "paper");
+        assert_eq!(context["before"][0]["basis"], "background");
+        assert_eq!(context["before"][0]["downgraded"], "unknown_work");
+        assert!(context["read_alongside"][0]["work_id"].is_null());
+        assert_eq!(context["read_alongside"][0]["basis"], "background");
+        let counts = record.context.as_ref().expect("context counts");
+        assert_eq!(counts.dossier_works, 0);
+        assert_eq!(counts.dossier_claims, 0);
+        assert_eq!(counts.downgraded_unknown_work, 2);
+        assert!(prompts.contains("The dossier is empty"));
+        let agreement = record.abstract_agreement.as_ref().expect("agreement");
+        assert!(!agreement.model_found);
+        assert_eq!(agreement.token_f1, None);
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_refresh_only_the_context_over_a_seeded_core() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let (script, log) = context_stub(directory.path());
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let mut options = pipeline_options(directory.path(), 1, 1.0);
+        options.plan = Some(context_pipeline());
+        options.dossier = umetrack_dossier();
+        options.seed = Some(
+            json!({"card": {"thesis": {"text": "A seeded thesis.", "evidence": [], "confidence": "high"}}}),
+        );
+        let record = extract_with(&options, plan_backend(&cli, directory.path()))
+            .await
+            .expect("record");
+        let prompts = std::fs::read_to_string(log).expect("log");
+        assert_eq!(
+            prompts.matches("=====").count(),
+            2,
+            "the context call and the quote repair only"
+        );
+        assert!(prompts.contains("A seeded thesis."));
+        let artifacts = record.artifacts.as_ref().expect("artifacts");
+        assert_eq!(artifacts["card"]["thesis"]["text"], "A seeded thesis.");
+        assert_eq!(artifacts["context"]["before"][0]["basis"], "dossier");
+        assert_eq!(record.verification.self_check, StageStatus::Disabled);
+        assert!(record.abstract_agreement.is_none());
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_fail_a_context_refresh_whose_context_call_failed() {
+        use std::os::unix::fs::PermissionsExt;
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let script = directory.path().join("stub-codex");
+        std::fs::write(
+            &script,
+            r#"#!/bin/sh
+prompt=$(cat)
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--output-last-message" ]; then shift; output="$1"; fi
+  shift
+done
+printf '%s' 'not json' > "$output"
+"#,
+        )
+        .expect("stub script");
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700))
+            .expect("executable");
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let mut options = pipeline_options(directory.path(), 1, 1.0);
+        options.plan = Some(context_pipeline());
+        options.seed = Some(json!({
+            "card": {"thesis": {"text": "A seeded thesis.", "evidence": [], "confidence": "high"}}
+        }));
+        let record = extract_with(&options, plan_backend(&cli, directory.path()))
+            .await
+            .expect("record");
+        assert!(
+            record.warnings.iter().any(|warning| {
+                warning.kind == QualityWarningKind::CallFailed && warning.field == "context"
+            }),
+            "{:#?}",
+            record.warnings
+        );
+        let outcome = crate::analysis::context_outcome(record);
+        assert!(
+            outcome.is_err_and(|error| error.to_string().contains("context refresh failed")),
+            "a failed refresh is an error, not an old or empty context"
+        );
+    }
+
+    #[test]
+    fn should_warn_for_each_field_of_a_failed_or_skipped_plan_call() {
+        let plan = core_pipeline(Features::parse("context").expect("features"));
+        let failure = |stage: &str| Failure {
+            stage: stage.to_owned(),
+            chunk: None,
+            error: "bad json".to_owned(),
+            raw: None,
+        };
+        let failures = [failure("outline"), failure(CHECK_STAGE)];
+        let skipped = ["context".to_owned(), "sections.retry".to_owned()];
+        let warnings = call_warnings(&plan, &failures, &skipped);
+        let shown = warnings
+            .iter()
+            .map(|warning| (warning.kind, warning.field.as_str()))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            shown,
+            [
+                (QualityWarningKind::CallFailed, "outline"),
+                (QualityWarningKind::CallSkipped, "context"),
+            ],
+            "verification stages and plausibility retries report elsewhere"
+        );
+        assert!(warnings[0].message.contains("bad json"));
+        assert!(warnings.iter().all(|warning| warning.kind.degrades()));
+    }
+
+    #[test]
+    fn should_hash_every_prompt_and_schema_a_plan_uses() {
+        let core = pipeline_texts(&core_pipeline(Features::default()), ReasoningEffort::Low);
+        assert!(core.iter().any(|text| text == FIELDS_PROMPT));
+        assert!(core.iter().any(|text| text == SECTIONS_SCHEMA));
+        assert!(core.iter().any(|text| text == SECTIONS_GROUPED_SCHEMA));
+        assert!(core.iter().any(|text| text == OUTLINE_SCHEMA));
+        assert!(core.iter().any(|text| text == OUTLINE_PROMPT));
+        assert!(core.iter().any(|text| text.contains(SECTIONS_FROM_OUTLINE)));
+        assert!(core.iter().any(|text| text == CHECK_PROMPT));
+        assert!(core.iter().any(|text| text.starts_with(SECTIONS_POLICY)));
+        assert!(!core.iter().any(|text| text == OBJECTS_PROMPT));
+        let all = pipeline_texts(&core_pipeline(Features::all()), ReasoningEffort::Low);
+        assert!(all.iter().any(|text| text == OBJECTS_PROMPT));
+        assert_ne!(
+            core,
+            pipeline_texts(&core_pipeline(Features::default()), ReasoningEffort::Medium)
+        );
+    }
+
     #[test]
     fn should_build_the_core_pipeline_and_its_optional_features() {
         let core = core_pipeline(Features::default());
-        assert_eq!(core.calls.len(), 1);
-        assert_eq!(core.calls[0].name, "core");
-        assert!(core.calls[0].fields.iter().any(|field| field == "sections"));
-        assert_eq!(core.calls[0].effort, Effort::Low);
-        assert!(core.calls[0].requires.is_empty());
+        let names = core
+            .calls
+            .iter()
+            .map(|call| call.name.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(names, ["core", "outline", "sections"]);
+        assert!(!core.calls[0].fields.iter().any(|field| field == "sections"));
+        assert!(!core.calls[0].fields.iter().any(|field| field == "outline"));
+        assert_eq!(core.calls[0].fields.len(), CORE_FIELDS.len() - 2);
+        assert!(core.calls.iter().all(|call| call.effort == Effort::Low));
+        assert!(core.calls[0].requires.is_empty() && core.calls[1].requires.is_empty());
+        assert_eq!(core.calls[2].requires, vec!["outline"]);
 
         let all = core_pipeline(Features::all());
-        assert_eq!(all.calls.len(), 5);
-        for call in &all.calls[1..] {
-            assert_eq!(call.requires, vec!["core"]);
+        assert_eq!(all.calls.len(), 8);
+        for call in &all.calls[3..7] {
+            assert_eq!(call.requires, vec!["core", "outline", "sections"]);
         }
-        for name in ["objects", "supercut", "analysis", "glossary"] {
+        for name in ["objects", "supercut", "analysis", "glossary", "context"] {
             assert!(all.calls.iter().any(|call| call.name == name), "{name}");
         }
+    }
+
+    #[test]
+    fn should_run_the_context_node_on_the_strong_tier_after_the_calls_it_reads() {
+        let mut plan = core_pipeline(Features::parse("context").expect("features"));
+        let context = plan.calls.last().expect("context call").clone();
+        assert_eq!(context.name, "context");
+        assert_eq!(
+            context.requires,
+            vec!["core"],
+            "it may run beside the logical units"
+        );
+        assert_eq!(context.effort, Effort::High);
+        assert_eq!(plan.calls[0].effort, Effort::Low);
+        assert_eq!(plan.model_for(&context), openrouter::DEFAULT_MODEL);
+        plan.models.cheap = Some("cheap/model".to_owned());
+        assert_eq!(plan.model_for(&context), "cheap/model");
+        plan.models.strong = Some("strong/model".to_owned());
+        assert_eq!(plan.model_for(&context), "strong/model");
+        assert_eq!(plan.model_for(&plan.calls[0]), "cheap/model");
+
+        let fanout = default_pipeline(
+            CoreMode::Fanout,
+            Features::parse("context").expect("features"),
+        );
+        let context = fanout.calls.last().expect("context call");
+        assert_eq!(
+            context.requires,
+            [
+                "identity",
+                "type",
+                "card",
+                "question",
+                "references",
+                "relations"
+            ]
+        );
+        let only = context_pipeline();
+        assert_eq!(only.calls.len(), 1);
+        assert!(only.calls[0].requires.is_empty());
+        assert_eq!(only.verify.self_check, SelfCheckMode::None);
     }
 }

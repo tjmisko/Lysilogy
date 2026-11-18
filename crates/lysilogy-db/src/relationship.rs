@@ -4,6 +4,11 @@
 //! are never destroyed: an edit inserts a new user claim and points the old
 //! row's `superseded_by` at it, so only rows with a null `superseded_by` are
 //! current.
+//!
+//! `label_path` records which path wrote a claim (the core reading's admitted
+//! relations, the per-edge labeler, or a person); see `docs/edge-labels.md`.
+
+use std::collections::BTreeMap;
 
 use chrono::{DateTime, Utc};
 use lysilogy_core::{
@@ -15,6 +20,43 @@ use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
 use crate::{DbError, Result};
+
+/// Which path produced a label.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
+#[serde(rename_all = "snake_case")]
+pub enum LabelPath {
+    /// A relation the core reading returned and quote admission kept.
+    CoreRelation,
+    /// The dedicated labeler, which reads the citing passages of one edge.
+    EdgeLabeler,
+    /// A person wrote or edited it.
+    User,
+}
+
+impl LabelPath {
+    /// The stored code.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::CoreRelation => "core_relation",
+            Self::EdgeLabeler => "edge_labeler",
+            Self::User => "user",
+        }
+    }
+
+    /// Parse a stored code; unknown codes are `None`.
+    #[must_use]
+    pub fn parse(code: &str) -> Option<Self> {
+        match code {
+            "core_relation" => Some(Self::CoreRelation),
+            "edge_labeler" => Some(Self::EdgeLabeler),
+            "user" => Some(Self::User),
+            _ => None,
+        }
+    }
+}
 
 /// A stored relationship claim.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -35,6 +77,25 @@ pub struct StoredClaim {
     pub superseded_by: Option<RelationshipClaimId>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    /// The path that wrote it; `None` only for rows written before paths
+    /// were recorded that could not be classified (see [`Self::path`]).
+    pub label_path: Option<LabelPath>,
+    /// How much the citing paper does with the work, when the labeler said.
+    pub engagement: Option<String>,
+    /// The labeler prompt version that wrote it, when known.
+    pub prompt_version: Option<i32>,
+}
+
+impl StoredClaim {
+    /// The path that wrote the claim, reading an unclassified AI claim as
+    /// the edge labeler's (the only AI path before paths were recorded).
+    #[must_use]
+    pub fn path(&self) -> LabelPath {
+        self.label_path.unwrap_or(match self.origin {
+            RelationshipOrigin::User => LabelPath::User,
+            _ => LabelPath::EdgeLabeler,
+        })
+    }
 }
 
 /// An unreviewed AI claim to store.
@@ -48,6 +109,29 @@ pub struct NewAiClaim<'a> {
     pub model: &'a str,
     /// The cached model output that produced this claim.
     pub record: SourceRecordId,
+    pub path: LabelPath,
+    pub engagement: Option<&'a str>,
+    pub prompt_version: Option<i32>,
+}
+
+/// Review outcomes of AI labels written by one path, model and prompt
+/// version. The accept, reject and edit actions in the graph double as
+/// grading data.
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize)]
+pub struct LabelReviewCounts {
+    pub path: String,
+    pub model: Option<String>,
+    pub prompt_version: Option<i32>,
+    /// Current and accepted.
+    pub accepted: i64,
+    /// Current and rejected.
+    pub rejected: i64,
+    /// Current and not yet reviewed.
+    pub unreviewed: i64,
+    /// Replaced by a person's edit.
+    pub edited: i64,
+    /// Replaced by a later AI label (a new core reading or a relabel).
+    pub replaced: i64,
 }
 
 /// A claim with the passage and document location of its mention.
@@ -68,7 +152,7 @@ pub struct StoredClaimWithMention {
 
 const CLAIM_COLUMNS: &str = "c.id, c.assertion_id, c.mention_id, c.label, c.explanation, c.quote, \
      c.model, c.origin, c.review_state, c.source_record_id, c.superseded_by, c.created_at, \
-     c.updated_at";
+     c.updated_at, c.label_path, c.engagement, c.prompt_version";
 
 /// Reads and writes relationship claims.
 #[derive(Clone)]
@@ -91,8 +175,8 @@ impl RelationshipRepository {
         let id: Option<Uuid> = sqlx::query_scalar(
             "insert into graph.relationship_claim \
                  (assertion_id, mention_id, label, explanation, quote, model, source_record_id, \
-                  origin, review_state) \
-             values ($1, $2, $3, $4, $5, $6, $7, 'ai', 'unreviewed') \
+                  origin, review_state, label_path, engagement, prompt_version) \
+             values ($1, $2, $3, $4, $5, $6, $7, 'ai', 'unreviewed', $8, $9, $10) \
              on conflict (assertion_id, source_record_id) \
                  where source_record_id is not null do nothing \
              returning id",
@@ -104,9 +188,143 @@ impl RelationshipRepository {
         .bind(claim.quote)
         .bind(claim.model)
         .bind(claim.record.as_uuid())
+        .bind(claim.path.as_str())
+        .bind(claim.engagement)
+        .bind(claim.prompt_version)
         .fetch_optional(&self.pool)
         .await?;
         Ok(id.map(RelationshipClaimId::from_uuid))
+    }
+
+    /// Replace a current, unreviewed AI claim with a new AI claim on the same
+    /// assertion, in one transaction. Returns `None`, changing nothing, when
+    /// the new claim's source record already produced a claim there.
+    ///
+    /// # Errors
+    /// `DbError::Conflict` when the old claim was superseded, reviewed, or
+    /// written by a person: automation never overrides a reviewed label.
+    pub async fn replace_ai_claim(
+        &self,
+        old: RelationshipClaimId,
+        claim: &NewAiClaim<'_>,
+    ) -> Result<Option<RelationshipClaimId>> {
+        let mut transaction = self.pool.begin().await?;
+        let row = sqlx::query(
+            "select superseded_by, origin, review_state from graph.relationship_claim \
+             where id = $1 for update",
+        )
+        .bind(old.as_uuid())
+        .fetch_optional(&mut *transaction)
+        .await?;
+        let Some(row) = row else {
+            return Err(DbError::Sqlx(sqlx::Error::RowNotFound));
+        };
+        let superseded: Option<Uuid> = row.try_get("superseded_by")?;
+        let origin: String = row.try_get("origin")?;
+        let review_state: String = row.try_get("review_state")?;
+        if superseded.is_some() || origin != "ai" || review_state != "unreviewed" {
+            return Err(DbError::Conflict(format!(
+                "claim {old} is superseded or reviewed and cannot be replaced"
+            )));
+        }
+        let id: Option<Uuid> = sqlx::query_scalar(
+            "insert into graph.relationship_claim \
+                 (assertion_id, mention_id, label, explanation, quote, model, source_record_id, \
+                  origin, review_state, label_path, engagement, prompt_version) \
+             values ($1, $2, $3, $4, $5, $6, $7, 'ai', 'unreviewed', $8, $9, $10) \
+             on conflict (assertion_id, source_record_id) \
+                 where source_record_id is not null do nothing \
+             returning id",
+        )
+        .bind(claim.assertion.as_uuid())
+        .bind(claim.mention.map(MentionId::as_uuid))
+        .bind(claim.relation)
+        .bind(claim.reason)
+        .bind(claim.quote)
+        .bind(claim.model)
+        .bind(claim.record.as_uuid())
+        .bind(claim.path.as_str())
+        .bind(claim.engagement)
+        .bind(claim.prompt_version)
+        .fetch_optional(&mut *transaction)
+        .await?;
+        let Some(id) = id else {
+            transaction.rollback().await?;
+            return Ok(None);
+        };
+        sqlx::query(
+            "update graph.relationship_claim set superseded_by = $2, updated_at = now() \
+             where id = $1",
+        )
+        .bind(old.as_uuid())
+        .bind(id)
+        .execute(&mut *transaction)
+        .await?;
+        transaction.commit().await?;
+        Ok(Some(RelationshipClaimId::from_uuid(id)))
+    }
+
+    /// The newest current claim on each assertion that has one.
+    pub async fn current_claims_by_assertion(
+        &self,
+        assertions: &[AssertionId],
+    ) -> Result<BTreeMap<AssertionId, StoredClaim>> {
+        if assertions.is_empty() {
+            return Ok(BTreeMap::new());
+        }
+        let ids: Vec<Uuid> = assertions.iter().map(|id| id.as_uuid()).collect();
+        let rows = sqlx::query(&format!(
+            "select {CLAIM_COLUMNS} from graph.relationship_claim c \
+             where c.assertion_id = any($1) and c.superseded_by is null \
+             order by c.assertion_id, c.created_at, c.id"
+        ))
+        .bind(&ids)
+        .fetch_all(&self.pool)
+        .await?;
+        let mut current = BTreeMap::new();
+        for row in &rows {
+            let claim = claim_from_row(row)?;
+            current.insert(claim.assertion, claim);
+        }
+        Ok(current)
+    }
+
+    /// Review outcomes of every AI label, grouped by path, model and prompt
+    /// version.
+    pub async fn label_review_counts(&self) -> Result<Vec<LabelReviewCounts>> {
+        let rows = sqlx::query(
+            "select coalesce(c.label_path, 'edge_labeler') as path, c.model, c.prompt_version, \
+                 count(*) filter (where c.superseded_by is null and c.review_state = 'accepted') \
+                     as accepted, \
+                 count(*) filter (where c.superseded_by is null and c.review_state = 'rejected') \
+                     as rejected, \
+                 count(*) filter (where c.superseded_by is null and c.review_state = 'unreviewed') \
+                     as unreviewed, \
+                 count(*) filter (where c.superseded_by is not null and s.origin = 'user') \
+                     as edited, \
+                 count(*) filter (where c.superseded_by is not null and s.origin <> 'user') \
+                     as replaced \
+             from graph.relationship_claim c \
+             left join graph.relationship_claim s on s.id = c.superseded_by \
+             where c.origin = 'ai' \
+             group by 1, 2, 3 order by 1, 2, 3",
+        )
+        .fetch_all(&self.pool)
+        .await?;
+        rows.iter()
+            .map(|row| {
+                Ok(LabelReviewCounts {
+                    path: row.try_get("path")?,
+                    model: row.try_get("model")?,
+                    prompt_version: row.try_get("prompt_version")?,
+                    accepted: row.try_get("accepted")?,
+                    rejected: row.try_get("rejected")?,
+                    unreviewed: row.try_get("unreviewed")?,
+                    edited: row.try_get("edited")?,
+                    replaced: row.try_get("replaced")?,
+                })
+            })
+            .collect()
     }
 
     /// Whether the assertion has a claim that has not been superseded.
@@ -179,8 +397,9 @@ impl RelationshipRepository {
         let mention: Option<Uuid> = old.try_get("mention_id")?;
         let row = sqlx::query(&format!(
             "insert into graph.relationship_claim \
-                 (assertion_id, mention_id, label, explanation, quote, origin, review_state) \
-             values ($1, $2, $3, $4, $5, 'user', 'accepted') \
+                 (assertion_id, mention_id, label, explanation, quote, origin, review_state, \
+                  label_path) \
+             values ($1, $2, $3, $4, $5, 'user', 'accepted', 'user') \
              returning {}",
             CLAIM_COLUMNS.replace("c.", "")
         ))
@@ -294,6 +513,12 @@ fn claim_from_row(row: &PgRow) -> Result<StoredClaim> {
             .map(RelationshipClaimId::from_uuid),
         created_at: row.try_get("created_at")?,
         updated_at: row.try_get("updated_at")?,
+        label_path: row
+            .try_get::<Option<String>, _>("label_path")?
+            .as_deref()
+            .and_then(LabelPath::parse),
+        engagement: row.try_get("engagement")?,
+        prompt_version: row.try_get("prompt_version")?,
     })
 }
 
@@ -378,6 +603,9 @@ mod tests {
                 quote: "build on prior work",
                 model: "claude:default",
                 record: fixture.record,
+                path: LabelPath::EdgeLabeler,
+                engagement: Some("substantive"),
+                prompt_version: Some(2),
             })
             .await
             .expect("insert")
@@ -410,6 +638,9 @@ mod tests {
                 quote: "y",
                 model: "claude:default",
                 record: fixture.record,
+                path: LabelPath::EdgeLabeler,
+                engagement: Some("substantive"),
+                prompt_version: Some(2),
             })
             .await
             .expect("second");
@@ -549,5 +780,93 @@ mod tests {
             missing,
             Err(DbError::Sqlx(sqlx::Error::RowNotFound))
         ));
+    }
+
+    #[tokio::test]
+    async fn should_replace_unreviewed_ai_claim_and_refuse_reviewed_one() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let fixture = fixture(&pool).await;
+        let old = insert(&fixture).await;
+        let stored = fixture.repo.get(old).await.unwrap().expect("old");
+        assert_eq!(stored.claim.path(), LabelPath::EdgeLabeler);
+        assert_eq!(stored.claim.engagement.as_deref(), Some("substantive"));
+        assert_eq!(stored.claim.prompt_version, Some(2));
+
+        let record = new_record(&pool).await;
+        let core = NewAiClaim {
+            assertion: fixture.assertion,
+            mention: None,
+            relation: "uses_method",
+            reason: "It takes the cited estimator.",
+            quote: "build on prior work",
+            model: "openrouter:m",
+            record,
+            path: LabelPath::CoreRelation,
+            engagement: None,
+            prompt_version: None,
+        };
+        let new = fixture
+            .repo
+            .replace_ai_claim(old, &core)
+            .await
+            .expect("replace")
+            .expect("new id");
+        let current = fixture
+            .repo
+            .current_claims_by_assertion(&[fixture.assertion])
+            .await
+            .unwrap();
+        assert_eq!(current.len(), 1);
+        let claim = &current[&fixture.assertion];
+        assert_eq!(claim.id, new);
+        assert_eq!(claim.path(), LabelPath::CoreRelation);
+        assert_eq!(
+            fixture
+                .repo
+                .get(old)
+                .await
+                .unwrap()
+                .unwrap()
+                .claim
+                .superseded_by,
+            Some(new)
+        );
+        assert!(matches!(
+            fixture.repo.replace_ai_claim(old, &core).await,
+            Err(DbError::Conflict(_))
+        ));
+
+        fixture
+            .repo
+            .set_review_state(new, ReviewState::Accepted)
+            .await
+            .unwrap();
+        let other = NewAiClaim {
+            record: new_record(&pool).await,
+            ..core
+        };
+        assert!(
+            matches!(
+                fixture.repo.replace_ai_claim(new, &other).await,
+                Err(DbError::Conflict(_))
+            ),
+            "a reviewed label is never replaced by automation"
+        );
+
+        let counts = fixture.repo.label_review_counts().await.unwrap();
+        let core_row = counts
+            .iter()
+            .find(|row| row.path == "core_relation" && row.model.as_deref() == Some("openrouter:m"))
+            .expect("core row");
+        assert!(core_row.accepted >= 1);
+        let labeler_row = counts
+            .iter()
+            .find(|row| row.path == "edge_labeler" && row.prompt_version == Some(2))
+            .expect("labeler row");
+        assert!(labeler_row.replaced >= 1);
     }
 }

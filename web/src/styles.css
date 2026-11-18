@@ -886,6 +886,99 @@ code {
 .context-note-list { margin: 12px 0 0; padding-left: 1.15em; }
 .context-note-list li::marker { color: var(--interpretation); }
 
+/* The context node: why the paper matters, with a source class per claim. */
+.why-it-matters {
+  margin-top: 12px;
+  padding: clamp(18px, 2.6vw, 26px);
+  border: 1px solid color-mix(in srgb, var(--context) 45%, var(--line));
+  background: linear-gradient(115deg, rgba(222, 184, 91, 0.08), transparent 62%), var(--panel);
+}
+.why-it-matters h2 { margin: 7px 0 0; font: 500 24px/1.2 Georgia, "Times New Roman", serif; }
+.reading-context.is-node { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.context-claim-list { display: grid; gap: 14px; margin: 12px 0 0; padding: 0; list-style: none; }
+.context-claim p { margin: 5px 0 0; color: var(--ink-soft); font: 16px/1.55 Georgia, "Times New Roman", serif; }
+.why-it-matters .context-claim p { color: var(--ink); font-size: 17px; }
+.context-basis {
+  display: inline-block;
+  padding: 2px 6px;
+  border: 1px solid var(--line-bright);
+  border-radius: 3px;
+  color: var(--ink-faint);
+  font: 650 9px ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: help;
+}
+.context-basis.basis-paper { border-color: color-mix(in srgb, var(--evidence) 60%, var(--line)); color: var(--evidence); }
+.context-basis.basis-dossier { border-color: color-mix(in srgb, var(--interpretation) 60%, var(--line)); color: var(--interpretation); }
+.context-basis.basis-background { border-style: dashed; }
+.context-claim-quote {
+  margin: 8px 0 0;
+  padding: 6px 0 6px 12px;
+  border-left: 2px solid color-mix(in srgb, var(--evidence) 55%, var(--line));
+  color: var(--ink-faint);
+  font: italic 14px/1.5 Georgia, "Times New Roman", serif;
+}
+.context-claim-page,
+.context-claim-work {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--interpretation);
+  font: inherit;
+  font-style: normal;
+  cursor: pointer;
+}
+.context-claim-page { font: 650 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.context-claim-work { text-decoration: underline; text-underline-offset: 3px; }
+.context-claim .context-claim-works,
+.context-claim .context-claim-downgrade { color: var(--ink-faint); font-size: 13px; }
+.context-reception-note,
+.context-provenance { margin: 10px 0 0; color: var(--ink-faint); font: 13px/1.5 Georgia, "Times New Roman", serif; }
+.context-provenance { font: 650 9px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.05em; text-transform: uppercase; }
+.read-alongside + .legacy-context { margin-top: 12px; }
+.read-alongside { margin-top: 20px; padding-top: 16px; border-top: 1px solid color-mix(in srgb, var(--context) 30%, var(--line)); }
+.read-alongside h2 { margin: 5px 0 0; font: 500 19px/1.2 Georgia, "Times New Roman", serif; }
+.read-alongside ol { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin: 12px 0 0; padding: 0; list-style: none; }
+.read-alongside-item { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid var(--line); background: var(--bg-raised); }
+.read-alongside-head { display: grid; gap: 3px; }
+.read-alongside-head strong { font: 500 16px/1.3 Georgia, "Times New Roman", serif; }
+.read-alongside-relation,
+.read-alongside-byline,
+.read-alongside-status { color: var(--ink-faint); font: 650 9px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.04em; text-transform: uppercase; }
+.read-alongside-relation { color: var(--context); }
+.read-alongside-item > p { flex: 1; margin: 0; color: var(--ink-soft); font: 14px/1.5 Georgia, "Times New Roman", serif; }
+.read-alongside-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.read-alongside-actions button {
+  padding: 4px 8px;
+  border: 1px solid var(--line-bright);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--interpretation);
+  font: 650 9px ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.read-alongside-status.is-error { color: var(--danger); }
+.read-alongside-item > p.read-alongside-edge { flex: 0; color: var(--ink-faint); font-size: 13px; }
+.edge-why { margin-top: 6px; padding-left: 10px; border-left: 2px solid color-mix(in srgb, var(--context) 40%, var(--line)); }
+.edge-why p { margin: 0; color: var(--ink-soft); font: 13px/1.5 Georgia, "Times New Roman", serif; }
+.edge-why-heading,
+.edge-why-caption { color: var(--ink-faint); font: 650 9px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.04em; text-transform: uppercase; }
+.edge-why-relation { color: var(--context); font-weight: 600; }
+.edge-why-quote { margin: 4px 0; color: var(--ink-faint); font: italic 13px/1.5 Georgia, "Times New Roman", serif; }
+.edge-why p.edge-why-caption { color: var(--ink-faint); font: 650 9px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.later-citations { margin-top: 20px; padding-top: 16px; border-top: 1px solid color-mix(in srgb, var(--context) 30%, var(--line)); }
+.later-citations h2 { margin: 5px 0 0; font: 500 19px/1.2 Georgia, "Times New Roman", serif; }
+.later-citations ol { display: grid; gap: 10px; margin: 12px 0 0; padding: 0; list-style: none; }
+.later-citations li strong { font: 500 15px/1.3 Georgia, "Times New Roman", serif; }
+.pipeline-checks { margin-top: 18px; color: var(--ink-faint); font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.pipeline-checks summary { cursor: pointer; }
+.pipeline-checks ul { margin: 8px 0 0; padding-left: 1.2em; }
+.pipeline-checks code { color: var(--caveat); }
+.pipeline-version { color: var(--ink-faint); }
+@media (max-width: 860px) { .reading-context.is-node { grid-template-columns: minmax(0, 1fr); } }
+
 .context-notes {
   display: grid;
   gap: 8px;
@@ -1501,6 +1594,105 @@ code {
 
 .section-boxes.is-disabled {
   pointer-events: none;
+}
+
+.section-boxes > button > .section-box-range {
+  position: absolute;
+  z-index: 1;
+  bottom: 6px;
+  left: 50%;
+  max-width: calc(100% - 12px);
+  overflow: hidden;
+  padding: 2px 6px;
+  transform: translateX(-50%);
+  background: rgba(8, 10, 9, 0.9);
+  color: var(--ink-soft);
+  font: 650 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Overview segmentation: logical units on the page map, or the printed outline. */
+.segmentation-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 16px;
+}
+.segmentation-toggle button {
+  padding: 6px 10px;
+  border: 1px solid var(--line-bright);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: 650 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.segmentation-toggle button span { margin-left: 4px; color: var(--ink-faint); }
+.segmentation-toggle button.is-active { border-color: var(--signal); color: var(--signal); }
+.segmentation-toggle button:disabled { opacity: 0.45; }
+.segmentation-toggle kbd { color: var(--ink-faint); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.outline-view { max-width: 1012px; padding: 0 16px 16px; }
+.outline-list { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.outline-list > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(120px, 32%);
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  border-left: 3px solid color-mix(in srgb, var(--family, var(--line-bright)) 70%, transparent);
+}
+.outline-list > li.starts-unit { border-top: 1px solid var(--line-bright); }
+.outline-list > li[data-role="references"],
+.outline-list > li[data-role="appendix"],
+.outline-list > li[data-role="back_matter"] { opacity: 0.75; }
+.outline-entry {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  font: 16px/1.35 Georgia, "Times New Roman", serif;
+}
+.outline-list > li.is-active { background: rgba(216, 255, 99, 0.06); }
+.outline-list > li.is-active .outline-entry { box-shadow: inset 2px 0 0 var(--signal); }
+.outline-number { flex: 0 0 auto; min-width: 2.6em; color: var(--ink-faint); font: 650 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.outline-title { min-width: 0; }
+.outline-role { color: var(--ink-faint); font: 650 9px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.05em; text-transform: uppercase; }
+.outline-page {
+  padding: 4px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--interpretation);
+  font: 650 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.outline-unit { padding: 6px 12px; color: var(--family, var(--ink-soft)); font: 600 13px/1.3 Georgia, "Times New Roman", serif; }
+.outline-hint { margin: 10px 0 0; color: var(--ink-faint); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.unit-index { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+.unit-index > li > button {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--family, var(--line-bright));
+  background: var(--bg-raised);
+  color: var(--ink);
+  text-align: left;
+}
+.unit-index > li.is-active > button { border-color: var(--signal); border-left-color: var(--family, var(--signal)); }
+.unit-index strong { font: 500 15px/1.3 Georgia, "Times New Roman", serif; }
+.unit-index-range { color: var(--ink-faint); font: 650 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.unit-index-question { color: var(--ink-soft); font: italic 13px/1.4 Georgia, "Times New Roman", serif; }
+@media (max-width: 700px) {
+  .outline-list > li { grid-template-columns: minmax(0, 1fr) auto; }
+  .outline-unit { grid-column: 1 / -1; padding-top: 0; }
 }
 
 .highlight-layer {
@@ -3118,6 +3310,8 @@ code {
 .queue-tasks .task-active { color: var(--ink); }
 .queue-tasks .task-active i { border-color: var(--signal); background: var(--signal); animation: pulse 1.2s ease-in-out infinite; }
 .queue-tasks .task-completed i { border-color: var(--evidence); background: var(--evidence); }
+.queue-tasks .task-warning { color: var(--context); }
+.queue-tasks .task-warning i { border-color: var(--context); background: transparent; }
 .queue-tasks .task-failed { color: var(--danger); }
 .queue-tasks .task-failed i { border-color: var(--danger); background: var(--danger); }
 

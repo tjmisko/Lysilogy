@@ -181,14 +181,22 @@ mod tests {
                 kind: crate::domain::ContextKind::Legacy,
                 text: "A grounded reception claim.".to_owned(),
                 source_ids: vec!["working".to_owned(), "broken".to_owned()],
+                basis: None,
+                work_ids: Vec::new(),
             }],
             context_sources: vec![source("working"), source("broken"), source("unused")],
             prerequisites: Vec::new(),
+            outline: Vec::new(),
             sections: Vec::new(),
             claims: Vec::new(),
             glossary: Vec::new(),
             caveats: Vec::new(),
             reading_path: Vec::new(),
+            pipeline_version: None,
+            quality_warnings: Vec::new(),
+            context: None,
+            abstract_agreement: None,
+            component_versions: std::collections::BTreeMap::new(),
         }
     }
 }

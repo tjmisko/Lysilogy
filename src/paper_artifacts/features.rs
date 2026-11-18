@@ -3,7 +3,8 @@
 //! The core fields (identity, abstract, context, sections, references,
 //! citations, relations) are always extracted. Everything here is off by
 //! default and can be requested on its own, so an existing core result is
-//! never invalidated by adding a feature.
+//! never invalidated by adding a feature. The reader turns `context` on: the
+//! "why this paper matters" account on the first view.
 
 use crate::{Error, Result};
 
@@ -17,6 +18,7 @@ pub enum Feature {
     Supercut,
     Analysis,
     Glossary,
+    Context,
 }
 
 impl Feature {
@@ -26,7 +28,7 @@ impl Feature {
             Self::Tables => Some("table"),
             Self::Algorithms => Some("algorithm"),
             Self::Equations => Some("equation"),
-            Self::Supercut | Self::Analysis | Self::Glossary => None,
+            Self::Supercut | Self::Analysis | Self::Glossary | Self::Context => None,
         }
     }
 
@@ -45,9 +47,10 @@ impl Feature {
             "supercut" => vec![Self::Supercut],
             "analysis" => vec![Self::Analysis],
             "glossary" => vec![Self::Glossary],
+            "context" => vec![Self::Context],
             other => {
                 return Err(Error::InvalidRequest(format!(
-                    "unknown feature '{other}'; expected figures, tables, algorithms, equations, objects, supercut, analysis, glossary, all, or none"
+                    "unknown feature '{other}'; expected figures, tables, algorithms, equations, objects, supercut, analysis, glossary, context, all, or none"
                 )));
             }
         })
@@ -66,6 +69,8 @@ pub struct Features {
     pub supercut: bool,
     pub analysis: bool,
     pub glossary: bool,
+    /// Why the paper matters: a judgment call after the core.
+    pub context: bool,
 }
 
 impl Features {
@@ -104,6 +109,7 @@ impl Features {
             supercut: true,
             analysis: true,
             glossary: true,
+            context: true,
         }
     }
 
@@ -116,6 +122,7 @@ impl Features {
             Feature::Supercut => self.supercut = true,
             Feature::Analysis => self.analysis = true,
             Feature::Glossary => self.glossary = true,
+            Feature::Context => self.context = true,
         }
     }
 
@@ -151,6 +158,7 @@ impl Features {
             (self.supercut, "supercut"),
             (self.analysis, "analysis"),
             (self.glossary, "glossary"),
+            (self.context, "context"),
         ] {
             if on {
                 names.push(name);
@@ -188,6 +196,13 @@ mod tests {
         assert!(features.supercut && features.equations);
         assert!(!features.figures && !features.analysis);
         assert_eq!(features.label(), "equations,supercut");
+    }
+
+    #[test]
+    fn should_parse_the_context_feature_on_its_own() {
+        let features = Features::parse("context").expect("parse");
+        assert!(features.context && !features.any_objects() && !features.glossary);
+        assert_eq!(features.label(), "context");
     }
 
     #[test]

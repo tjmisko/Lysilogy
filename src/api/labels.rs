@@ -8,22 +8,19 @@ use axum::{
     extract::{Path as AxumPath, State},
     http::StatusCode,
     response::{IntoResponse, Response},
-    routing::{post, put},
+    routing::{get, post, put},
 };
 use chrono::{DateTime, Utc};
 use lysilogy_core::{RelationshipClaimId, RelationshipOrigin, ReviewState, WorkId};
 use lysilogy_db::{
     DbError,
-    relationship::{StoredClaim, StoredClaimWithMention},
+    relationship::{LabelPath, StoredClaim, StoredClaimWithMention},
 };
-use lysilogy_ingest::labels::{GroundingRejection, LabelDraft, RELATIONS, ground_quote};
+use lysilogy_ingest::labels::{GroundingRejection, LabelDraft, check_label_text, ground_quote};
 use serde::{Deserialize, Serialize};
 
 use super::{AppState, GraphError, graph_error, graph_or_unavailable, graph_query_failure};
 use crate::domain::PaperId;
-
-/// The longest reason a person may write, as in the model grounding rule.
-const MAX_REASON_CHARS: usize = 600;
 
 /// Where a label's evidence sits in the citing paper.
 #[derive(Debug, Serialize)]
@@ -51,6 +48,11 @@ pub(super) struct EdgeLabel {
     pub model: Option<String>,
     pub created_at: DateTime<Utc>,
     pub mention: Option<EdgeMention>,
+    /// Which path wrote it: `core_relation`, `edge_labeler` or `user`.
+    pub path: LabelPath,
+    /// `substantive`, `perfunctory` or `not_shown`, when the labeler said.
+    pub engagement: Option<String>,
+    pub prompt_version: Option<i32>,
 }
 
 /// An edge with the evidence behind it.
@@ -66,6 +68,8 @@ pub(super) struct GraphEdge {
 
 pub(super) fn routes() -> Router<AppState> {
     Router::new()
+        .route("/api/papers/{id}/edge-labels", get(paper_edge_labels))
+        .route("/api/papers/{id}/edge-labels/run", post(run_edge_labels))
         .route("/api/relationship-claims/{id}/accept", post(accept_label))
         .route("/api/relationship-claims/{id}/reject", post(reject_label))
         .route("/api/relationship-claims/{id}", put(edit_label))
@@ -157,6 +161,70 @@ async fn edge_label(state: &AppState, stored: &StoredClaimWithMention) -> EdgeLa
         model: claim.model.clone(),
         created_at: claim.created_at,
         mention,
+        path: claim.path(),
+        engagement: claim.engagement.clone(),
+        prompt_version: claim.prompt_version,
+    }
+}
+
+/// Why the paper cites each work, why later labelled papers cite it, and the
+/// last labelling run. Without a graph the run record is still returned.
+async fn paper_edge_labels(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<String>,
+) -> Response {
+    let paper_id = match super::parse_id(&id) {
+        Ok(paper_id) => paper_id,
+        Err(error) => return error.into_response(),
+    };
+    match state.paper_edge_labels(&paper_id).await {
+        Ok(labels) => Json(labels).into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
+/// What `POST /api/papers/{id}/edge-labels/run` takes; every field is optional.
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+struct RunLabelsRequest {
+    /// The model provider; `OpenRouter` when absent, as for analysis.
+    provider: Option<crate::domain::AnalysisProvider>,
+    /// Relabel unreviewed edge-labeler labels from an older prompt version.
+    relabel_older_prompt: bool,
+}
+
+/// Run (or resume) the labels step for one paper: seed from the core
+/// reading, label the edges still without a label, save `edge-labels.json`,
+/// and rewrite the context node when a label was written. Answers with the
+/// run and what happened to the context.
+async fn run_edge_labels(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<String>,
+    body: Option<Json<RunLabelsRequest>>,
+) -> Response {
+    let paper_id = match super::parse_id(&id) {
+        Ok(paper_id) => paper_id,
+        Err(error) => return error.into_response(),
+    };
+    let request = body.map(|Json(request)| request).unwrap_or_default();
+    let provider = request
+        .provider
+        .unwrap_or(crate::domain::AnalysisProvider::OpenRouter);
+    let options = crate::edge_labels::EdgeLabelRequest {
+        relabel_older_prompt: request.relabel_older_prompt,
+    };
+    match Box::pin(state.run_edge_labels(&paper_id, provider, options)).await {
+        Ok((run, context)) => {
+            let context = match context {
+                None => serde_json::json!({"status": "not_needed"}),
+                Some(Ok(())) => serde_json::json!({"status": "rewritten"}),
+                Some(Err(error)) => {
+                    serde_json::json!({"status": "failed", "error": error.to_string()})
+                }
+            };
+            Json(serde_json::json!({"run": run, "context": context})).into_response()
+        }
+        Err(error) => error.into_response(),
     }
 }
 
@@ -249,8 +317,15 @@ fn rejection_response(rejection: GroundingRejection) -> Response {
             "The quote must be copied exactly from the citing passage."
         }
         GroundingRejection::InvalidRelation => "That relation is not in the vocabulary.",
+        GroundingRejection::InvalidEngagement => "That engagement is not in the vocabulary.",
         GroundingRejection::EmptyReason => "The reason is empty.",
         GroundingRejection::ReasonTooLong => "The reason is too long.",
+        GroundingRejection::InconsistentEngagement => {
+            "A citation whose role is not shown takes the relation other or background."
+        }
+        GroundingRejection::QuoteOutsideCitingSentence => {
+            "The quote must come from the sentence that cites this work."
+        }
     };
     graph_error(
         StatusCode::UNPROCESSABLE_ENTITY,
@@ -261,17 +336,7 @@ fn rejection_response(rejection: GroundingRejection) -> Response {
 
 /// Relation and reason checks for a claim with no passage to ground in.
 fn check_without_passage(relation: &str, reason: &str) -> Result<(), GroundingRejection> {
-    if !RELATIONS.contains(&relation) {
-        return Err(GroundingRejection::InvalidRelation);
-    }
-    let reason = reason.trim();
-    if reason.is_empty() {
-        return Err(GroundingRejection::EmptyReason);
-    }
-    if reason.chars().count() > MAX_REASON_CHARS {
-        return Err(GroundingRejection::ReasonTooLong);
-    }
-    Ok(())
+    check_label_text(relation, None, reason)
 }
 
 async fn edit_label(
@@ -305,13 +370,26 @@ async fn edit_label(
         .or_else(|| existing.claim.quote.clone())
         .map(|quote| quote.trim().to_owned())
         .filter(|quote| !quote.is_empty());
+    // A quote kept as it was was grounded when the label was written: a
+    // labeler quote may come from the text around the stored passage, and a
+    // core-reading quote was admitted against the page text. Only a new
+    // quote is checked against the passage.
+    let unchanged = quote.is_some() && quote == existing.claim.quote;
     let stored_quote = match (&quote, &existing.passage) {
+        (Some(quote), _) if unchanged => {
+            if let Err(rejection) = check_without_passage(&relation, &reason) {
+                return rejection_response(rejection);
+            }
+            Some(quote.as_str())
+        }
         (Some(quote), Some(passage)) => {
             let draft = LabelDraft {
                 relation: relation.clone(),
                 reason: reason.clone(),
                 quote: quote.clone(),
                 passage_index: 0,
+                engagement: None,
+                cites_this_work: None,
             };
             match ground_quote(std::slice::from_ref(passage), &draft) {
                 Ok(_) => Some(quote.as_str()),
@@ -500,6 +578,8 @@ mod tests {
                 reason: "It motivates the setup.".to_owned(),
                 quote: request.passages[0].clone(),
                 passage_index: 0,
+                engagement: Some("substantive".to_owned()),
+                cites_this_work: None,
             })
         });
         let labels = state
@@ -873,5 +953,96 @@ mod tests {
         )
         .await;
         assert_eq!(json["center"], into.id.to_string());
+    }
+
+    #[tokio::test]
+    async fn should_run_the_labels_step_on_demand_and_save_the_run() {
+        let root = tempfile::tempdir().unwrap();
+        let library = root.path().join("library");
+        std::fs::create_dir_all(&library).unwrap();
+        std::fs::write(library.join("paper.pdf"), b"pdf").unwrap();
+        let state = AppState::new(&library, root.path().join("data")).await.unwrap();
+        let id = PaperId::from_relative_path(Path::new("paper.pdf"));
+        let uri = format!("/api/papers/{id}/edge-labels/run");
+        let (status, json) = send(&state, "POST", &uri, None).await;
+        assert_eq!(status, StatusCode::OK, "{json}");
+        assert_eq!(json["run"]["status"], "skipped");
+        assert_eq!(json["context"]["status"], "not_needed", "no label was written");
+        let saved = state.load_edge_label_run(&id).await.unwrap().expect("the run is saved");
+        assert_eq!(saved.status, crate::edge_labels::EdgeLabelStatus::Skipped);
+
+        let (status, _) = send(&state, "POST", &uri, Some(json!({"relabel_older_prompt": true}))).await;
+        assert_eq!(status, StatusCode::OK);
+        let (status, _) = send(&state, "POST", "/api/papers/1234567890abcdef/edge-labels/run", None).await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn should_run_the_labels_step_and_serve_the_labels_around_a_paper() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let fixture = labeled_fixture(graph).await;
+        let uri = format!("/api/papers/{}/edge-labels", fixture.paper_id);
+        let (status, json) = send(&fixture.state, "GET", &uri, None).await;
+        assert_eq!(status, StatusCode::OK, "{json}");
+        assert_eq!(json["status"], "ok");
+        assert_eq!(json["work_id"], fixture.citing.to_string());
+        assert_eq!(json["outgoing"][0]["work_id"], fixture.cited.to_string());
+        assert_eq!(json["outgoing"][0]["label"]["relation"], "background");
+        assert_eq!(json["outgoing"][0]["label"]["path"], "edge_labeler");
+        assert_eq!(json["incoming"], json!([]));
+        assert!(json["run"].is_null());
+
+        // The core reading names the same edge with another relation, and a
+        // key that matches no entry.
+        let record = json!({
+            "pipeline_version": "core-test",
+            "artifacts": {
+                "relations": [
+                    {"reference_key": "1", "relation": "uses_method",
+                     "why": "Builds its reward model on the cited comparison method.",
+                     "quote": "reward learning from comparisons is feasible", "page": 1,
+                     "confidence": "high"},
+                    {"reference_key": "9", "relation": "supports", "why": "Agrees with it.",
+                     "quote": "shows reward learning from", "page": 1, "confidence": "medium"}
+                ],
+                "citations": [],
+                "references": []
+            }
+        });
+        tokio::fs::write(
+            fixture.state.store.paper_dir(&fixture.paper_id).join("paper-artifacts.json"),
+            record.to_string(),
+        )
+        .await
+        .unwrap();
+        let labeler = ScriptedLabeler::new("fake:model", |_| {
+            Err(lysilogy_ingest::labels::LabelerError::Failed("not called".to_owned()))
+        });
+        let run = fixture
+            .state
+            .label_paper_edges_with(
+                &fixture.paper_id,
+                crate::domain::AnalysisProvider::OpenRouter,
+                Some(&labeler),
+                crate::edge_labels::EdgeLabelRequest::default(),
+            )
+            .await;
+        assert_eq!(run.status, crate::edge_labels::EdgeLabelStatus::Completed, "{run:?}");
+        assert_eq!(labeler.calls(), 0, "the edge already has a label");
+        let core = run.core.as_ref().expect("seed summary");
+        assert_eq!(core.kept_existing, 1);
+        assert_eq!(core.disagreements.len(), 1);
+        assert_eq!(core.disagreements[0].existing_relation, "background");
+        assert_eq!(core.unresolved.get("no_matching_entry"), Some(&1));
+        assert_eq!(core.unresolved_keys[0].key, "9");
+        assert_eq!(run.pipeline_version.as_deref(), Some("core-test"));
+        assert_eq!((run.counts.edges, run.counts.labelled), (1, 1));
+        assert_eq!(run.edges[0].label.as_ref().map(|label| label.relation.as_str()), Some("background"));
+        let detail = run.task_detail();
+        assert!(detail.contains("1 of 1 edges labelled (0 from the core reading, 1 by the edge labeler; 1 say what role the work plays)"), "{detail}");
+        assert!(detail.contains("1 reference keys unresolved"), "{detail}");
     }
 }

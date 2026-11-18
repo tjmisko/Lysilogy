@@ -25,8 +25,8 @@ The top bar is a monotonic ramp — each level is strictly more detailed than th
 
 | Level | What it gives you |
 | --- | --- |
-| **Abstract** | A generated one-sentence thesis, a source-verified authored abstract, and separate cited accounts of research before the paper and its subsequent influence. |
-| **Overview** | A resizable whole-paper page map and conceptual tiles. Opening a region brings its source pages into a scrollable left column beside the contextual digest. |
+| **Abstract** | A generated one-sentence thesis, why the paper matters, the source-verified authored abstract, what came before / what it changed / what followed (each claim marked with its source class), and a short list of papers to read alongside it. |
+| **Overview** | Two segmentations, switched with `O`: **Logical units** (a resizable whole-paper page map whose tiles group printed sections into reading units, each naming the headings it covers) and **Outline** (the paper's printed headings as a hierarchy, each with the unit that holds it). Opening a unit brings its source pages into a scrollable left column beside the contextual digest. |
 | **Glossary** | The load-bearing technical vocabulary to hold in your head before reading. |
 | **Text** | The selectable source PDF by default; reconstructed Markdown is available on request. |
 
@@ -35,11 +35,21 @@ Two provenance rules hold everywhere:
 - Abstract proposals must match an entire source span under narrow typographic normalization and
   pass separate boundary checks. Ambiguous boundaries need independent model review; unresolved
   text is withheld. Generated orientation stays visibly separate from the authors' words.
-- Every new context claim maps to inspected excerpts and passes an independent model review of
-  support, chronology, and usefulness. Every cited URL must also pass bounded DNS,
-  redirect, public-address, and HTTP-success checks before the note or its sources are persisted.
-  One failed citation withholds the whole note. The interface states the limit of that guarantee:
-  reachability at a recorded time is not evidence that a source semantically supports the claim.
+- Every context claim carries a source class, shown next to it: **From the paper** (a quote that
+  was found verbatim in the paper's text, linked to its page), **Citation graph** (a record for a
+  neighbouring work in Lysilogy's citation graph), or **Background · unverified** (the model's own
+  knowledge, which nothing checked). A claim whose quote or graph record does not check out is
+  shown as background and says why; it is never silently promoted. Analyses made before the
+  context node keep their older web-researched notes, which are shown only when every cited URL
+  passed the reachability checks.
+- Every citation edge carries at most one current label saying why the paper cites the work: a
+  relation, a reason, a quote checked against the citing text, how much the paper does with the
+  work, and which path wrote it (the paper reading, the citation labeler, or you). Labels run after
+  each analysis, show in the literature graph and under the Abstract page's graph claims and
+  reading list, and feed the context node. See `docs/edge-labels.md`.
+- Pipeline checks (sparse sections, a repaired grouping, downgraded context claims, a skipped
+  verification pass) and the pipeline version sit in a collapsed line at the foot of the Abstract
+  view.
 
 AI citations become prehighlights only after a deterministic unique-match check against the
 extracted tokens. Reader highlights use the same stable sentence and token anchors, so both survive
@@ -291,6 +301,7 @@ Press `?` in the app for the complete, contextual guide.
 | `y` | Copy the selection |
 | `Space` | Persist the selected source sentence range as a reader highlight |
 | `H` / `U` in Overview | Toggle AI-cited prehighlights / reader highlights |
+| `O` in Overview | Switch between logical units and the printed outline (`j`/`k` and Enter work in both) |
 | `I` | Invert every PDF rendering between dark ink and true image colors |
 | `F1` | Toggle the library from anywhere |
 | `F10` | Open the fuzzy article switcher |
@@ -430,6 +441,7 @@ Everything generated lives beneath the data root:
         ├── context-assessment.json # claim/link support counts, reviews, and research gaps
         ├── sectioning-report.json # initial/final size and parent-topic fragmentation checks
         ├── analysis.json        # typed, versioned application model
+        ├── edge-labels.json     # the last citation-labelling run: counts and every edge's label
         ├── digest.md            # portable human-readable digest
         ├── highlights.jsonl     # canonical one-highlight-per-line records (AI and reader)
         ├── highlights.md        # generated human-readable projection
@@ -450,6 +462,41 @@ complete typed highlight with provenance, exact quoted text, PDF page, page-loca
 sentence IDs, and PDF-point rectangles — diffable and scriptable without a database. The original
 PDFs are never modified, and every artifact can be read, searched, versioned, or reused without
 running the frontend.
+
+## Reviewing output quality
+
+The review panel grades what the Abstract and Overview views show against a rubric
+(`eval/review/rubric.json`): the abstract (exact or not), the thesis, why it matters (marked highest
+value, with a hard reject for a false claim), the outline, the logical units and a sample of the
+paper's citation labels. Grades are stored
+per analysis run and summarised by pipeline version, so a prompt change can be compared with the
+run before it. `eval/review/README.md` explains the rubric and the storage.
+
+1. **Fetch the evaluation set** (four AI papers and five classic economics papers, each with three
+   to five neighbours; every identifier was written offline and is marked unverified):
+
+   ```sh
+   python3 scripts/review/fetch_papers.py --target ~/Papers/review-set --neighbours
+   ```
+
+   Paywalled papers come back as `needs-manual`; save them under the printed file name.
+2. **Analyse.** Add the folder to the library from the home page and analyse each paper. The
+   app path uses the `analysis` section of `lysilogy.config.json` (model, optional judgment model,
+   providers, default `["deepinfra"]`, and the per-paper budget). Citation labels follow the
+   analysis with `label_model`, `label_budget_usd` and `label_limit` from the same section.
+3. **Grade.** Open a paper and press `F2` (or `:review`). Each component's output, with its source
+   classes and any pipeline warnings, sits next to its rubric dimensions; `j`/`k` move, `0`–`4`
+   score, `i` flags an issue with the selected text as its quote. Grades save as you go.
+4. **Summarise.** `cargo run -- review` prints means, pass rates and flagged issues per pipeline
+   version; `--json` prints the same as JSON and `--export reviews.json` writes every review and
+   issue next to the output it refers to. Citation-label grades are grouped by labeler and prompt
+   version, and with a graph the accept, reject and edit actions on labels are counted too.
+
+The shared fixtures in `tests/fixtures/reader/` (a current analysis using every reader field and
+an older one without them) are loaded by Rust (`src/domain/fixture_tests.rs`), by
+`npm run test:reader-output` and by `npm run smoke:reader-output`, which renders the built app
+against them and writes the screenshots in `docs/screenshots/`. Set `LYSILOGY_CHROMIUM` to a
+browser binary when Playwright's bundled one is not installed.
 
 ## Quality checks
 

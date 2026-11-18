@@ -275,6 +275,9 @@ enum Command {
         /// The `OpenRouter` model.
         #[arg(long, default_value = lysilogy::analysis::openrouter::DEFAULT_MODEL)]
         model: String,
+        /// A stronger `OpenRouter` model for the self-check; defaults to --model.
+        #[arg(long)]
+        judgment_model: Option<String>,
         /// 1 for a single pass, 2 to add the self-check pass.
         #[arg(long, default_value_t = 2, value_parser = clap::value_parser!(u8).range(1..=2))]
         passes: u8,
@@ -291,9 +294,14 @@ enum Command {
         #[arg(long, default_value_t = 0.15)]
         paper_budget_usd: f64,
         /// Optional feature passes after the core pass: figures, tables,
-        /// algorithms, equations, objects, supercut, analysis, glossary, all, none.
+        /// algorithms, equations, objects, supercut, analysis, glossary,
+        /// context, all, none.
         #[arg(long, default_value = "")]
         features: String,
+        /// A neighbour dossier JSON for the context node. A library paper
+        /// gets its dossier from the citation graph when this is omitted.
+        #[arg(long)]
+        dossier: Option<PathBuf>,
         /// Pages per chunk for the chunked object pass.
         #[arg(long, default_value_t = 6, value_parser = clap::value_parser!(u16).range(1..=50))]
         object_pages: u16,
@@ -327,7 +335,7 @@ enum Command {
         #[arg(long)]
         force: bool,
     },
-    /// Refresh only cited research history and subsequent influence.
+    /// Refresh only the "why this paper matters" context, over the last core run.
     RefreshContext {
         query: String,
         #[arg(long, default_value = "openrouter")]
@@ -520,6 +528,26 @@ enum Command {
         #[arg(long)]
         arm_b: PathBuf,
     },
+    /// Label why one paper cites each work (or resume a partial run), save
+    /// edge-labels.json, and rewrite its context when a label was written.
+    Labels {
+        /// Paper ID or unambiguous title fragment.
+        query: String,
+        #[arg(long, default_value = "openrouter")]
+        provider: AnalysisProvider,
+        /// Also relabel unreviewed labels written under an older prompt version.
+        #[arg(long)]
+        relabel_older_prompt: bool,
+    },
+    /// Summarise human reviews of reader output by pipeline version, or export them.
+    Review {
+        /// Write every review, the summary and the flagged issues to this JSON file.
+        #[arg(long)]
+        export: Option<PathBuf>,
+        /// Print the summary as JSON.
+        #[arg(long)]
+        json: bool,
+    },
     /// Persist a blind evaluator's absolute scorecards and comparative judgment.
     ExperimentJudge {
         /// Paper ID or unambiguous title fragment.
@@ -559,6 +587,7 @@ async fn run(cli: Cli) -> Result<()> {
         .await
         .with_notes_root(&cli.notes)
         .with_vimrc(config.vim.vimrc)
+        .with_analysis_config(config.analysis)
         .with_notes_template(config.notes)?;
     let skip_fields = matches!(
         cli.command,
@@ -582,7 +611,7 @@ async fn run(cli: Cli) -> Result<()> {
             .map_err(|error| Error::InvalidRequest(format!("invalid default address: {error}")))?,
         web: PathBuf::from("web/dist"),
     }) {
-        Command::Serve { bind, web } => serve(state, bind, &web).await,
+        Command::Serve { bind, web } => Box::pin(serve(state, bind, &web)).await,
         Command::Scan => {
             let library = state.refresh().await?;
             let ready = library
@@ -598,11 +627,14 @@ async fn run(cli: Cli) -> Result<()> {
             );
             Ok(())
         }
-        Command::Audit { query, all, json } => audit_command(&state, query, all, json).await,
+        Command::Audit { query, all, json } => {
+            Box::pin(audit_command(&state, query, all, json)).await
+        }
         Command::Extract {
             query,
             pdf,
             model,
+            judgment_model,
             passes,
             out,
             work,
@@ -614,12 +646,17 @@ async fn run(cli: Cli) -> Result<()> {
             core_mode,
             providers,
             config,
+            dossier,
         } => {
+            let mut graph_dossier = None;
             let pdf = match (pdf, query) {
                 (Some(pdf), _) => pdf,
                 (None, Some(query)) => {
                     let id = resolve_paper(&state, &query).await?;
                     let paper = state.paper(&id).await?;
+                    if dossier.is_none() {
+                        graph_dossier = Some(state.neighbour_dossier(&id).await);
+                    }
                     cli.library.join(&paper.paper.relative_path)
                 }
                 (None, None) => {
@@ -636,6 +673,7 @@ async fn run(cli: Cli) -> Result<()> {
                 work_directory: work.unwrap_or_else(|| extract_root.join(&stem)),
                 pdf,
                 model,
+                judgment_model,
                 passes,
                 dpi,
                 paper_budget_usd,
@@ -655,9 +693,19 @@ async fn run(cli: Cli) -> Result<()> {
                 },
                 progress: None,
                 checkpoints: None,
+                dossier: match dossier {
+                    Some(path) => serde_json::from_slice(
+                        &tokio::fs::read(&path)
+                            .await
+                            .map_err(|error| Error::io(&path, error))?,
+                    )?,
+                    None => graph_dossier.unwrap_or_default(),
+                },
+                seed: None,
             };
             let ledger = lysilogy::analysis::spend::SpendLedger::with_defaults();
-            let record = lysilogy::paper_artifacts::run::extract(&options, &ledger).await?;
+            let record =
+                Box::pin(lysilogy::paper_artifacts::run::extract(&options, &ledger)).await?;
             print_extract_summary(&record, &options.output);
             if record.succeeded() {
                 Ok(())
@@ -697,7 +745,7 @@ async fn run(cli: Cli) -> Result<()> {
         } => {
             let id = resolve_paper(&state, &query).await?;
             println!("Analyzing {id} with {provider}…");
-            let view = state.analyze_now(&id, provider, force).await?;
+            let view = Box::pin(state.analyze_now(&id, provider, force)).await?;
             let analysis = view.analysis.ok_or_else(|| {
                 Error::Task("analysis completed without a stored artifact".to_owned())
             })?;
@@ -710,14 +758,13 @@ async fn run(cli: Cli) -> Result<()> {
             force,
         } => {
             let id = resolve_paper(&state, &query).await?;
-            let view = state
-                .refresh_component(
-                    &id,
-                    provider,
-                    force,
-                    lysilogy::domain::AnalysisComponent::Abstract,
-                )
-                .await?;
+            let view = Box::pin(state.refresh_component(
+                &id,
+                provider,
+                force,
+                lysilogy::domain::AnalysisComponent::Abstract,
+            ))
+            .await?;
             println!(
                 "{}",
                 serde_json::to_string_pretty(&view.analysis.and_then(|a| a.abstract_extraction))?
@@ -730,17 +777,16 @@ async fn run(cli: Cli) -> Result<()> {
             force,
         } => {
             let id = resolve_paper(&state, &query).await?;
-            let view = state
-                .refresh_component(
-                    &id,
-                    provider,
-                    force,
-                    lysilogy::domain::AnalysisComponent::Context,
-                )
-                .await?;
+            let view = Box::pin(state.refresh_component(
+                &id,
+                provider,
+                force,
+                lysilogy::domain::AnalysisComponent::Context,
+            ))
+            .await?;
             println!(
                 "{}",
-                serde_json::to_string_pretty(&view.analysis.and_then(|a| a.context_assessment))?
+                serde_json::to_string_pretty(&view.analysis.and_then(|a| a.context))?
             );
             Ok(())
         }
@@ -777,7 +823,7 @@ async fn run(cli: Cli) -> Result<()> {
             Ok(())
         }
         Command::ResolveReference { reference, json } => {
-            resolve_reference_command(&reference, json).await
+            Box::pin(resolve_reference_command(&reference, json)).await
         }
         Command::Lit {
             paper,
@@ -816,7 +862,16 @@ async fn run(cli: Cli) -> Result<()> {
             paper,
             all,
             fetch_metrics,
-        } => prominence_command(&state, &cli.library, paper.as_deref(), all, fetch_metrics).await,
+        } => {
+            Box::pin(prominence_command(
+                &state,
+                &cli.library,
+                paper.as_deref(),
+                all,
+                fetch_metrics,
+            ))
+            .await
+        }
         Command::Fetch {
             work,
             cited_by,
@@ -829,9 +884,16 @@ async fn run(cli: Cli) -> Result<()> {
                 model_fallback: model_fallback.map(LabelSidecar::provider),
             };
             match (work, cited_by) {
-                (Some(work), None) => fetch_work_command(&state, &work, options).await,
+                (Some(work), None) => Box::pin(fetch_work_command(&state, &work, options)).await,
                 (None, Some(paper)) => {
-                    fetch_cited_by_command(&state, &cli.library, &paper, limit, options).await
+                    Box::pin(fetch_cited_by_command(
+                        &state,
+                        &cli.library,
+                        &paper,
+                        limit,
+                        options,
+                    ))
+                    .await
                 }
                 _ => Err(Error::InvalidRequest(
                     "give exactly one of <work> or --cited-by".to_owned(),
@@ -852,10 +914,12 @@ async fn run(cli: Cli) -> Result<()> {
                 refresh,
                 local: !no_local,
             };
-            expand_command(&state, &cli.library, &work, paper, options).await
+            Box::pin(expand_command(&state, &cli.library, &work, paper, options)).await
         }
-        Command::Provenance { command } => provenance_command(&state, &cli.library, command).await,
-        Command::Ramp { command } => ramp_command(&state, &cli.library, command).await,
+        Command::Provenance { command } => {
+            Box::pin(provenance_command(&state, &cli.library, command)).await
+        }
+        Command::Ramp { command } => Box::pin(ramp_command(&state, &cli.library, command)).await,
         Command::RefreshStructure {
             query,
             provider,
@@ -863,14 +927,13 @@ async fn run(cli: Cli) -> Result<()> {
         } => {
             let id = resolve_paper(&state, &query).await?;
             println!("Regrouping sections for {id} with {provider}…");
-            let view = state
-                .refresh_component(
-                    &id,
-                    provider,
-                    force,
-                    lysilogy::domain::AnalysisComponent::Structure,
-                )
-                .await?;
+            let view = Box::pin(state.refresh_component(
+                &id,
+                provider,
+                force,
+                lysilogy::domain::AnalysisComponent::Structure,
+            ))
+            .await?;
             if let Some(analysis) = view.analysis {
                 println!(
                     "{}: {} reading units",
@@ -890,7 +953,7 @@ async fn run(cli: Cli) -> Result<()> {
             provider,
             force,
             limit,
-        } => ingest(&state, provider, force, limit).await,
+        } => Box::pin(ingest(&state, provider, force, limit)).await,
         Command::Experiment {
             queries,
             experiment,
@@ -898,21 +961,76 @@ async fn run(cli: Cli) -> Result<()> {
             repeat,
             concurrency,
         } => {
-            experiment_campaign(&state, &queries, &experiment, provider, repeat, concurrency).await
+            Box::pin(experiment_campaign(
+                &state,
+                &queries,
+                &experiment,
+                provider,
+                repeat,
+                concurrency,
+            ))
+            .await
         }
-        Command::ExperimentReport { output } => experiment_report_command(&state, output).await,
+        Command::ExperimentReport { output } => {
+            Box::pin(experiment_report_command(&state, output)).await
+        }
+        Command::Labels {
+            query,
+            provider,
+            relabel_older_prompt,
+        } => {
+            let id = resolve_paper(&state, &query).await?;
+            let (run, context) = Box::pin(state.run_edge_labels(
+                &id,
+                provider,
+                lysilogy::edge_labels::EdgeLabelRequest {
+                    relabel_older_prompt,
+                },
+            ))
+            .await?;
+            eprintln!("{}", run.task_detail());
+            match context {
+                None => eprintln!("context: not rewritten (no label was written)"),
+                Some(Ok(())) => eprintln!("context: rewritten with the new labels"),
+                Some(Err(error)) => eprintln!("context: rewrite failed: {error}"),
+            }
+            println!("{}", serde_json::to_string_pretty(&run)?);
+            Ok(())
+        }
+        Command::Review { export, json } => {
+            let store = lysilogy::store::ArtifactStore::new(&cli.data);
+            print!(
+                "{}",
+                Box::pin(lysilogy::review::run_cli(&store, export.as_deref(), json)).await?
+            );
+            Ok(())
+        }
         Command::ExperimentPrepare {
             queries,
             experiment,
             provider,
             repeat,
-        } => prepare_experiment_campaign(&state, &queries, &experiment, provider, repeat).await,
+        } => {
+            Box::pin(prepare_experiment_campaign(
+                &state,
+                &queries,
+                &experiment,
+                provider,
+                repeat,
+            ))
+            .await
+        }
         Command::ExperimentImport {
             query,
             run,
             arm_a,
             arm_b,
-        } => import_experiment_command(&state, &query, &run, &arm_a, &arm_b).await,
+        } => {
+            Box::pin(import_experiment_command(
+                &state, &query, &run, &arm_a, &arm_b,
+            ))
+            .await
+        }
         Command::ExperimentJudge { query, run, input } => {
             let id = resolve_paper(&state, &query).await?;
             let bytes = tokio::fs::read(&input)
@@ -2516,6 +2634,21 @@ fn print_extract_summary(
     }
     if let Some(reason) = &record.budget_stopped {
         println!("  budget: {reason}");
+    }
+    println!("  pipeline: {}", record.pipeline_version);
+    for retry in &record.plausibility_retries {
+        let outcome = if retry.kept_retry {
+            "kept"
+        } else {
+            "discarded"
+        };
+        println!(
+            "  retried {} for a degenerate answer; retry {outcome}",
+            retry.call
+        );
+    }
+    for warning in &record.warnings {
+        println!("  warning: {}", warning.message);
     }
     for failure in &record.failures {
         println!("  failed {}: {}", failure.stage, failure.error);

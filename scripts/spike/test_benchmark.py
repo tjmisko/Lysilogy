@@ -230,6 +230,42 @@ class SectionTests(unittest.TestCase):
         self.assertEqual(score["unit_count_error"], -1)
 
 
+    def test_should_score_grouped_units_by_their_outline_range_when_pages_are_missing(self):
+        oracle = {"sections": [{"pages": {"start": 1, "end": 2}}, {"pages": {"start": 3, "end": 4}}]}
+        grouped = {
+            "outline": [{"title": "Introduction", "page": 1}, {"title": "Model", "page": 2},
+                        {"title": "Results", "page": 3}, {"title": "References", "page": 4}],
+            "sections": [{"outline_first": 0, "outline_last": 1}, {"outline_first": 2, "outline_last": 2}],
+        }
+        score = b.score_sections_oracle(grouped, oracle)
+        self.assertEqual(score["predicted_units"], 2)
+        self.assertEqual(score["boundary_exact"], 0.5)
+        self.assertIsNone(b.section_pages({"outline_first": 3, "outline_last": 9}, grouped["outline"]))
+
+
+class OutlineTests(unittest.TestCase):
+    def test_should_score_heading_recall_and_precision_against_an_oracle_list(self):
+        oracle = {"outline": ["1 Introduction", {"title": "Related Work", "page": 2}, "3 Results", "References"]}
+        predicted = {"outline": [
+            {"number": "1", "title": "Introduction", "page": 1},
+            {"number": "2", "title": "Related work", "page": 3},
+            {"number": None, "title": "References", "page": 9},
+            {"number": None, "title": "Figure 1", "page": 4},
+        ]}
+        score = b.score_outline(predicted, oracle)
+        self.assertEqual(score["matched"], 3)
+        self.assertEqual(score["recall"], 0.75)
+        self.assertEqual(score["precision"], 0.75)
+        self.assertEqual(score["page_exact"], 0.0)
+
+    def test_should_skip_outline_scoring_without_oracle_data(self):
+        self.assertEqual(b.score_outline({"outline": []}, {"title": "T"}), {})
+
+    def test_should_give_full_marks_to_an_empty_outline_for_a_paper_without_headings(self):
+        score = b.score_outline({"outline": []}, {"outline": []})
+        self.assertEqual((score["recall"], score["precision"]), (1.0, 1.0))
+
+
 class IntervalTests(unittest.TestCase):
     def test_should_bound_a_perfect_rate_below_one(self):
         interval = b.wilson(20, 20)

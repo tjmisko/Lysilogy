@@ -109,7 +109,7 @@ pub enum ProcessingStage {
     Persistence,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AnalysisComponent {
     Abstract,
@@ -155,6 +155,9 @@ pub enum AnalysisTaskStatus {
     Pending,
     Active,
     Completed,
+    /// Finished, but part of the work was not done (for example some
+    /// citation labels failed or ran out of budget); the detail says what.
+    Warning,
     Failed,
 }
 
@@ -291,6 +294,13 @@ pub struct PaperAnalysis {
     pub context_assessment: Option<crate::analysis::context::ContextAssessment>,
     #[serde(default)]
     pub prerequisites: Vec<String>,
+    /// The paper's own headings as printed, in reading order: the outline
+    /// view. Empty for a paper that prints no headings and for analyses made
+    /// before it was recorded.
+    #[serde(default)]
+    pub outline: Vec<OutlineEntry>,
+    /// The logical reading units. When the paper has a usable outline each
+    /// unit groups a contiguous range of `outline` entries.
     #[serde(default)]
     pub sections: Vec<PaperSection>,
     #[serde(default)]
@@ -301,6 +311,125 @@ pub struct PaperAnalysis {
     pub caveats: Vec<String>,
     #[serde(default)]
     pub reading_path: Vec<String>,
+    /// What produced this analysis: a digest of the prompts and schemas plus
+    /// the model and provider, so a later review can be tied to exactly the
+    /// pipeline that wrote it. Absent on analyses made before it was recorded.
+    #[serde(default)]
+    pub pipeline_version: Option<String>,
+    /// Deterministic plausibility warnings about the model output, such as a
+    /// section map that covers too little of the paper or a skipped
+    /// verification pass. Empty when nothing looked wrong.
+    #[serde(default)]
+    pub quality_warnings: Vec<QualityWarning>,
+    /// Why the paper matters, from the context node. `None` on analyses made
+    /// before it existed and when the node did not run.
+    #[serde(default)]
+    pub context: Option<PaperContext>,
+    /// How closely the model's abstract agrees with the deterministic
+    /// extraction. `None` on analyses made before it was recorded.
+    #[serde(default)]
+    pub abstract_agreement: Option<crate::abstracts::AbstractAgreement>,
+    /// The pipeline version that last wrote each refreshable component
+    /// (`abstract`, `context`, `structure`), so a grade can be tied to the
+    /// pipeline that produced the part it grades. A component missing here
+    /// was written with the whole analysis under `pipeline_version`.
+    #[serde(default)]
+    pub component_versions: std::collections::BTreeMap<AnalysisComponent, String>,
+}
+
+impl PaperAnalysis {
+    /// Record that `version` last wrote `component`, and make it the
+    /// analysis's current pipeline version.
+    pub fn record_component_version(&mut self, component: AnalysisComponent, version: String) {
+        self.component_versions.insert(component, version.clone());
+        self.pipeline_version = Some(version);
+    }
+
+    /// Whether any stored warning means the analysis is not a clean success.
+    #[must_use]
+    pub fn degraded(&self) -> bool {
+        self.quality_warnings
+            .iter()
+            .any(|warning| warning.kind.degrades())
+    }
+}
+
+/// One deterministic sanity check the model output failed.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct QualityWarning {
+    pub kind: QualityWarningKind,
+    /// The record field the warning is about, e.g. `sections` or `identity`.
+    pub field: String,
+    /// A plain-language account of what looked wrong, with the numbers.
+    pub message: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum QualityWarningKind {
+    /// The section map is empty.
+    SectionsMissing,
+    /// Far fewer reading units than the page count warrants.
+    SectionsSparse,
+    /// The section map leaves much of the main text uncovered.
+    SectionsLowCoverage,
+    /// No references, although the text has a references heading.
+    ReferencesMissing,
+    /// No abstract, although the text has an abstract heading.
+    AbstractMissing,
+    /// The title is empty, very short, or looks like an identifier or stamp.
+    TitleImplausible,
+    /// No outline, although the text shows numbered headings.
+    OutlineMissing,
+    /// Far fewer outline entries than the numbered headings the text shows.
+    OutlineSparse,
+    /// Headings the model returned were not found in the page text and were
+    /// dropped by admission.
+    OutlineEntriesDropped,
+    /// The model's grouping of outline entries had gaps, overlaps or split
+    /// references and was repaired deterministically.
+    SectionsGroupingRepaired,
+    /// Logical units leave main-text outline entries uncovered.
+    SectionsGroupingInvalid,
+    /// Every logical unit is a single heading: a table of contents, not a
+    /// reading map.
+    SectionsMirrorOutline,
+    /// No authors were returned.
+    AuthorsMissing,
+    /// A verification pass did not run because the paper budget ran out.
+    VerificationSkipped,
+    /// A verification pass ran but returned no usable answer.
+    VerificationFailed,
+    /// The model's abstract and the deterministic extraction disagree.
+    AbstractDisagreement,
+    /// Context claims whose quote or dossier record did not check out were
+    /// shown as unverified background instead.
+    ContextClaimsDowngraded,
+    /// The context node ran but left no context in the record.
+    ContextMissing,
+    /// A model call of the plan failed, so the fields it fills are missing
+    /// or come from an earlier answer.
+    CallFailed,
+    /// The paper budget kept a model call of the plan from starting.
+    CallSkipped,
+    /// A kind written by a newer version.
+    #[serde(other)]
+    Other,
+}
+
+impl QualityWarningKind {
+    /// Whether the warning means the result should not be shown as a clean
+    /// success: a verification pass or a model call did not complete.
+    #[must_use]
+    pub const fn degrades(self) -> bool {
+        matches!(
+            self,
+            Self::VerificationSkipped
+                | Self::VerificationFailed
+                | Self::CallFailed
+                | Self::CallSkipped
+        )
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -319,6 +448,244 @@ pub struct ContextNote {
     pub text: String,
     #[serde(default)]
     pub source_ids: Vec<String>,
+    /// Where the note comes from, for notes written by the context node.
+    /// `None` on notes from the older web-research design, whose support is
+    /// `source_ids`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub basis: Option<ContextBasis>,
+    /// Neighbour-dossier work ids that support a `dossier` note.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub work_ids: Vec<String>,
+}
+
+/// Where a claim about the paper's place in its field comes from.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ContextBasis {
+    /// The paper says so, and a verbatim quote was admitted against its text.
+    Paper,
+    /// A record in the neighbour dossier supports it.
+    Dossier,
+    /// The model's own background knowledge: shown, labelled unverified.
+    /// Unknown values read as this, the least trusted class.
+    #[default]
+    #[serde(other)]
+    Background,
+}
+
+/// Why a claim was moved to `background`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ContextDowngrade {
+    /// It claimed the paper's support, but no quote survived admission.
+    QuoteNotFound,
+    /// It claimed a dossier record, but none of its work ids is in the dossier.
+    UnknownWork,
+    /// A kind written by a newer version.
+    #[serde(other)]
+    Other,
+}
+
+/// A verbatim passage of the paper and its 1-based PDF page.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ContextQuote {
+    pub quote: String,
+    pub page: u32,
+}
+
+/// One claim of the context, with its source class.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ContextClaim {
+    pub text: String,
+    #[serde(default)]
+    pub basis: ContextBasis,
+    /// Admitted quotes for a `paper` claim.
+    #[serde(default)]
+    pub evidence: Vec<ContextQuote>,
+    /// Dossier work ids for a `dossier` claim; also kept on a `background`
+    /// claim as pointers.
+    #[serde(default)]
+    pub work_ids: Vec<String>,
+    /// Set when the claim was asked for as `paper` or `dossier` but its
+    /// support did not check out, so it is shown as `background`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub downgraded: Option<ContextDowngrade>,
+}
+
+/// How a neighbouring work relates to this paper.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum NeighbourRelation {
+    Predecessor,
+    Successor,
+    Critique,
+    Replication,
+    /// An overview or textbook treatment of the question.
+    Survey,
+    /// Independent work on the same question at about the same time.
+    Parallel,
+    #[default]
+    #[serde(other)]
+    Other,
+}
+
+/// A neighbouring work worth reading next to this paper.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReadAlongside {
+    /// The citation-graph Work id when the work is in the dossier, so the
+    /// reader can open it or ask Lysilogy to acquire it.
+    #[serde(default)]
+    pub work_id: Option<String>,
+    pub title: String,
+    #[serde(default)]
+    pub authors: Option<String>,
+    #[serde(default)]
+    pub year: Option<i32>,
+    #[serde(default)]
+    pub relation: NeighbourRelation,
+    pub why: String,
+    #[serde(default)]
+    pub basis: ContextBasis,
+    /// The library paper that holds this work, when Lysilogy has it.
+    #[serde(default)]
+    pub local_paper_id: Option<String>,
+}
+
+/// What settling the context did, for reviews and prompt tuning.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ContextCounts {
+    /// Works in the dossier the model was given.
+    pub dossier_works: usize,
+    /// Claims by final basis.
+    pub paper_claims: usize,
+    pub dossier_claims: usize,
+    pub background_claims: usize,
+    /// `paper` claims whose quotes all failed admission.
+    pub downgraded_quote_not_found: usize,
+    /// `dossier` claims none of whose work ids was in the dossier.
+    pub downgraded_unknown_work: usize,
+    /// Work ids removed from claims or reading suggestions because the
+    /// dossier has no such record.
+    pub unknown_work_ids: usize,
+    /// Reading suggestions dropped beyond the cap or without a title.
+    pub dropped_read_alongside: usize,
+    /// Claims dropped because their text was empty.
+    pub dropped_empty_claims: usize,
+}
+
+/// Why the paper matters: the first view's account of where it sits in its
+/// field, written by the context node.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct PaperContext {
+    /// Two to four claims: why a smart outsider should care.
+    pub lead: Vec<ContextClaim>,
+    pub before: Vec<ContextClaim>,
+    pub contribution: Vec<ContextClaim>,
+    pub after: Vec<ContextClaim>,
+    pub read_alongside: Vec<ReadAlongside>,
+    /// What the model said it does not know about the reception.
+    pub reception_note: Option<String>,
+    pub counts: ContextCounts,
+    /// The neighbour dossier the context node read, in compact form, so a
+    /// reviewer can check a dossier claim against what the model was given.
+    /// `None` on contexts written before it was stored.
+    pub dossier: Option<ContextDossier>,
+}
+
+/// Whether the neighbour dossier could be assembled.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DossierStatus {
+    /// It was assembled from the citation graph; it may still be short.
+    #[default]
+    Ok,
+    /// The paper is not linked to a work in the citation graph.
+    NotLinked,
+    /// No citation graph is configured.
+    NoGraph,
+    /// Assembling it failed, so the model was given an empty dossier.
+    Error,
+    /// A status written by a newer version.
+    #[serde(other)]
+    Other,
+}
+
+/// The dossier the context node read: whether it could be assembled, and
+/// each work it listed.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ContextDossier {
+    pub status: DossierStatus,
+    pub works: Vec<DossierWorkSummary>,
+}
+
+/// One dossier work, as much as a reviewer needs to recognise it.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct DossierWorkSummary {
+    /// The citation-graph Work id that claims cite.
+    pub id: String,
+    pub title: Option<String>,
+    pub year: Option<i32>,
+    pub first_author: Option<String>,
+    /// `true` for a later work that cites the paper, `false` for one it cites.
+    pub citing: bool,
+    /// The library paper that holds this work, when Lysilogy has it.
+    pub local_paper_id: Option<String>,
+    /// The citation label on the edge between this work and the paper, when
+    /// the graph had one at analysis time: why the paper cites it, or (for a
+    /// citing work) why it cites the paper.
+    pub edge: Option<DossierEdgeLabel>,
+}
+
+/// A citation label as the context node read it from the graph.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct DossierEdgeLabel {
+    pub relation: String,
+    pub reason: String,
+    pub quote: Option<String>,
+    /// `core_relation`, `edge_labeler` or `user`.
+    pub path: Option<String>,
+    /// `substantive`, `perfunctory` or `not_shown`, when the labeler said.
+    pub engagement: Option<String>,
+    /// `unreviewed`, `accepted` or `disputed`; rejected labels are left out.
+    pub review_state: String,
+}
+
+impl DossierEdgeLabel {
+    /// Whether the label says what role the work plays: engagement
+    /// `substantive`, or no engagement stated (a core relation, a version 1
+    /// label) and a relation that claims a role, not `background` or `other`.
+    #[must_use]
+    pub fn names_a_role(&self) -> bool {
+        self.engagement.as_deref().map_or_else(
+            || !matches!(self.relation.as_str(), "background" | "other"),
+            |engagement| engagement == "substantive",
+        )
+    }
+
+    /// Whether the label says the citation is only a mention.
+    #[must_use]
+    pub fn is_perfunctory(&self) -> bool {
+        matches!(
+            self.engagement.as_deref(),
+            Some("perfunctory" | "not_shown")
+        )
+    }
+}
+
+impl PaperContext {
+    /// Every claim, in reading order.
+    pub fn claims(&self) -> impl Iterator<Item = &ContextClaim> {
+        self.lead
+            .iter()
+            .chain(&self.before)
+            .chain(&self.contribution)
+            .chain(&self.after)
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -344,6 +711,42 @@ pub struct ContextSource {
     pub relationship: Option<String>,
 }
 
+/// One printed heading of the paper.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct OutlineEntry {
+    /// The printed number or letter, such as `2.1`, `IV.` or `A.`.
+    #[serde(default)]
+    pub number: Option<String>,
+    /// The heading text as printed, without its number.
+    pub title: String,
+    /// 1 for a top-level heading, 2 for a subsection, and so on.
+    pub level: u8,
+    /// The 1-based PDF page the heading is printed on.
+    pub page: u32,
+    #[serde(default)]
+    pub role: OutlineRole,
+    /// Where the heading is printed, resolved from the PDF text layer.
+    #[serde(default)]
+    pub anchor: Option<TextAnchor>,
+}
+
+/// Which part of the paper a heading belongs to.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OutlineRole {
+    /// Abstract, keywords and similar material before the main text.
+    FrontMatter,
+    #[default]
+    Main,
+    /// Acknowledgments, funding, author notes and declarations.
+    BackMatter,
+    References,
+    Appendix,
+    /// A role written by a newer version.
+    #[serde(other)]
+    Other,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PaperSection {
     pub id: String,
@@ -353,6 +756,14 @@ pub struct PaperSection {
     pub pages: PageSpan,
     pub summary: String,
     pub digest: String,
+    /// The question this unit answers for the reader: why its parts belong
+    /// together.
+    #[serde(default)]
+    pub question: Option<String>,
+    /// Indices into `PaperAnalysis::outline` of the printed headings this
+    /// unit groups, in order. Empty when the unit was made without an outline.
+    #[serde(default)]
+    pub outline_entries: Vec<usize>,
     #[serde(default)]
     pub source_span: Option<SectionSourceSpan>,
     #[serde(default)]
@@ -866,3 +1277,6 @@ impl ExtractedPaper {
         text
     }
 }
+
+#[cfg(test)]
+mod fixture_tests;

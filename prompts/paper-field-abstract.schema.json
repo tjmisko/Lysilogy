@@ -10,8 +10,7 @@
       "additionalProperties": false,
       "required": [
         "text",
-        "page",
-        "confidence"
+        "page"
       ],
       "properties": {
         "text": {
@@ -19,22 +18,13 @@
             "string",
             "null"
           ],
-          "description": "The abstract copied verbatim, paragraphs joined with a blank line; null if the paper has none."
+          "description": "The authors' own abstract copied verbatim from the page, lines within a paragraph joined with single spaces and paragraphs separated by a blank line; never a summary, a paraphrase or the opening of the introduction. Null if the paper prints no abstract."
         },
         "page": {
           "type": [
             "integer",
             "null"
           ]
-        },
-        "confidence": {
-          "type": "string",
-          "enum": [
-            "high",
-            "medium",
-            "low"
-          ],
-          "description": "How sure you are that this item is correct."
         }
       }
     }

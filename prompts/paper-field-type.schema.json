@@ -9,11 +9,14 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "value",
         "reason",
-        "confidence"
+        "value"
       ],
       "properties": {
+        "reason": {
+          "type": "string",
+          "description": "One line on what the paper mainly does, written before choosing the value."
+        },
         "value": {
           "type": "string",
           "enum": [
@@ -25,19 +28,8 @@
             "position",
             "replication",
             "resource"
-          ]
-        },
-        "reason": {
-          "type": "string"
-        },
-        "confidence": {
-          "type": "string",
-          "enum": [
-            "high",
-            "medium",
-            "low"
           ],
-          "description": "How sure you are that this item is correct."
+          "description": "survey: mainly reviews others' work; a paper with new theorems, methods or results is not a survey. method: proposes a new method, model or algorithm. empirical: tests a question on data or experiments. theory: derives results formally. dataset: introduces a dataset or benchmark. position: argues for a view or research agenda, including lectures and essays. replication: re-tests a previously published result; a reprint or corrected edition is not a replication. resource: software, a tool or another artefact for others to use."
         }
       }
     }

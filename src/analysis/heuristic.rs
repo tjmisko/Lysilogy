@@ -27,6 +27,8 @@ struct RawSection {
 
 impl HeuristicAnalyzer {
     #[must_use]
+    // One linear pass that fills every draft field in turn.
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn analyze(paper: &ExtractedPaper) -> AnalysisDraft {
         let target_pages = target_document_pages(&paper.pages);
         let mut raw_sections = discover_sections(&target_pages);
@@ -69,6 +71,8 @@ impl HeuristicAnalyzer {
                 },
                 summary,
                 digest,
+                question: None,
+                outline_entries: Vec::new(),
                 source_span: source_span(&raw),
                 key_quotes: quote.into_iter().collect(),
                 related_terms: detected_term_names(&body),
@@ -122,6 +126,7 @@ impl HeuristicAnalyzer {
             context_sources: Vec::new(),
             assessment: None,
             prerequisites,
+            outline: Vec::new(),
             sections,
             claims: claims.into_iter().take(10).collect(),
             glossary,
@@ -129,6 +134,7 @@ impl HeuristicAnalyzer {
                 "This digest was produced by the offline structural analyzer and should be checked against the quoted pages.".to_owned(),
             ],
             reading_path,
+            context: None,
         }
     }
 
@@ -906,6 +912,8 @@ fn empty_section(paper: &ExtractedPaper) -> SectionDraft {
         },
         summary: "Text was extracted, but its structure requires manual review.".to_owned(),
         digest: "Open the PDF alongside this view to inspect the source.".to_owned(),
+        question: None,
+        outline_entries: Vec::new(),
         source_span: None,
         key_quotes: Vec::new(),
         related_terms: Vec::new(),

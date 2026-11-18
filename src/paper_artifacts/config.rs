@@ -267,7 +267,9 @@ impl RunConfig {
         seen != self.calls.len()
     }
 
-    /// The model id for one call, resolving tier names.
+    /// The model id for one call, resolving tier names. The strong tier
+    /// falls back to the cheap one, so a judgment call runs on the requested
+    /// model when no stronger model is configured.
     #[must_use]
     pub fn model_for(&self, call: &Call) -> String {
         match call.model.as_deref() {
@@ -275,6 +277,7 @@ impl RunConfig {
                 .models
                 .strong
                 .clone()
+                .or_else(|| self.models.cheap.clone())
                 .unwrap_or_else(|| DEFAULT_MODEL.to_owned()),
             Some("cheap") | None => self
                 .models
@@ -336,6 +339,15 @@ mod tests {
     }
 
     #[test]
+    fn should_run_the_strong_tier_on_the_cheap_model_when_no_strong_model_is_set() {
+        let config = RunConfig::parse(
+            r#"{"calls":[{"name":"c","fields":["card"],"model":"strong"}],"models":{"cheap":"cheap/model"}}"#,
+        )
+        .expect("config");
+        assert_eq!(config.model_for(&config.calls[0]), "cheap/model");
+    }
+
+    #[test]
     fn should_reject_an_unknown_field() {
         assert!(RunConfig::parse(r#"{"calls":[{"name":"x","fields":["vibes"]}]}"#).is_err());
         assert!(RunConfig::parse(r#"{"calls":[]}"#).is_ok());
@@ -375,10 +387,8 @@ mod tests {
             .is_err()
         );
         assert!(
-            RunConfig::parse(
-                r#"{"calls":[{"name":"a","fields":["sections"],"requires":["a"]}]}"#
-            )
-            .is_err()
+            RunConfig::parse(r#"{"calls":[{"name":"a","fields":["sections"],"requires":["a"]}]}"#)
+                .is_err()
         );
         assert!(
             RunConfig::parse(

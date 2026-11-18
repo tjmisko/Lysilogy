@@ -18,6 +18,7 @@ mod notes;
 mod provenance;
 mod ramps;
 mod reader_tools;
+mod review;
 mod source_index;
 mod vimrc;
 
@@ -78,7 +79,7 @@ pub struct AppState {
     extra_libraries: Arc<RwLock<Vec<ExtraLibrary>>>,
     pub(crate) store: ArtifactStore,
     pub(crate) extractor: PdfExtractor,
-    analysis: AnalysisService,
+    pub(crate) analysis: AnalysisService,
     citation_http: crate::citation_graph::GraphHttp,
     pub(crate) graph: Option<GraphState>,
     pub(crate) literature: crate::literature::LiteratureClient,
@@ -224,6 +225,13 @@ impl AppState {
         })
     }
 
+    /// Run the model reader with these model, provider and budget settings.
+    #[must_use]
+    pub fn with_analysis_config(mut self, settings: crate::config::AnalysisConfig) -> Self {
+        self.analysis = self.analysis.with_settings(settings);
+        self
+    }
+
     /// Replace the `OpenAlex` client used by the literature flow (for tests).
     #[must_use]
     pub fn with_literature_client(mut self, client: crate::literature::LiteratureClient) -> Self {
@@ -309,8 +317,11 @@ impl AppState {
 
     pub async fn library(&self) -> LibraryResponse {
         let catalog = self.catalog.read().await;
-        let extras = self.extra_libraries.read().await;
         let papers = catalog.overviews();
+        let root_name = directory_name(catalog.root());
+        let root_path = catalog.root().display().to_string();
+        drop(catalog);
+        let extras = self.extra_libraries.read().await.clone();
         let count_in = |prefix: &str| {
             papers
                 .iter()
@@ -328,8 +339,8 @@ impl AppState {
             .collect::<Vec<_>>();
         let mut directories = vec![LibraryDirectory {
             id: "primary".to_owned(),
-            name: directory_name(catalog.root()),
-            path: catalog.root().display().to_string(),
+            name: root_name.clone(),
+            path: root_path,
             primary: true,
             available: true,
             papers: papers.len() - extra_papers.iter().sum::<usize>(),
@@ -345,7 +356,7 @@ impl AppState {
             }
         }));
         LibraryResponse {
-            name: directory_name(catalog.root()),
+            name: root_name,
             papers,
             directories,
         }
@@ -615,6 +626,79 @@ impl AppState {
         self.paper(id).await
     }
 
+    /// The analysis job's `labels` and `context-labels` tasks: label the
+    /// paper's citation edges, then rewrite the context node when labels
+    /// changed. Their failures are recorded on the tasks; only job tracking
+    /// errors are returned.
+    async fn label_after_analysis(&self, id: &PaperId, provider: AnalysisProvider) -> Result<()> {
+        self.jobs
+            .transition(id, ProcessingStage::Analysis, "labels")
+            .await?;
+        let labels = Box::pin(self.label_paper_edges(
+            id,
+            provider,
+            crate::edge_labels::EdgeLabelRequest::default(),
+        ))
+        .await;
+        self.jobs
+            .task_finished(id, "labels", labels.status.task_status(), labels.task_detail())
+            .await?;
+        // The context node was written before the labels existed; rewrite
+        // it when labels changed, so "why this paper matters" carries them.
+        let (status, detail) = if labels.wrote_labels() && provider != AnalysisProvider::Heuristic {
+            self.jobs
+                .transition(id, ProcessingStage::Analysis, "context-labels")
+                .await?;
+            match Box::pin(self.rewrite_context(id, provider, "context-labels")).await {
+                Ok(()) => (
+                    crate::domain::AnalysisTaskStatus::Completed,
+                    "Rewrote the context with the new citation labels".to_owned(),
+                ),
+                Err(error) => {
+                    tracing::warn!(paper_id = %id, %error, "could not rewrite the context after labelling");
+                    (
+                        crate::domain::AnalysisTaskStatus::Failed,
+                        format!("Failed: {error}; refresh the context to retry"),
+                    )
+                }
+            }
+        } else {
+            (
+                crate::domain::AnalysisTaskStatus::Completed,
+                "Not needed: no citation label was written".to_owned(),
+            )
+        };
+        self.jobs
+            .task_finished(id, "context-labels", status, detail)
+            .await
+    }
+
+    /// Rewrite the context node of a saved analysis in place, inside a job
+    /// that already holds the paper (the analysis job after labelling).
+    async fn rewrite_context(&self, id: &PaperId, provider: AnalysisProvider, task: &str) -> Result<()> {
+        let mut analysis = self.store.load_analysis(id).await?.ok_or_else(|| {
+            Error::InvalidRequest("Analyze this paper before refreshing it".to_owned())
+        })?;
+        let pdf = self.source_path(id).await?;
+        let dossier = self.neighbour_dossier(id).await;
+        let (progress, forwarder) = self.jobs.progress_reporter(id, task);
+        let refreshed = self
+            .analysis
+            .refresh_context(
+                provider,
+                &analysis,
+                &pdf,
+                &self.store.paper_dir(id),
+                dossier,
+                Some(progress),
+            )
+            .await;
+        forwarder.stop().await;
+        crate::analysis::apply_context(&mut analysis, refreshed?);
+        let _guard = self.highlight_write.lock().await;
+        self.store.save_analysis_projection(id, &analysis).await
+    }
+
     #[allow(clippy::too_many_lines)] // Keep reservation, component work, and status restoration together.
     pub async fn refresh_component(
         &self,
@@ -672,6 +756,7 @@ impl AppState {
                         Error::InvalidRequest("Analyze this paper before refreshing it".to_owned())
                     })?;
                     let pdf = self.source_path(id).await?;
+                    let dossier = self.neighbour_dossier(id).await;
                     let (progress, forwarder) = self.jobs.progress_reporter(id, task);
                     let refreshed = self
                         .analysis
@@ -680,30 +765,35 @@ impl AppState {
                             &paper,
                             &pdf,
                             &self.store.paper_dir(id),
+                            dossier,
                             Some(progress),
                         )
                         .await;
                     forwarder.stop().await;
                     let refreshed = refreshed?;
-                    match component {
-                        AnalysisComponent::Structure => {
-                            analysis.sections.clone_from(&refreshed.analysis.sections);
-                            analysis.generated_at = refreshed.analysis.generated_at;
-                        }
-                        AnalysisComponent::Abstract => {
-                            analysis
-                                .author_abstract
-                                .clone_from(&refreshed.analysis.author_abstract);
-                            analysis.abstract_extraction = refreshed.analysis.abstract_extraction;
-                        }
-                        AnalysisComponent::Context => unreachable!(),
-                    }
+                    crate::analysis::apply_component(analysis, component, refreshed);
                 }
                 AnalysisComponent::Context => {
-                    return Err(Error::InvalidRequest(
-                        "Context research is disabled until its node is rebuilt without web"
-                            .to_owned(),
-                    ));
+                    let analysis = analysis.as_mut().ok_or_else(|| {
+                        Error::InvalidRequest("Analyze this paper before refreshing it".to_owned())
+                    })?;
+                    let pdf = self.source_path(id).await?;
+                    let dossier = self.neighbour_dossier(id).await;
+                    let (progress, forwarder) = self.jobs.progress_reporter(id, task);
+                    let refreshed = self
+                        .analysis
+                        .refresh_context(
+                            provider,
+                            analysis,
+                            &pdf,
+                            &self.store.paper_dir(id),
+                            dossier,
+                            Some(progress),
+                        )
+                        .await;
+                    forwarder.stop().await;
+                    let refreshed = refreshed?;
+                    crate::analysis::apply_context(analysis, refreshed);
                 }
             }
             self.jobs.task_completed(id, task).await?;
@@ -870,6 +960,11 @@ impl AppState {
             .task_completed(id, "persist")
             .await
             .map_err(|error| (ProcessingStage::Persistence, error))?;
+        // Label why the paper cites each work. The analysis is saved; this
+        // step records its own failure on the task and never fails the job.
+        Box::pin(self.label_after_analysis(id, provider))
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
         self.jobs
             .complete(id, outcome.session.is_some())
             .await
@@ -905,12 +1000,14 @@ impl AppState {
             }
             AnalysisProvider::Codex | AnalysisProvider::Claude | AnalysisProvider::OpenRouter => {
                 let pdf = self.source_path(id).await?;
+                let dossier = self.neighbour_dossier(id).await;
                 self.analysis
                     .analyze_core_artifacts(
                         provider,
                         paper,
                         &pdf,
                         &self.store.paper_dir(id),
+                        dossier,
                         Some(progress),
                     )
                     .await
@@ -2045,6 +2142,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .merge(source_index::routes())
         .merge(notes::routes())
         .merge(vimrc::routes())
+        .merge(review::routes())
         .route("/api/health", get(health))
         .route("/api/library", get(library))
         .route("/api/library/scan", post(scan_library))

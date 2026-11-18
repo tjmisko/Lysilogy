@@ -6,6 +6,7 @@ import {
   HISTOGRAM_LIMIT, citedEdgesByCited, HISTOGRAM_NAV_KEYS, LITERATURE_VIEW_STORAGE_KEY, parseLiteratureView, type LiteratureView,
 } from "../lib/histogramLayout";
 import { LITERATURE_QUIT_EVENT } from "../lib/literatureEvents";
+import { edgeRelationLabel, engagementLabel, groupByRelation } from "../lib/edgeLabels";
 import {
   layoutRankedFanout, layoutWalk, planVisibleLabels, walkViewBox,
   type LabelRect, type LabelRequest, type RankedPlacement, type WalkPlacement,
@@ -143,8 +144,22 @@ function resolveLabel(label: EdgeLabel, patches: ReadonlyMap<string, EdgeLabel>)
 function labelCaption(label: EdgeLabel): string {
   if (label.origin === "user") return "Edited";
   const state = label.review_state === "accepted" ? "Accepted" : "Unreviewed";
-  return label.model === null ? state : `${state} · ${label.model}`;
+  const path = label.path === "core_relation" ? " · from the paper reading" : label.path === "edge_labeler" ? " · citation labeler" : "";
+  const engagement = engagementLabel(label.engagement);
+  const tail = `${path}${engagement === null ? "" : ` · ${engagement.toLowerCase()}`}`;
+  return label.model === null ? `${state}${tail}` : `${state}${tail} · ${label.model}`;
 }
+
+/** The edge's current reason in one line, for a tooltip or the selection strip; null without one. */
+function edgeWhyText(edge: GraphEdge | undefined, patches: ReadonlyMap<string, EdgeLabel>): string | null {
+  const label = edge?.labels.map((item) => resolveLabel(item, patches)).find((item) => item.review_state !== "rejected");
+  if (label === undefined) return null;
+  const engagement = engagementLabel(label.engagement);
+  return `${edgeRelationLabel(label.relation)} — ${label.reason}${engagement === null ? "" : ` (${engagement.toLowerCase()})`}`;
+}
+
+/** A cited Work with its current label, for the per-paper list grouped by relation. */
+type CitedReason = { workId: string; title: string; relation: string; label: EdgeLabel };
 
 function canShowInPaper(label: EdgeLabel): boolean {
   const mention = label.mention;
@@ -620,6 +635,24 @@ export function LiteratureGraph({ paperId, paperTitle, embedded = false, onClose
       ...applied(incoming, "Why it cites this"),
     ];
   }, [activeWork, citations, edgeByCited, graph, patches]);
+  // The selected Work's reason, readable without opening its panel.
+  const selectedWhy = useMemo(() => {
+    if (graph === null || activeWork === undefined || activeWork.id === graph.work.id) return null;
+    return edgeWhyText(edgeByCited.get(activeWork.id), patches);
+  }, [activeWork, edgeByCited, graph, patches]);
+  // Every labelled reference of the center paper, for the list grouped by relation.
+  const citedReasons = useMemo<CitedReason[]>(() => {
+    if (graph === null) return [];
+    const reasons: CitedReason[] = [];
+    for (const [workId, edge] of edgeByCited) {
+      const label = edge.labels.map((item) => resolveLabel(item, patches)).find((item) => item.review_state !== "rejected");
+      if (label === undefined) continue;
+      const work = worksById.get(workId);
+      reasons.push({ workId, title: work === undefined ? workId : workTitle(work), relation: label.relation, label });
+    }
+    return reasons;
+  }, [edgeByCited, graph, patches, worksById]);
+  const unlabelledCited = graph === null ? 0 : [...edgeByCited.values()].filter((edge) => edge.labels.every((label) => resolveLabel(label, patches).review_state === "rejected")).length;
   const actionableLabel = useMemo(
     () => panelEdges.flatMap((edge) => edge.labels).find((label) => label.review_state !== "rejected"),
     [panelEdges],
@@ -1049,7 +1082,15 @@ export function LiteratureGraph({ paperId, paperTitle, embedded = false, onClose
                     const labeled = edge?.labels.some((label) => resolveLabel(label, patches).review_state !== "rejected") ?? false;
                     const localOnly = edge !== undefined && edge.sources.includes("local") && !edge.sources.includes("provider");
                     const kind = labeled ? "is-labeled" : localOnly ? "is-local-only" : "";
-                    return <line key={`edge-${placement.id}`} className={`literature-edge ${kind}`} data-edge-kind={kind === "" ? "provider" : kind.slice(3)} x1={center.x} y1={center.y} x2={placement.x} y2={placement.y} />;
+                    const why = edgeWhyText(edge, patches);
+                    return <g key={`edge-${placement.id}`}>
+                      <line className={`literature-edge ${kind}`} data-edge-kind={kind === "" ? "provider" : kind.slice(3)} x1={center.x} y1={center.y} x2={placement.x} y2={placement.y} />
+                      {why !== null && (
+                        <line className="literature-edge-hit" data-edge-why={placement.id} x1={center.x} y1={center.y} x2={placement.x} y2={placement.y}>
+                          <title>{`Why it is cited: ${why}`}</title>
+                        </line>
+                      )}
+                    </g>;
                   })}
                   {walkLayout.walkEdges.map((edge) => {
                     const from = positions.get(edge.from);
@@ -1189,6 +1230,11 @@ export function LiteratureGraph({ paperId, paperTitle, embedded = false, onClose
                   />
                 )}
                 {walkNotice !== null && <p className="literature-walk-notice" role="status" data-walk-notice="true">{walkNotice}</p>}
+                {selectedWhy !== null && (
+                  <p className="literature-edge-why" role="status" data-edge-why-strip="true">
+                    <span>Why it is cited:</span> {selectedWhy}
+                  </p>
+                )}
                 <LiteratureLegend
                   graph={graphView === "histogram" ? histogramData ?? graph.neighbors : graph.neighbors}
                   placementCount={graphView === "histogram" ? histogramCardCount : placements.length - 1}
@@ -1223,6 +1269,9 @@ export function LiteratureGraph({ paperId, paperTitle, embedded = false, onClose
                   onUnassignTag={(tag) => unassignTag(activeWork.id, tag)}
                   state={citations}
                   edges={panelEdges}
+                  citedReasons={citedReasons}
+                  unlabelledCited={unlabelledCited}
+                  onSelectWork={openWorkPanel}
                   editingId={editingId}
                   labelError={labelError}
                   onReview={reviewLabel}
@@ -1288,6 +1337,10 @@ type WorkPanelProps = {
   onUnassignTag: (tag: TagView) => void;
   state: CitationsState;
   edges: PanelEdge[];
+  /** On the center paper: every labelled reference, for the list grouped by relation. */
+  citedReasons: CitedReason[];
+  unlabelledCited: number;
+  onSelectWork: (workId: string) => void;
   editingId: string | null;
   labelError: string | null;
   onReview: (label: EdgeLabel, decision: "accept" | "reject") => void;
@@ -1398,6 +1451,38 @@ function EdgeReasons({ edge, props }: { edge: PanelEdge; props: WorkPanelProps }
   );
 }
 
+/** Why the center paper cites each labelled work, grouped by relation: the paper's references seen from above. */
+function CitedReasons({ reasons, unlabelled, onSelectWork }: {
+  reasons: CitedReason[];
+  unlabelled: number;
+  onSelectWork: (workId: string) => void;
+}) {
+  if (reasons.length === 0 && unlabelled === 0) return null;
+  return (
+    <section className="literature-cited-reasons" aria-label="Why this paper cites its references">
+      <h4>Why it cites its references</h4>
+      {reasons.length === 0 && <p className="literature-hint">No reference shown here has a reason yet.</p>}
+      {groupByRelation(reasons).map((group) => (
+        <details key={group.relation} open={group.relation !== "background" && group.relation !== "other"} data-relation={group.relation}>
+          <summary>{edgeRelationLabel(group.relation)} · {group.items.length}</summary>
+          <ul>
+            {group.items.map((reason) => (
+              <li key={reason.workId} data-review-state={reason.label.review_state}>
+                <button type="button" onClick={() => onSelectWork(reason.workId)}>{reason.title}</button>
+                <span className="literature-reason">{reason.label.reason}</span>
+                {engagementLabel(reason.label.engagement) !== null && (
+                  <span className="literature-caption"> {engagementLabel(reason.label.engagement)}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ))}
+      {unlabelled > 0 && <p className="literature-hint">{unlabelled} shown reference{unlabelled === 1 ? "" : "s"} without a reason yet.</p>}
+    </section>
+  );
+}
+
 function FetchControl({ props }: { props: WorkPanelProps }) {
   const { fetchEntry, fetchView, canFetch: allowed, onFetch } = props;
   const job = fetchEntry?.job ?? "none";
@@ -1462,6 +1547,7 @@ function WorkPanel(props: WorkPanelProps) {
           )}
         </section>
       )}
+      {props.isCenter && <CitedReasons reasons={props.citedReasons} unlabelled={props.unlabelledCited} onSelectWork={props.onSelectWork} />}
       {edges.map((edge) => <EdgeReasons key={edge.heading} edge={edge} props={props} />)}
       {labelError !== null && <p className="literature-hint literature-label-error" role="alert">{labelError}</p>}
       {state.kind === "loading" && <p className="literature-hint" role="status">Loading citations…</p>}

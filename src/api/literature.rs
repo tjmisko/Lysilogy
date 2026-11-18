@@ -168,6 +168,22 @@ async fn run_job_steps(
             .label_local_edges(id, &summary, &labeler, label_options)
             .await?;
     }
+    if options.labels.is_none() {
+        // Linking the paper is what lets the labels step run: label its
+        // edges now (seeding from the core reading first) and write a fresh
+        // edge-labels.json, then rewrite the context when labels changed.
+        // A failure is recorded on the run and never fails the flow.
+        match Box::pin(state.run_edge_labels(
+            id,
+            crate::domain::AnalysisProvider::OpenRouter,
+            crate::edge_labels::EdgeLabelRequest::default(),
+        ))
+        .await
+        {
+            Ok((run, _)) => tracing::info!(paper_id = %id, detail = %run.task_detail(), "labelled citation edges after linking"),
+            Err(error) => tracing::warn!(paper_id = %id, %error, "could not label citation edges after linking"),
+        }
+    }
     if options.no_fields.unwrap_or(false) {
         return Ok((summary, Some(local)));
     }

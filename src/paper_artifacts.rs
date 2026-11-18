@@ -8,13 +8,22 @@
 pub mod admission;
 pub mod checkpoint;
 pub mod config;
+pub mod context;
 pub mod core_fields;
 pub mod corrections;
+pub mod dossier;
 pub mod features;
+pub mod grouping;
 pub mod objects;
+pub mod outline;
+pub mod pipeline;
+pub mod plausibility;
 pub mod resources;
 pub mod run;
 pub mod schema;
+pub mod structure;
+pub mod title;
+pub mod verification;
 
 /// The whole-paper artifacts a model fills in one pass, with every feature on.
 pub const PAPER_ARTIFACTS_SCHEMA: &str = include_str!("../prompts/paper-artifacts.schema.json");
@@ -31,6 +40,9 @@ pub const SUPERCUT_SCHEMA: &str = include_str!("../prompts/paper-supercut.schema
 /// Claims, method, numbers, limitations, open questions and the read signal.
 pub const ANALYSIS_SCHEMA: &str = include_str!("../prompts/paper-analysis.schema.json");
 
+/// Why the paper matters: the context node's answer.
+pub const CONTEXT_SCHEMA: &str = include_str!("../prompts/paper-context.schema.json");
+
 /// Notation and glossary terms.
 pub const GLOSSARY_SCHEMA: &str = include_str!("../prompts/paper-glossary.schema.json");
 
@@ -40,7 +52,12 @@ pub const TYPE_SCHEMA: &str = include_str!("../prompts/paper-field-type.schema.j
 pub const ABSTRACT_SCHEMA: &str = include_str!("../prompts/paper-field-abstract.schema.json");
 pub const CARD_SCHEMA: &str = include_str!("../prompts/paper-field-card.schema.json");
 pub const QUESTION_SCHEMA: &str = include_str!("../prompts/paper-field-question.schema.json");
+pub const OUTLINE_SCHEMA: &str = include_str!("../prompts/paper-field-outline.schema.json");
 pub const SECTIONS_SCHEMA: &str = include_str!("../prompts/paper-field-sections.schema.json");
+/// The logical units as ranges of the outline, asked for when the paper has
+/// a usable outline; pages and spans are then derived, not asked.
+pub const SECTIONS_GROUPED_SCHEMA: &str =
+    include_str!("../prompts/paper-field-sections-grouped.schema.json");
 pub const REFERENCES_SCHEMA: &str = include_str!("../prompts/paper-field-references.schema.json");
 pub const CITATIONS_SCHEMA: &str = include_str!("../prompts/paper-field-citations.schema.json");
 pub const RELATIONS_SCHEMA: &str = include_str!("../prompts/paper-field-relations.schema.json");
@@ -100,12 +117,15 @@ mod tests {
             ("supercut", SUPERCUT_SCHEMA),
             ("analysis", ANALYSIS_SCHEMA),
             ("glossary", GLOSSARY_SCHEMA),
+            ("context", CONTEXT_SCHEMA),
             ("field-identity", IDENTITY_SCHEMA),
             ("field-type", TYPE_SCHEMA),
             ("field-abstract", ABSTRACT_SCHEMA),
             ("field-card", CARD_SCHEMA),
             ("field-question", QUESTION_SCHEMA),
+            ("field-outline", OUTLINE_SCHEMA),
             ("field-sections", SECTIONS_SCHEMA),
+            ("field-sections-grouped", SECTIONS_GROUPED_SCHEMA),
             ("field-references", REFERENCES_SCHEMA),
             ("field-citations", CITATIONS_SCHEMA),
             ("field-relations", RELATIONS_SCHEMA),
@@ -130,6 +150,7 @@ mod tests {
             "card",
             "supercut",
             "question",
+            "outline",
             "claims",
             "method",
             "key_numbers",
@@ -144,6 +165,186 @@ mod tests {
         ] {
             assert!(required.contains(&Value::from(field)), "missing {field}");
         }
+    }
+
+    /// The property names of `schema` at `pointer`, in the order a model
+    /// fills them.
+    fn property_order(schema: &str, pointer: &str) -> Vec<String> {
+        let schema: Value = serde_json::from_str(schema).expect("schema");
+        schema
+            .pointer(pointer)
+            .and_then(Value::as_object)
+            .map(|properties| properties.keys().cloned().collect())
+            .unwrap_or_default()
+    }
+
+    fn position(order: &[String], key: &str) -> usize {
+        order
+            .iter()
+            .position(|name| name == key)
+            .unwrap_or_else(|| panic!("no {key} in {order:?}"))
+    }
+
+    #[test]
+    fn should_ask_for_a_units_extent_and_question_before_its_title() {
+        for (name, text) in [
+            ("core", CORE_SCHEMA),
+            ("field-sections", SECTIONS_SCHEMA),
+            ("field-sections-grouped", SECTIONS_GROUPED_SCHEMA),
+            ("paper-artifacts", PAPER_ARTIFACTS_SCHEMA),
+        ] {
+            let order = property_order(text, "/properties/sections/items/properties");
+            let question = position(&order, "question");
+            assert!(position(&order, "outline_last") < question, "{name}: {order:?}");
+            assert!(question < position(&order, "summary"), "{name}: {order:?}");
+            assert!(position(&order, "summary") < position(&order, "title"), "{name}: {order:?}");
+            let schema: Value = serde_json::from_str(text).expect("schema");
+            let description = schema["properties"]["sections"]["description"]
+                .as_str()
+                .unwrap_or_default();
+            assert!(!description.contains("Never"), "{name}: {description}");
+        }
+    }
+
+    #[test]
+    fn should_ask_for_the_context_lead_after_the_parts_it_distils() {
+        let order = property_order(CONTEXT_SCHEMA, "/properties/context/properties");
+        assert_eq!(order.last().map(String::as_str), Some("lead"), "{order:?}");
+        assert!(position(&order, "before") < position(&order, "after"));
+    }
+
+    #[test]
+    fn should_ask_for_the_type_reason_before_its_value() {
+        let order = property_order(TYPE_SCHEMA, "/properties/type/properties");
+        assert_eq!(order, ["reason", "value"]);
+    }
+
+    #[test]
+    fn should_include_every_prompt_file_somewhere_in_the_source() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let mut source = String::new();
+        let mut directories = vec![root.join("src")];
+        while let Some(directory) = directories.pop() {
+            for entry in std::fs::read_dir(&directory).expect("source directory") {
+                let path = entry.expect("entry").path();
+                if path.is_dir() {
+                    directories.push(path);
+                } else if path.extension().is_some_and(|extension| extension == "rs") {
+                    source.push_str(&std::fs::read_to_string(&path).expect("source file"));
+                }
+            }
+        }
+        for entry in std::fs::read_dir(root.join("prompts")).expect("prompts") {
+            let path = entry.expect("entry").path();
+            if path.extension().is_some_and(|extension| extension == "md") {
+                let name = path.file_name().and_then(|name| name.to_str()).unwrap_or_default();
+                assert!(
+                    source.contains(&format!("prompts/{name}\")")),
+                    "prompts/{name} is not included anywhere; edits to it would change nothing"
+                );
+            }
+        }
+    }
+
+    /// Phrases tied to papers in the evaluation set that a prompt or the
+    /// rubric must not use as examples: a model could copy them onto that
+    /// paper, and a grader primed with the same words would reward the copy.
+    /// Titles are checked by three-word runs; the list adds the papers'
+    /// signature terms, which titles miss.
+    const EVAL_SET_TERMS: &[&str] = &[
+        "import exposure",
+        "import competition",
+        "china syndrome",
+        "mariel",
+        "boatlift",
+        "minimum wage",
+        "fast-food",
+        "lemons",
+        "quarter of birth",
+        "compulsory schooling",
+        "residual learning",
+        "scaling laws",
+        "self-attention",
+        "borjas",
+        "bartik",
+    ];
+
+    fn words(text: &str) -> Vec<String> {
+        text.split(|c: char| !c.is_alphanumeric() && c != '-')
+            .filter(|word| !word.is_empty())
+            .map(str::to_lowercase)
+            .collect()
+    }
+
+    #[test]
+    fn should_keep_evaluation_set_papers_out_of_prompt_examples() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let manifest: Value = serde_json::from_str(
+            &std::fs::read_to_string(root.join("eval/review/papers.json")).expect("manifest"),
+        )
+        .expect("manifest JSON");
+        let mut phrases = EVAL_SET_TERMS
+            .iter()
+            .map(|term| (*term).to_owned())
+            .collect::<Vec<_>>();
+        for paper in manifest["papers"].as_array().expect("papers") {
+            let title = words(paper["title"].as_str().unwrap_or_default());
+            phrases.extend(title.windows(3).map(|run| run.join(" ")));
+        }
+        let mut texts = vec![(
+            "eval/review/rubric.json".to_owned(),
+            std::fs::read_to_string(root.join("eval/review/rubric.json")).expect("rubric"),
+        )];
+        for entry in std::fs::read_dir(root.join("prompts")).expect("prompts") {
+            let path = entry.expect("entry").path();
+            texts.push((
+                path.display().to_string(),
+                std::fs::read_to_string(&path).expect("prompt"),
+            ));
+        }
+        texts.push((
+            "core_fields.rs".to_owned(),
+            include_str!("paper_artifacts/core_fields.rs").to_owned(),
+        ));
+        for (name, text) in texts {
+            let text = words(&text).join(" ");
+            for phrase in &phrases {
+                assert!(
+                    !format!(" {text} ").contains(&format!(" {phrase} ")),
+                    "{name} uses \"{phrase}\", which belongs to a paper in the evaluation set"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn should_keep_the_same_section_unit_shape_in_the_core_and_fanout_schemas() {
+        let core: Value = serde_json::from_str(CORE_SCHEMA).expect("schema");
+        let field: Value = serde_json::from_str(SECTIONS_SCHEMA).expect("schema");
+        assert_eq!(
+            core["properties"]["sections"],
+            field["properties"]["sections"]
+        );
+    }
+
+    #[test]
+    fn should_store_a_grouped_unit_in_the_shape_of_a_page_span_unit() {
+        // A grouped answer plus the derived pages and source span must be a
+        // valid stored unit, so the self-check can validate patches to it.
+        let grouped: Value = serde_json::from_str(SECTIONS_GROUPED_SCHEMA).expect("schema");
+        let stored: Value = serde_json::from_str(SECTIONS_SCHEMA).expect("schema");
+        let keys = |schema: &Value| {
+            schema["properties"]["sections"]["items"]["properties"]
+                .as_object()
+                .map(|properties| properties.keys().cloned().collect::<Vec<_>>())
+                .unwrap_or_default()
+        };
+        let mut derived = keys(&grouped);
+        derived.extend(["pages".to_owned(), "source_span".to_owned()]);
+        derived.sort();
+        let mut stored_keys = keys(&stored);
+        stored_keys.sort();
+        assert_eq!(derived, stored_keys);
     }
 
     #[test]

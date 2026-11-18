@@ -1,8 +1,10 @@
 //! Authored abstract reconstruction. Locating text and admitting it are separate operations.
+pub mod agreement;
 mod locate;
 mod verify;
 
 use crate::domain::ExtractedPaper;
+pub use agreement::{AbstractAgreement, agreement};
 pub use locate::{locate, target_start_index};
 use serde::{Deserialize, Serialize};
 pub use verify::verify;

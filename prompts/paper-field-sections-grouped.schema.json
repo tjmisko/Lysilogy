@@ -1,0 +1,79 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sections"
+  ],
+  "properties": {
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "outline_first",
+          "outline_last",
+          "question",
+          "summary",
+          "title",
+          "kind",
+          "family"
+        ],
+        "properties": {
+          "outline_first": {
+            "type": "integer",
+            "description": "Index of the first outline entry in this unit."
+          },
+          "outline_last": {
+            "type": "integer",
+            "description": "Index of the last outline entry in this unit; equal to outline_first for a one-entry unit."
+          },
+          "question": {
+            "type": "string",
+            "description": "Write this first: the one question every part of this unit helps answer. If you cannot write one question, change the range."
+          },
+          "summary": {
+            "type": "string",
+            "description": "One or two sentences that synthesize the whole unit."
+          },
+          "title": {
+            "type": "string",
+            "description": "Written after the question: a short title by role. Setup and method units name what they set up; result and interpretation units state the finding. Not a breadcrumb of the paper's own headings, and not two topics joined by 'and'."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "abstract",
+              "background",
+              "research_question",
+              "theory",
+              "methods",
+              "data",
+              "results",
+              "discussion",
+              "limitations",
+              "conclusion",
+              "references",
+              "appendix",
+              "other"
+            ]
+          },
+          "family": {
+            "type": "string",
+            "enum": [
+              "context",
+              "question",
+              "method",
+              "evidence",
+              "interpretation",
+              "caveat",
+              "reference"
+            ]
+          }
+        }
+      },
+      "description": "Reading units as contiguous ranges of the given outline entries, in order, without gaps or overlaps. Group headings that answer the same question; a printed section that is already one idea may be its own unit."
+    }
+  },
+  "description": "The paper's reading map as ranges of its outline."
+}

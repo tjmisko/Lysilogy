@@ -287,6 +287,8 @@ mod tests {
             "source.bibliography_entry.ordinal",
             "graph.relationship_claim.superseded_by",
             "graph.relationship_claim.source_record_id",
+            "graph.relationship_claim.label_path",
+            "graph.relationship_claim.engagement",
             "source.bibliography_entry.fields",
             "graph.citation_mention.entry_id",
             "graph.citation_mention.marker_start",

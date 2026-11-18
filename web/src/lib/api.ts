@@ -16,6 +16,7 @@ import type {
   ExperimentView,
   EdgeLabel,
   EdgeLabelEdit,
+  PaperEdgeLabels,
   AcquisitionJobState,
   ExpandWorkOptions,
   ExpansionJob,
@@ -179,6 +180,8 @@ export const api = {
       method: "POST",
       ...(options === undefined ? {} : { body: JSON.stringify(options) }),
     }),
+  paperEdgeLabels: (paperId: string, signal?: AbortSignal): Promise<PaperEdgeLabels> =>
+    request(`/api/papers/${encodeURIComponent(paperId)}/edge-labels`, { signal }),
   workAcquisition: (workId: string, signal?: AbortSignal): Promise<AcquisitionStatus> =>
     request(`/api/works/${encodeURIComponent(workId)}/acquisition`, { signal }),
   expandWork: (workId: string, body?: ExpandWorkOptions): Promise<ExpansionJob> =>

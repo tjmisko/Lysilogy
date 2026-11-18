@@ -4,6 +4,7 @@ import {
   type RenderTask,
 } from "pdfjs-dist";
 import { usePdfDocument } from "../hooks/usePdfDocument";
+import { groupedRangeLabel } from "../lib/readerOutput";
 
 import type {
   LayoutPage,
@@ -191,10 +192,13 @@ function defaultColumnCount(pageCount: number): number {
 function SectionBoxButton({
   box,
   active,
+  range,
   onOpen,
 }: {
   box: SectionBox;
   active: boolean;
+  /** The printed headings this unit groups, such as "§ 2–3.1". */
+  range: string | null;
   onOpen: (section: PaperSection, index: number) => void;
 }) {
   const titleRef = useRef<HTMLSpanElement>(null);
@@ -242,7 +246,8 @@ function SectionBoxButton({
         height: `${box.height}px`,
       }}
       onClick={() => onOpen(box.section, box.index)}
-      aria-label={`${box.section.title}; pages ${box.section.pages.start} to ${box.section.pages.end}`}
+      aria-label={`${box.section.title}; pages ${box.section.pages.start} to ${box.section.pages.end}${range === null ? "" : `; groups ${range}`}`}
+      title={range === null ? undefined : `${box.section.title} · ${range}`}
     >
       {box.showTitle && (
         <span
@@ -255,6 +260,7 @@ function SectionBoxButton({
           <b>{box.section.title}</b>
         </span>
       )}
+      {box.showTitle && range !== null && <small className="section-box-range">{range}</small>}
     </button>
   );
 }
@@ -681,6 +687,7 @@ export function SourceMap({
               key={box.id}
               box={box}
               active={box.index === activeSection}
+              range={groupedRangeLabel(box.section, analysis.outline ?? [])}
               onOpen={onOpenSection}
             />
           ))}

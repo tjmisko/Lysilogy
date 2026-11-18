@@ -61,7 +61,7 @@ export type ImportPdfResponse = {
   source: RemotePdfSource;
 };
 
-export type AnalysisTaskStatus = "pending" | "active" | "completed" | "failed";
+export type AnalysisTaskStatus = "pending" | "active" | "completed" | "warning" | "failed";
 
 export type AnalysisTask = {
   id: string;
@@ -152,6 +152,53 @@ export type KeyQuote = {
   validation?: CitationStatus;
 };
 
+/** Which part of the paper a printed heading belongs to. */
+export type OutlineRole = "front_matter" | "main" | "back_matter" | "references" | "appendix" | "other";
+
+/** One printed heading of the paper, as the outline view shows it. */
+export type OutlineEntry = {
+  /** The printed number or letter, such as "2.1", "IV." or "A.". */
+  number?: string | null;
+  /** The heading text as printed, without its number. */
+  title: string;
+  /** 1 for a top-level heading, 2 for a subsection, and so on. */
+  level: number;
+  page: number;
+  role?: OutlineRole;
+  anchor?: TextAnchor | null;
+};
+
+export type QualityWarningKind =
+  | "sections_missing"
+  | "sections_sparse"
+  | "sections_low_coverage"
+  | "references_missing"
+  | "abstract_missing"
+  | "title_implausible"
+  | "authors_missing"
+  | "outline_missing"
+  | "outline_sparse"
+  | "outline_entries_dropped"
+  | "sections_grouping_repaired"
+  | "sections_grouping_invalid"
+  | "sections_mirror_outline"
+  | "verification_skipped"
+  | "verification_failed"
+  | "abstract_disagreement"
+  | "context_claims_downgraded"
+  | "context_missing"
+  | "call_failed"
+  | "call_skipped"
+  | "other";
+
+/** One deterministic sanity check the model output failed. */
+export type QualityWarning = {
+  kind: QualityWarningKind;
+  field: string;
+  message: string;
+};
+
+/** A logical reading unit; when the paper has an outline it groups a run of outline entries. */
 export type PaperSection = {
   id: string;
   title: string;
@@ -160,6 +207,10 @@ export type PaperSection = {
   pages: PageSpan;
   summary: string;
   digest: string;
+  /** The question this unit answers for the reader. */
+  question?: string | null;
+  /** Indices into `PaperAnalysis.outline` of the headings this unit groups. */
+  outline_entries?: number[];
   source_span?: { start: TextAnchor; end: TextAnchor } | null;
   key_quotes: KeyQuote[];
   related_terms: string[];
@@ -186,6 +237,125 @@ export type ContextNote = {
   kind?: "before" | "after" | "legacy";
   text: string;
   source_ids: string[];
+  /** Set on notes written by the context node; absent on web-researched notes. */
+  basis?: ContextBasis;
+  /** Neighbour-dossier work ids supporting a `dossier` note. */
+  work_ids?: string[];
+};
+
+/**
+ * Where a context claim comes from: the paper (with an admitted verbatim quote),
+ * a neighbour-dossier record, or the model's unverified background knowledge.
+ */
+export type ContextBasis = "paper" | "dossier" | "background";
+
+/** Why a claim asked for as `paper` or `dossier` is shown as `background`. */
+export type ContextDowngrade = "quote_not_found" | "unknown_work" | "other";
+
+export type ContextClaim = {
+  text: string;
+  basis: ContextBasis;
+  /** Admitted quotes, for a `paper` claim. */
+  evidence: { quote: string; page: number }[];
+  /** Citation-graph work ids, for a `dossier` claim (kept as pointers on others). */
+  work_ids: string[];
+  downgraded?: ContextDowngrade | null;
+};
+
+export type NeighbourRelation =
+  | "predecessor"
+  | "successor"
+  | "critique"
+  | "replication"
+  | "survey"
+  | "parallel"
+  | "other";
+
+/** A neighbouring work worth reading next to the paper. */
+export type ReadAlongside = {
+  /** Citation-graph work id when the work is in the dossier: open or acquire it. */
+  work_id: string | null;
+  title: string;
+  authors: string | null;
+  year: number | null;
+  relation: NeighbourRelation;
+  why: string;
+  basis: ContextBasis;
+  /** The library paper holding this work, when Lysilogy has it. */
+  local_paper_id: string | null;
+};
+
+export type ContextCounts = {
+  dossier_works: number;
+  paper_claims: number;
+  dossier_claims: number;
+  background_claims: number;
+  downgraded_quote_not_found: number;
+  downgraded_unknown_work: number;
+  unknown_work_ids: number;
+  dropped_read_alongside: number;
+  /** Claims dropped because their text was empty. */
+  dropped_empty_claims?: number;
+};
+
+/** Why the paper matters: the first view's context, written by the context node. */
+export type PaperContext = {
+  lead: ContextClaim[];
+  before: ContextClaim[];
+  contribution: ContextClaim[];
+  after: ContextClaim[];
+  read_alongside: ReadAlongside[];
+  /** What the model said it does not know about the reception. */
+  reception_note: string | null;
+  counts: ContextCounts;
+  /** The neighbour dossier the context node read; absent on older contexts. */
+  dossier?: ContextDossier | null;
+};
+
+/** Whether the neighbour dossier could be assembled for the context node. */
+export type DossierStatus = "ok" | "not_linked" | "no_graph" | "error" | "other";
+
+/** The dossier the context node read, in compact form. */
+export type ContextDossier = {
+  status: DossierStatus;
+  works: DossierWorkSummary[];
+};
+
+export type DossierWorkSummary = {
+  id: string;
+  title: string | null;
+  year: number | null;
+  first_author: string | null;
+  /** True for a later work citing the paper, false for one it cites. */
+  citing: boolean;
+  local_paper_id: string | null;
+  /** The citation label on the edge, as the context node read it; absent on older contexts. */
+  edge?: DossierEdgeLabel | null;
+};
+
+/** Which path wrote an edge label. */
+export type EdgeLabelPath = "core_relation" | "edge_labeler" | "user";
+
+/** How much the citing paper does with the cited work, in the labeler's judgement. */
+export type EdgeEngagement = "substantive" | "perfunctory" | "not_shown";
+
+/** A citation label stored with the context's dossier. */
+export type DossierEdgeLabel = {
+  relation: string;
+  reason: string;
+  quote: string | null;
+  path: EdgeLabelPath | null;
+  engagement: EdgeEngagement | null;
+  review_state: string;
+};
+
+/** The model's abstract against the deterministic extraction. */
+export type AbstractAgreement = {
+  /** Token F1 between the two; null when either is missing. */
+  token_f1: number | null;
+  model_found: boolean;
+  deterministic_found: boolean;
+  deterministic_status: "accepted" | "not_found" | "needs_review" | "needs_ocr";
 };
 
 export type ContextSource = {
@@ -226,11 +396,21 @@ export type PaperAnalysis = {
     assessed_at: string;
   } | null;
   prerequisites: string[];
+  /** The paper's printed headings in reading order; empty when it prints none. */
+  outline?: OutlineEntry[];
+  /** The logical reading units. */
   sections: PaperSection[];
   claims: Claim[];
   glossary: GlossaryEntry[];
   caveats: string[];
   reading_path: string[];
+  pipeline_version?: string | null;
+  /** The pipeline version that last refreshed each component, keyed abstract/context/structure. */
+  component_versions?: Partial<Record<"abstract" | "context" | "structure", string>>;
+  quality_warnings?: QualityWarning[];
+  /** Why the paper matters; absent on older analyses and when the node did not run. */
+  context?: PaperContext | null;
+  abstract_agreement?: AbstractAgreement | null;
 };
 
 export type PaperView = {
@@ -514,6 +694,93 @@ export type EdgeLabel = {
   model: string | null;
   created_at: string;
   mention: EdgeLabelMention | null;
+  /** Absent from servers older than the edge-label paths. */
+  path?: EdgeLabelPath;
+  engagement?: EdgeEngagement | null;
+  prompt_version?: number | null;
+};
+
+/** One current label as the Abstract page and the review panel read it. */
+export type EdgeLabelBrief = {
+  claim_id: string;
+  relation: string;
+  reason: string;
+  quote: string | null;
+  path: EdgeLabelPath | null;
+  engagement: EdgeEngagement | null;
+  review_state: EdgeLabelReviewState;
+  model: string | null;
+  prompt_version: number | null;
+  passage: string | null;
+  page: number | null;
+};
+
+/** An edge from (outgoing) or into (incoming) a paper, with its current label. */
+export type LabelledEdge = {
+  work_id: string;
+  title: string | null;
+  year: number | null;
+  first_author: string | null;
+  mention_count: number;
+  label: EdgeLabelBrief | null;
+};
+
+export type EdgeLabelCounts = {
+  edges: number;
+  labelled: number;
+  /** Labels that say what role the work plays (not passing mentions or declines). Absent before it was counted. */
+  labelled_with_role?: number;
+  unlabelled_with_passages: number;
+  unlabelled_without_passages: number;
+  by_path: Record<string, number>;
+  by_relation: Record<string, number>;
+  by_engagement: Record<string, number>;
+  perfunctory: number;
+  not_shown: number;
+  rejected: number;
+};
+
+/** How a labelling run ended; `partial` left edges unlabelled (failed calls, budget, call limit). */
+export type EdgeLabelRunStatus = "completed" | "partial" | "skipped" | "failed";
+
+/** What the edge labeler did in one run; fields absent in older runs read as zero. */
+export type EdgeLabelPass = {
+  model_calls?: number;
+  labeled?: number;
+  replaced?: number;
+  failed?: number;
+  first_error?: string | null;
+  over_budget?: number;
+  over_limit?: number;
+  rejected_for_grounding?: number;
+  misattributed?: number;
+  [key: string]: unknown;
+};
+
+/** The record of one labelling run (`edge-labels.json`). Counts beyond these are kept as JSON. */
+export type EdgeLabelRun = {
+  generated_at: string | null;
+  status: EdgeLabelRunStatus;
+  detail: string | null;
+  provider: string | null;
+  labeler: string | null;
+  prompt_version: number;
+  brief_digest?: string | null;
+  pipeline_version: string | null;
+  local_evidence_error: string | null;
+  core: Record<string, unknown> | null;
+  labels: EdgeLabelPass | null;
+  counts: EdgeLabelCounts;
+  edges: LabelledEdge[];
+};
+
+/** `GET /api/papers/{id}/edge-labels`. */
+export type PaperEdgeLabels = {
+  status: "ok" | "no_graph" | "not_linked" | "error";
+  work_id: string | null;
+  outgoing: LabelledEdge[];
+  incoming: LabelledEdge[];
+  run: EdgeLabelRun | null;
 };
 
 export type EdgeLabelEdit = {

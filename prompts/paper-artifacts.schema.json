@@ -7,6 +7,7 @@
     "abstract",
     "card",
     "question",
+    "outline",
     "sections",
     "references",
     "citations",
@@ -21,7 +22,8 @@
     "headline_results",
     "read_signal",
     "notation",
-    "glossary"
+    "glossary",
+    "context"
   ],
   "properties": {
     "identity": {
@@ -35,8 +37,7 @@
         "venue",
         "identifiers",
         "publication_state",
-        "evidence",
-        "confidence"
+        "evidence"
       ],
       "properties": {
         "title": {
@@ -61,13 +62,14 @@
             "properties": {
               "name": {
                 "type": "string",
-                "description": "As printed."
+                "description": "As printed, without footnote marks."
               },
               "affiliation": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "The affiliation printed next to the name, else null."
               }
             }
           },
@@ -138,15 +140,6 @@
             "description": "A verbatim passage from the paper and the page it is on."
           },
           "description": "Verbatim support. Empty only when the item is a model judgment."
-        },
-        "confidence": {
-          "type": "string",
-          "enum": [
-            "high",
-            "medium",
-            "low"
-          ],
-          "description": "How sure you are that this item is correct."
         }
       }
     },
@@ -154,11 +147,14 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "value",
         "reason",
-        "confidence"
+        "value"
       ],
       "properties": {
+        "reason": {
+          "type": "string",
+          "description": "One line on what the paper mainly does, written before choosing the value."
+        },
         "value": {
           "type": "string",
           "enum": [
@@ -170,19 +166,8 @@
             "position",
             "replication",
             "resource"
-          ]
-        },
-        "reason": {
-          "type": "string"
-        },
-        "confidence": {
-          "type": "string",
-          "enum": [
-            "high",
-            "medium",
-            "low"
           ],
-          "description": "How sure you are that this item is correct."
+          "description": "survey: mainly reviews others' work; a paper with new theorems, methods or results is not a survey. method: proposes a new method, model or algorithm. empirical: tests a question on data or experiments. theory: derives results formally. dataset: introduces a dataset or benchmark. position: argues for a view or research agenda, including lectures and essays. replication: re-tests a previously published result; a reprint or corrected edition is not a replication. resource: software, a tool or another artefact for others to use."
         }
       }
     },
@@ -191,8 +176,7 @@
       "additionalProperties": false,
       "required": [
         "text",
-        "page",
-        "confidence"
+        "page"
       ],
       "properties": {
         "text": {
@@ -200,22 +184,13 @@
             "string",
             "null"
           ],
-          "description": "The abstract copied verbatim, paragraphs joined with a blank line; null if the paper has none."
+          "description": "The authors' own abstract copied verbatim from the page, lines within a paragraph joined with single spaces and paragraphs separated by a blank line; never a summary, a paraphrase or the opening of the introduction. Null if the paper prints no abstract."
         },
         "page": {
           "type": [
             "integer",
             "null"
           ]
-        },
-        "confidence": {
-          "type": "string",
-          "enum": [
-            "high",
-            "medium",
-            "low"
-          ],
-          "description": "How sure you are that this item is correct."
         }
       }
     },
@@ -240,7 +215,7 @@
           "properties": {
             "text": {
               "type": "string",
-              "description": "One plain sentence."
+              "description": "One plain sentence stating what the paper finds or shows, not what it is about."
             },
             "evidence": {
               "type": "array",
@@ -272,7 +247,7 @@
                 "medium",
                 "low"
               ],
-              "description": "How sure you are that this item is correct."
+              "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
             }
           }
         },
@@ -303,11 +278,11 @@
                       "string",
                       "null"
                     ],
-                    "description": "The key of the entry in `references`, or null if it is not in the bibliography."
+                    "description": "The in-text key exactly as the paper prints it, e.g. 'Smith and Jones (2004)' or '12'; null if you cannot match it to the bibliography. Never make one up."
                   },
                   "cited_work": {
                     "type": "string",
-                    "description": "Short name of the cited work, e.g. 'Smith et al. 2020'."
+                    "description": "One specific cited work, e.g. 'Smith et al. 2020'. Name a body of literature in `why`, not here."
                   },
                   "why": {
                     "type": "string",
@@ -343,7 +318,7 @@
                       "medium",
                       "low"
                     ],
-                    "description": "How sure you are that this item is correct."
+                    "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
                   }
                 }
               },
@@ -367,11 +342,11 @@
                       "string",
                       "null"
                     ],
-                    "description": "The key of the entry in `references`, or null if it is not in the bibliography."
+                    "description": "The in-text key exactly as the paper prints it, e.g. 'Smith and Jones (2004)' or '12'; null if you cannot match it to the bibliography. Never make one up."
                   },
                   "cited_work": {
                     "type": "string",
-                    "description": "Short name of the cited work, e.g. 'Smith et al. 2020'."
+                    "description": "One specific cited work, e.g. 'Smith et al. 2020'. Name a body of literature in `why`, not here."
                   },
                   "why": {
                     "type": "string",
@@ -407,7 +382,7 @@
                       "medium",
                       "low"
                     ],
-                    "description": "How sure you are that this item is correct."
+                    "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
                   }
                 }
               },
@@ -431,11 +406,11 @@
                       "string",
                       "null"
                     ],
-                    "description": "The key of the entry in `references`, or null if it is not in the bibliography."
+                    "description": "The in-text key exactly as the paper prints it, e.g. 'Smith and Jones (2004)' or '12'; null if you cannot match it to the bibliography. Never make one up."
                   },
                   "cited_work": {
                     "type": "string",
-                    "description": "Short name of the cited work, e.g. 'Smith et al. 2020'."
+                    "description": "One specific cited work, e.g. 'Smith et al. 2020'. Name a body of literature in `why`, not here."
                   },
                   "why": {
                     "type": "string",
@@ -471,11 +446,11 @@
                       "medium",
                       "low"
                     ],
-                    "description": "How sure you are that this item is correct."
+                    "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
                   }
                 }
               },
-              "description": "Work it replicates or that replicates it."
+              "description": "Earlier work whose result this paper re-tests."
             }
           }
         },
@@ -528,7 +503,7 @@
                   "medium",
                   "low"
                 ],
-                "description": "How sure you are that this item is correct."
+                "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
               }
             }
           }
@@ -563,8 +538,7 @@
       "additionalProperties": false,
       "required": [
         "text",
-        "evidence",
-        "confidence"
+        "evidence"
       ],
       "properties": {
         "text": {
@@ -593,17 +567,55 @@
             "description": "A verbatim passage from the paper and the page it is on."
           },
           "description": "Verbatim support. Empty only when the item is a model judgment."
-        },
-        "confidence": {
-          "type": "string",
-          "enum": [
-            "high",
-            "medium",
-            "low"
-          ],
-          "description": "How sure you are that this item is correct."
         }
       }
+    },
+    "outline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "number",
+          "title",
+          "level",
+          "page",
+          "role"
+        ],
+        "properties": {
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The heading's printed number or letter exactly as printed, e.g. '2', '2.1', 'IV.', 'A.'; null when the heading is unnumbered."
+          },
+          "title": {
+            "type": "string",
+            "description": "The heading text exactly as printed, without its number."
+          },
+          "level": {
+            "type": "integer",
+            "description": "1 for a top-level heading, 2 for a subsection, 3 below that."
+          },
+          "page": {
+            "type": "integer",
+            "description": "The 1-based PDF page the heading is printed on."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "front_matter",
+              "main",
+              "back_matter",
+              "references",
+              "appendix"
+            ],
+            "description": "front_matter: abstract, keywords and similar before the main text; main: the paper's argument; back_matter: acknowledgments, funding, author notes, declarations; references: the bibliography; appendix: appendices and supplementary material."
+          }
+        }
+      },
+      "description": "The paper's own headings as printed, in reading order. Empty when the paper prints no headings."
     },
     "sections": {
       "type": "array",
@@ -611,47 +623,30 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "title",
-          "kind",
-          "family",
+          "outline_first",
+          "outline_last",
           "pages",
           "source_span",
-          "summary"
+          "question",
+          "summary",
+          "title",
+          "kind",
+          "family"
         ],
         "properties": {
-          "title": {
-            "type": "string",
-            "description": "A short topic title, not a breadcrumb of the paper's own headings."
+          "outline_first": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Index of the first outline entry in the unit; null when no outline was given."
           },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "abstract",
-              "background",
-              "research_question",
-              "theory",
-              "methods",
-              "data",
-              "results",
-              "discussion",
-              "limitations",
-              "conclusion",
-              "references",
-              "appendix",
-              "other"
-            ]
-          },
-          "family": {
-            "type": "string",
-            "enum": [
-              "context",
-              "question",
-              "method",
-              "evidence",
-              "interpretation",
-              "caveat",
-              "reference"
-            ]
+          "outline_last": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Index of the last outline entry in the unit; null when no outline was given."
           },
           "pages": {
             "type": "object",
@@ -697,13 +692,51 @@
               }
             }
           },
+          "question": {
+            "type": "string",
+            "description": "Write this first: the one question every part of this unit helps answer. If you cannot write one question, change the range."
+          },
           "summary": {
             "type": "string",
             "description": "One or two sentences that synthesize the whole unit."
+          },
+          "title": {
+            "type": "string",
+            "description": "Written after the question: a short title by role. Setup and method units name what they set up; result and interpretation units state the finding. Not a breadcrumb of the paper's own headings, and not two topics joined by 'and'."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "abstract",
+              "background",
+              "research_question",
+              "theory",
+              "methods",
+              "data",
+              "results",
+              "discussion",
+              "limitations",
+              "conclusion",
+              "references",
+              "appendix",
+              "other"
+            ]
+          },
+          "family": {
+            "type": "string",
+            "enum": [
+              "context",
+              "question",
+              "method",
+              "evidence",
+              "interpretation",
+              "caveat",
+              "reference"
+            ]
           }
         }
       },
-      "description": "Coherent topic-based reading units, usually 1-2 pages and generally 1-5 pages of content. Keep related headings, variants, and examples together. Increasing PDF order, non-overlapping spans. Never a list of the paper's own headings."
+      "description": "Reading units that each answer one question, usually one to five pages of content. Increasing PDF order, non-overlapping spans, covering the main text."
     },
     "references": {
       "type": "array",
@@ -833,7 +866,7 @@
               "medium",
               "low"
             ],
-            "description": "How sure you are that this item is correct."
+            "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
           }
         }
       }
@@ -907,7 +940,7 @@
               "medium",
               "low"
             ],
-            "description": "How sure you are that this item is correct."
+            "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
           }
         }
       },
@@ -1018,7 +1051,7 @@
               "medium",
               "low"
             ],
-            "description": "How sure you are that this item is correct."
+            "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
           }
         }
       }
@@ -1089,7 +1122,7 @@
             "medium",
             "low"
           ],
-          "description": "How sure you are that this item is correct."
+          "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
         }
       }
     },
@@ -1146,7 +1179,7 @@
               "medium",
               "low"
             ],
-            "description": "How sure you are that this item is correct."
+            "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
           }
         }
       }
@@ -1203,7 +1236,7 @@
               "medium",
               "low"
             ],
-            "description": "How sure you are that this item is correct."
+            "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
           }
         }
       }
@@ -1260,7 +1293,7 @@
               "medium",
               "low"
             ],
-            "description": "How sure you are that this item is correct."
+            "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
           }
         }
       }
@@ -1314,7 +1347,7 @@
               "medium",
               "low"
             ],
-            "description": "How sure you are that this item is correct."
+            "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
           }
         }
       }
@@ -1398,7 +1431,7 @@
               "medium",
               "low"
             ],
-            "description": "How sure you are that this item is correct."
+            "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
           }
         }
       }
@@ -1451,8 +1484,333 @@
               "medium",
               "low"
             ],
-            "description": "How sure you are that this item is correct."
+            "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
           }
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "before",
+        "contribution",
+        "after",
+        "reception_note",
+        "read_alongside",
+        "lead"
+      ],
+      "properties": {
+        "before": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "text",
+              "basis",
+              "evidence",
+              "work_ids"
+            ],
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "One claim, in a sentence or two of plain prose."
+              },
+              "basis": {
+                "type": "string",
+                "enum": [
+                  "paper",
+                  "dossier",
+                  "background"
+                ],
+                "description": "paper: the paper itself says this, and `evidence` quotes it. dossier: a record in the neighbour dossier supports it, and `work_ids` names the record. background: your own knowledge of the field; the reader sees it labelled unverified."
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "quote",
+                    "page"
+                  ],
+                  "properties": {
+                    "quote": {
+                      "type": "string",
+                      "description": "Copied exactly from the page text, 8 to 300 characters."
+                    },
+                    "page": {
+                      "type": "integer",
+                      "description": "1-based page number."
+                    }
+                  },
+                  "description": "A verbatim passage from the paper and the page it is on."
+                },
+                "description": "For a paper claim: one or two verbatim quotes that state it. Empty for other claims."
+              },
+              "work_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "For a dossier claim: the ids of the dossier records that support it, exactly as given. Empty for other claims."
+              }
+            }
+          },
+          "description": "The state of the question before the paper: the specific prior results, methods and debates it entered."
+        },
+        "contribution": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "text",
+              "basis",
+              "evidence",
+              "work_ids"
+            ],
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "One claim, in a sentence or two of plain prose."
+              },
+              "basis": {
+                "type": "string",
+                "enum": [
+                  "paper",
+                  "dossier",
+                  "background"
+                ],
+                "description": "paper: the paper itself says this, and `evidence` quotes it. dossier: a record in the neighbour dossier supports it, and `work_ids` names the record. background: your own knowledge of the field; the reader sees it labelled unverified."
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "quote",
+                    "page"
+                  ],
+                  "properties": {
+                    "quote": {
+                      "type": "string",
+                      "description": "Copied exactly from the page text, 8 to 300 characters."
+                    },
+                    "page": {
+                      "type": "integer",
+                      "description": "1-based page number."
+                    }
+                  },
+                  "description": "A verbatim passage from the paper and the page it is on."
+                },
+                "description": "For a paper claim: one or two verbatim quotes that state it. Empty for other claims."
+              },
+              "work_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "For a dossier claim: the ids of the dossier records that support it, exactly as given. Empty for other claims."
+              }
+            }
+          },
+          "description": "What is new relative to `before`: the specific result, method or reframing this paper added."
+        },
+        "after": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "text",
+              "basis",
+              "evidence",
+              "work_ids"
+            ],
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "One claim, in a sentence or two of plain prose."
+              },
+              "basis": {
+                "type": "string",
+                "enum": [
+                  "paper",
+                  "dossier",
+                  "background"
+                ],
+                "description": "paper: the paper itself says this, and `evidence` quotes it. dossier: a record in the neighbour dossier supports it, and `work_ids` names the record. background: your own knowledge of the field; the reader sees it labelled unverified."
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "quote",
+                    "page"
+                  ],
+                  "properties": {
+                    "quote": {
+                      "type": "string",
+                      "description": "Copied exactly from the page text, 8 to 300 characters."
+                    },
+                    "page": {
+                      "type": "integer",
+                      "description": "1-based page number."
+                    }
+                  },
+                  "description": "A verbatim passage from the paper and the page it is on."
+                },
+                "description": "For a paper claim: one or two verbatim quotes that state it. Empty for other claims."
+              },
+              "work_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "For a dossier claim: the ids of the dossier records that support it, exactly as given. Empty for other claims."
+              }
+            }
+          },
+          "description": "What happened after: who built on it, who disputed it, how it is used now. Empty when you do not know."
+        },
+        "reception_note": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "When you do not know how the paper was received, say so here in one sentence (for example that it is too recent); otherwise null."
+        },
+        "read_alongside": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "work_id",
+              "title",
+              "authors",
+              "year",
+              "relation",
+              "why",
+              "basis"
+            ],
+            "properties": {
+              "work_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The dossier id of the work, exactly as given; null when the work is not in the dossier."
+              },
+              "title": {
+                "type": "string",
+                "description": "The work's exact title. If you know the work but not its exact title, give the authors and year and describe it in `why` instead of guessing."
+              },
+              "authors": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Short author string, e.g. 'Card' or 'Vaswani et al.'."
+              },
+              "year": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "relation": {
+                "type": "string",
+                "enum": [
+                  "predecessor",
+                  "successor",
+                  "critique",
+                  "replication",
+                  "survey",
+                  "parallel"
+                ],
+                "description": "predecessor: came before and this paper builds on or answers it. successor: came after and builds on this paper. critique: disputes this paper, or this paper disputes it. replication: reruns or re-tests the result. survey: an overview or textbook treatment of the question. parallel: independent work on the same question at about the same time."
+              },
+              "why": {
+                "type": "string",
+                "description": "One line on what the reader gets from reading it next to this paper."
+              },
+              "basis": {
+                "type": "string",
+                "enum": [
+                  "paper",
+                  "dossier",
+                  "background"
+                ],
+                "description": "dossier: the work is in the dossier and `work_id` is set. background: you know the work yourself; `work_id` is null. paper: the paper itself cites it."
+              }
+            }
+          },
+          "description": "Up to six neighbouring works worth reading next to this one; only works you could cite accurately. Two right works beat five with one invented."
+        },
+        "lead": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "text",
+              "basis",
+              "evidence",
+              "work_ids"
+            ],
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "One claim, in a sentence or two of plain prose."
+              },
+              "basis": {
+                "type": "string",
+                "enum": [
+                  "paper",
+                  "dossier",
+                  "background"
+                ],
+                "description": "paper: the paper itself says this, and `evidence` quotes it. dossier: a record in the neighbour dossier supports it, and `work_ids` names the record. background: your own knowledge of the field; the reader sees it labelled unverified."
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "quote",
+                    "page"
+                  ],
+                  "properties": {
+                    "quote": {
+                      "type": "string",
+                      "description": "Copied exactly from the page text, 8 to 300 characters."
+                    },
+                    "page": {
+                      "type": "integer",
+                      "description": "1-based page number."
+                    }
+                  },
+                  "description": "A verbatim passage from the paper and the page it is on."
+                },
+                "description": "For a paper claim: one or two verbatim quotes that state it. Empty for other claims."
+              },
+              "work_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "For a dossier claim: the ids of the dossier records that support it, exactly as given. Empty for other claims."
+              }
+            }
+          },
+          "description": "Written last: two to four sentences that distil before, contribution and after for a reader from another field. Say what changed, or, when reception is unknown, what the paper attempts that its predecessors did not."
         }
       }
     }
