@@ -328,7 +328,7 @@ fn tasks_for(kind: AnalysisJobKind) -> Vec<AnalysisTask> {
             ("extract", "Load the extracted source"),
             (
                 "context",
-                "Research evidence, write historical context, and review citations",
+                "Write why the paper matters from the paper, its core draft and its neighbours",
             ),
             ("persist", "Save context without changing the paper map"),
         ]

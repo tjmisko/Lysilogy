@@ -8,8 +8,10 @@
 pub mod admission;
 pub mod checkpoint;
 pub mod config;
+pub mod context;
 pub mod core_fields;
 pub mod corrections;
+pub mod dossier;
 pub mod features;
 pub mod grouping;
 pub mod objects;
@@ -37,6 +39,9 @@ pub const SUPERCUT_SCHEMA: &str = include_str!("../prompts/paper-supercut.schema
 
 /// Claims, method, numbers, limitations, open questions and the read signal.
 pub const ANALYSIS_SCHEMA: &str = include_str!("../prompts/paper-analysis.schema.json");
+
+/// Why the paper matters: the context node's answer.
+pub const CONTEXT_SCHEMA: &str = include_str!("../prompts/paper-context.schema.json");
 
 /// Notation and glossary terms.
 pub const GLOSSARY_SCHEMA: &str = include_str!("../prompts/paper-glossary.schema.json");
@@ -112,6 +117,7 @@ mod tests {
             ("supercut", SUPERCUT_SCHEMA),
             ("analysis", ANALYSIS_SCHEMA),
             ("glossary", GLOSSARY_SCHEMA),
+            ("context", CONTEXT_SCHEMA),
             ("field-identity", IDENTITY_SCHEMA),
             ("field-type", TYPE_SCHEMA),
             ("field-abstract", ABSTRACT_SCHEMA),
@@ -164,7 +170,10 @@ mod tests {
     #[test]
     fn should_state_the_same_typical_unit_size_in_the_sections_schema_and_policy() {
         let policy = include_str!("../prompts/sectioning.md");
-        assert!(policy.contains("usually 2\u{2013}3 pages"), "policy changed");
+        assert!(
+            policy.contains("usually 2\u{2013}3 pages"),
+            "policy changed"
+        );
         for (name, text) in [
             ("core", CORE_SCHEMA),
             ("field-sections", SECTIONS_SCHEMA),
@@ -183,7 +192,10 @@ mod tests {
     fn should_keep_the_same_section_unit_shape_in_the_core_and_fanout_schemas() {
         let core: Value = serde_json::from_str(CORE_SCHEMA).expect("schema");
         let field: Value = serde_json::from_str(SECTIONS_SCHEMA).expect("schema");
-        assert_eq!(core["properties"]["sections"], field["properties"]["sections"]);
+        assert_eq!(
+            core["properties"]["sections"],
+            field["properties"]["sections"]
+        );
     }
 
     #[test]

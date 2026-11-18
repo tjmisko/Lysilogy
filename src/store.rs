@@ -861,6 +861,8 @@ mod tests {
                 kind: crate::domain::ContextKind::Legacy,
                 text: "A grounded contextual note".to_owned(),
                 source_ids: vec!["review".to_owned()],
+                basis: None,
+                work_ids: Vec::new(),
             }],
             context_sources: vec![ContextSource {
                 excerpt: None,
@@ -883,6 +885,8 @@ mod tests {
             reading_path: Vec::new(),
             pipeline_version: None,
             quality_warnings: Vec::new(),
+            context: None,
+            abstract_agreement: None,
         };
         store.save_analysis(&id, &analysis).await?;
         assert!(store.load_analysis(&id).await?.is_some());

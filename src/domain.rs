@@ -318,6 +318,14 @@ pub struct PaperAnalysis {
     /// verification pass. Empty when nothing looked wrong.
     #[serde(default)]
     pub quality_warnings: Vec<QualityWarning>,
+    /// Why the paper matters, from the context node. `None` on analyses made
+    /// before it existed and when the node did not run.
+    #[serde(default)]
+    pub context: Option<PaperContext>,
+    /// How closely the model's abstract agrees with the deterministic
+    /// extraction. `None` on analyses made before it was recorded.
+    #[serde(default)]
+    pub abstract_agreement: Option<crate::abstracts::AbstractAgreement>,
 }
 
 /// One deterministic sanity check the model output failed.
@@ -363,6 +371,11 @@ pub enum QualityWarningKind {
     VerificationSkipped,
     /// A verification pass ran but returned no usable answer.
     VerificationFailed,
+    /// The model's abstract and the deterministic extraction disagree.
+    AbstractDisagreement,
+    /// Context claims whose quote or dossier record did not check out were
+    /// shown as unverified background instead.
+    ContextClaimsDowngraded,
     /// A kind written by a newer version.
     #[serde(other)]
     Other,
@@ -393,6 +406,151 @@ pub struct ContextNote {
     pub text: String,
     #[serde(default)]
     pub source_ids: Vec<String>,
+    /// Where the note comes from, for notes written by the context node.
+    /// `None` on notes from the older web-research design, whose support is
+    /// `source_ids`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub basis: Option<ContextBasis>,
+    /// Neighbour-dossier work ids that support a `dossier` note.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub work_ids: Vec<String>,
+}
+
+/// Where a claim about the paper's place in its field comes from.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ContextBasis {
+    /// The paper says so, and a verbatim quote was admitted against its text.
+    Paper,
+    /// A record in the neighbour dossier supports it.
+    Dossier,
+    /// The model's own background knowledge: shown, labelled unverified.
+    /// Unknown values read as this, the least trusted class.
+    #[default]
+    #[serde(other)]
+    Background,
+}
+
+/// Why a claim was moved to `background`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ContextDowngrade {
+    /// It claimed the paper's support, but no quote survived admission.
+    QuoteNotFound,
+    /// It claimed a dossier record, but none of its work ids is in the dossier.
+    UnknownWork,
+    /// A kind written by a newer version.
+    #[serde(other)]
+    Other,
+}
+
+/// A verbatim passage of the paper and its 1-based PDF page.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ContextQuote {
+    pub quote: String,
+    pub page: u32,
+}
+
+/// One claim of the context, with its source class.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ContextClaim {
+    pub text: String,
+    #[serde(default)]
+    pub basis: ContextBasis,
+    /// Admitted quotes for a `paper` claim.
+    #[serde(default)]
+    pub evidence: Vec<ContextQuote>,
+    /// Dossier work ids for a `dossier` claim; also kept on a `background`
+    /// claim as pointers.
+    #[serde(default)]
+    pub work_ids: Vec<String>,
+    /// Set when the claim was asked for as `paper` or `dossier` but its
+    /// support did not check out, so it is shown as `background`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub downgraded: Option<ContextDowngrade>,
+}
+
+/// How a neighbouring work relates to this paper.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum NeighbourRelation {
+    Predecessor,
+    Successor,
+    Critique,
+    Replication,
+    #[default]
+    #[serde(other)]
+    Other,
+}
+
+/// A neighbouring work worth reading next to this paper.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReadAlongside {
+    /// The citation-graph Work id when the work is in the dossier, so the
+    /// reader can open it or ask Lysilogy to acquire it.
+    #[serde(default)]
+    pub work_id: Option<String>,
+    pub title: String,
+    #[serde(default)]
+    pub authors: Option<String>,
+    #[serde(default)]
+    pub year: Option<i32>,
+    #[serde(default)]
+    pub relation: NeighbourRelation,
+    pub why: String,
+    #[serde(default)]
+    pub basis: ContextBasis,
+    /// The library paper that holds this work, when Lysilogy has it.
+    #[serde(default)]
+    pub local_paper_id: Option<String>,
+}
+
+/// What settling the context did, for reviews and prompt tuning.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ContextCounts {
+    /// Works in the dossier the model was given.
+    pub dossier_works: usize,
+    /// Claims by final basis.
+    pub paper_claims: usize,
+    pub dossier_claims: usize,
+    pub background_claims: usize,
+    /// `paper` claims whose quotes all failed admission.
+    pub downgraded_quote_not_found: usize,
+    /// `dossier` claims none of whose work ids was in the dossier.
+    pub downgraded_unknown_work: usize,
+    /// Work ids removed from claims or reading suggestions because the
+    /// dossier has no such record.
+    pub unknown_work_ids: usize,
+    /// Reading suggestions dropped beyond the cap or without a title.
+    pub dropped_read_alongside: usize,
+}
+
+/// Why the paper matters: the first view's account of where it sits in its
+/// field, written by the context node.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct PaperContext {
+    /// Two to four claims: why a smart outsider should care.
+    pub lead: Vec<ContextClaim>,
+    pub before: Vec<ContextClaim>,
+    pub contribution: Vec<ContextClaim>,
+    pub after: Vec<ContextClaim>,
+    pub read_alongside: Vec<ReadAlongside>,
+    /// What the model said it does not know about the reception.
+    pub reception_note: Option<String>,
+    pub counts: ContextCounts,
+}
+
+impl PaperContext {
+    /// Every claim, in reading order.
+    pub fn claims(&self) -> impl Iterator<Item = &ContextClaim> {
+        self.lead
+            .iter()
+            .chain(&self.before)
+            .chain(&self.contribution)
+            .chain(&self.after)
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -7,6 +7,7 @@ pub mod api;
 pub mod audit;
 pub mod citation_graph;
 pub mod config;
+pub mod context_dossier;
 pub mod domain;
 pub mod error;
 pub mod expansion;

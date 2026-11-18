@@ -183,6 +183,8 @@ export type QualityWarningKind =
   | "sections_mirror_outline"
   | "verification_skipped"
   | "verification_failed"
+  | "abstract_disagreement"
+  | "context_claims_downgraded"
   | "other";
 
 /** One deterministic sanity check the model output failed. */
@@ -231,6 +233,77 @@ export type ContextNote = {
   kind?: "before" | "after" | "legacy";
   text: string;
   source_ids: string[];
+  /** Set on notes written by the context node; absent on web-researched notes. */
+  basis?: ContextBasis;
+  /** Neighbour-dossier work ids supporting a `dossier` note. */
+  work_ids?: string[];
+};
+
+/**
+ * Where a context claim comes from: the paper (with an admitted verbatim quote),
+ * a neighbour-dossier record, or the model's unverified background knowledge.
+ */
+export type ContextBasis = "paper" | "dossier" | "background";
+
+/** Why a claim asked for as `paper` or `dossier` is shown as `background`. */
+export type ContextDowngrade = "quote_not_found" | "unknown_work" | "other";
+
+export type ContextClaim = {
+  text: string;
+  basis: ContextBasis;
+  /** Admitted quotes, for a `paper` claim. */
+  evidence: { quote: string; page: number }[];
+  /** Citation-graph work ids, for a `dossier` claim (kept as pointers on others). */
+  work_ids: string[];
+  downgraded?: ContextDowngrade | null;
+};
+
+export type NeighbourRelation = "predecessor" | "successor" | "critique" | "replication" | "other";
+
+/** A neighbouring work worth reading next to the paper. */
+export type ReadAlongside = {
+  /** Citation-graph work id when the work is in the dossier: open or acquire it. */
+  work_id: string | null;
+  title: string;
+  authors: string | null;
+  year: number | null;
+  relation: NeighbourRelation;
+  why: string;
+  basis: ContextBasis;
+  /** The library paper holding this work, when Lysilogy has it. */
+  local_paper_id: string | null;
+};
+
+export type ContextCounts = {
+  dossier_works: number;
+  paper_claims: number;
+  dossier_claims: number;
+  background_claims: number;
+  downgraded_quote_not_found: number;
+  downgraded_unknown_work: number;
+  unknown_work_ids: number;
+  dropped_read_alongside: number;
+};
+
+/** Why the paper matters: the first view's context, written by the context node. */
+export type PaperContext = {
+  lead: ContextClaim[];
+  before: ContextClaim[];
+  contribution: ContextClaim[];
+  after: ContextClaim[];
+  read_alongside: ReadAlongside[];
+  /** What the model said it does not know about the reception. */
+  reception_note: string | null;
+  counts: ContextCounts;
+};
+
+/** The model's abstract against the deterministic extraction. */
+export type AbstractAgreement = {
+  /** Token F1 between the two; null when either is missing. */
+  token_f1: number | null;
+  model_found: boolean;
+  deterministic_found: boolean;
+  deterministic_status: "accepted" | "not_found" | "needs_review" | "needs_ocr";
 };
 
 export type ContextSource = {
@@ -281,6 +354,9 @@ export type PaperAnalysis = {
   reading_path: string[];
   pipeline_version?: string | null;
   quality_warnings?: QualityWarning[];
+  /** Why the paper matters; absent on older analyses and when the node did not run. */
+  context?: PaperContext | null;
+  abstract_agreement?: AbstractAgreement | null;
 };
 
 export type PaperView = {

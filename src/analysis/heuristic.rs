@@ -134,6 +134,7 @@ impl HeuristicAnalyzer {
                 "This digest was produced by the offline structural analyzer and should be checked against the quoted pages.".to_owned(),
             ],
             reading_path,
+            context: None,
         }
     }
 

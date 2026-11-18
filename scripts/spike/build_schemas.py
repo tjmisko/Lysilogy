@@ -63,10 +63,12 @@ identity = obj(
     evidence=evidence_list, confidence=confidence)
 paper_type = obj(value=enum(["survey", "method", "empirical", "theory", "dataset", "position", "replication", "resource"]),
          reason=s(), confidence=confidence)
-abstract = obj(text=s("The abstract copied verbatim, paragraphs joined with a blank line; null if the paper has none.", null=True),
+abstract = obj(text=s("The authors' own abstract copied verbatim from the page, paragraphs joined with a blank line; never a summary or a paraphrase. Null if the paper prints no abstract.", null=True),
              page=i(null=True), confidence=confidence)
+thesis = obj(text=s("One plain sentence stating what the paper finds or shows, not what it is about."),
+             evidence=evidence_list, confidence=confidence)
 card_core = obj(
-    thesis=obj(text=s("One plain sentence."), evidence=evidence_list, confidence=confidence),
+    thesis=thesis,
     position=obj(predecessors=arr(position_item, "Work this paper builds on."),
                  targets=arr(position_item, "Work it contrasts with or critiques."),
                  replications=arr(position_item, "Work it replicates or that replicates it.")))
@@ -149,6 +151,37 @@ headline_results = arr(obj(statement=s(), carrier=s("The object label or number 
 read_signal = obj(judgment=enum(["read", "skim", "glance", "summary_enough"]),
                   reason=s("Model judgment; say why."))
 
+# The "why this paper matters" context, written after the core fields from the
+# paper, the core draft and a dossier of neighbouring works. Every claim says
+# where it comes from, so the reader can tell the paper's own words from the
+# dossier's records and from the model's unverified background knowledge.
+context_basis = enum(["paper", "dossier", "background"],
+    "paper: the paper itself says this, and `evidence` quotes it. dossier: a record in the neighbour dossier supports it, "
+    "and `work_ids` names the record. background: your own knowledge of the field; the reader sees it labelled unverified.")
+context_claim = obj(
+    text=s("One claim, in a sentence or two of plain prose."),
+    basis=context_basis,
+    evidence=arr(evidence, "For a paper claim: one or two verbatim quotes that state it. Empty for other claims."),
+    work_ids=arr(s(), "For a dossier claim: the ids of the dossier records that support it, exactly as given. Empty for other claims."))
+neighbour_relations = ["predecessor", "successor", "critique", "replication"]
+read_alongside = arr(obj(
+    work_id=s("The dossier id of the work, exactly as given; null when the work is not in the dossier.", null=True),
+    title=s("The work's title."),
+    authors=s("Short author string, e.g. 'Card' or 'Vaswani et al.'.", null=True),
+    year=i(null=True),
+    relation=enum(neighbour_relations, "predecessor: came before and this paper builds on or answers it. successor: came after and builds on this paper. "
+                  "critique: disputes this paper, or this paper disputes it. replication: reruns or re-tests the result."),
+    why=s("One line on what the reader gets from reading it next to this paper."),
+    basis=context_basis),
+    "Three to six neighbouring works worth reading next to this one.")
+context = obj(
+    lead=arr(context_claim, "Two to four sentences, one claim each: why this paper matters to a smart reader from another field."),
+    before=arr(context_claim, "The state of the question before the paper: the specific prior results, methods and debates it entered."),
+    contribution=arr(context_claim, "What is new relative to `before`: the specific result, method or reframing this paper added."),
+    after=arr(context_claim, "What happened after: who built on it, who disputed it, how it is used now. Empty when you do not know."),
+    read_alongside=read_alongside,
+    reception_note=s("When you do not know how the paper was received, say so here in one sentence (for example that it is too recent); otherwise null.", null=True))
+
 CORE = {
     "identity": identity,
     "type": paper_type,
@@ -168,13 +201,14 @@ FEATURES = {
                  "limitations": limitations, "open_questions": open_questions,
                  "headline_results": headline_results, "read_signal": read_signal},
     "glossary": {"notation": notation, "glossary": glossary},
+    "context": {"context": context},
 }
 
 full = dict(CORE)
 for fields in FEATURES.values():
     full.update(fields)
 full["card"] = obj(
-    thesis=obj(text=s("One plain sentence."), evidence=evidence_list, confidence=confidence),
+    thesis=thesis,
     position=obj(predecessors=arr(position_item, "Work this paper builds on."),
                  targets=arr(position_item, "Work it contrasts with or critiques."),
                  replications=arr(position_item, "Work it replicates or that replicates it.")),
@@ -201,6 +235,7 @@ analysis_schema = obj("The paper's claims, method, key numbers, limitations, ope
                       **FEATURES["analysis"])
 glossary_schema = obj("The symbols and terms a newcomer would need.", **FEATURES["glossary"])
 supercut_schema = obj("The argument as ordered segments.", **FEATURES["supercut"])
+context_schema = obj("Why this paper matters: before, contribution, after, and what to read alongside it.", **FEATURES["context"])
 objects_schema = obj(
     "The figures, tables, algorithms and numbered equations printed on the given pages.",
     objects=json.loads(json.dumps(objects)),
@@ -230,6 +265,7 @@ field_schemas = {
 for name, schema in [("paper-artifacts", paper), ("paper-core", core_schema),
                      ("paper-objects", objects_schema), ("paper-supercut", supercut_schema),
                      ("paper-analysis", analysis_schema), ("paper-glossary", glossary_schema),
+                     ("paper-context", context_schema),
                      ("paper-artifacts-check", check), ("paper-artifacts-repair", repair),
                      *[(f"paper-field-{name}", schema) for name, schema in field_schemas.items()]]:
     with open(f"{out}/{name}.schema.json", "w") as f:

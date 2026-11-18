@@ -40,8 +40,8 @@ analysis pipeline.
 
 1. **Refresh cost.** Structure and abstract refresh re-run the whole core. Should
    refresh run only the subgraph that produces its field, with per-node caching?
-2. **Reader mapping.** `draft_from_artifacts` fills only thesis, sections, and
-   the abstract. Glossary, claims, caveats, reading path, and context stay
+2. **Reader mapping.** `draft_from_artifacts` fills thesis, abstract, outline,
+   sections and, since 2026-11-18, the context. Glossary, claims, caveats, reading path, and context stay
    empty, so several tabs are thin.
 3. **Feature opt-in.** The pipeline supports `objects`, `supercut`, `analysis`,
    and `glossary` nodes, but the reader always asks for `none`. No UI opts in.
@@ -52,8 +52,8 @@ analysis pipeline.
 6. **`:analyze` command.** It accepts only codex, claude, or heuristic, so the
    no-argument default (OpenRouter) and `:analyze openrouter` both error. The
    toolbar button works.
-7. **Context research.** It is disabled. Rebuild it as a no-web node, or delete
-   it.
+7. **Context research.** Rebuilt 2026-11-18 as a no-web plan node with a
+   neighbour dossier from the citation graph; see `docs/context-node.md`.
 8. **Dead code.** `AnalysisService::refresh_structure`, `refresh_context`, and
    the `local_cli.analyze` orchestration are unreachable but still compiled.
 9. **Live validation.** The core path is unit-tested and stub-tested, not run
@@ -149,3 +149,18 @@ the record and both on the stored `PaperAnalysis`.
 - `cargo clippy --workspace --all-targets -- -D warnings`
 - `cargo test --workspace --lib` (1005 tests)
 - web `typecheck`, `lint`, `build`
+
+## Context node added 2026-11-18
+
+- A `context` plan node runs after the core call on the strong tier at high
+  effort, reads the paper, a brief of the core draft and a neighbour dossier
+  assembled from the citation graph, and writes a lead, before, contribution,
+  after and a read-alongside list. Every claim is `paper` (admitted quote),
+  `dossier` (work id checked against the dossier) or `background` (shown,
+  labelled unverified). Failed support downgrades to background and is
+  counted. Contract: `docs/context-node.md`.
+- Context refresh is re-enabled on top of the node, over the last run's core.
+- The thesis and abstract instructions were rewritten; the record and the
+  stored analysis carry `abstract_agreement` (token F1 against the
+  deterministic abstract).
+- Records are version 8. Tested with stub plan harnesses only.

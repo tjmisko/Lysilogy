@@ -16,13 +16,15 @@ use crate::{
     Result,
     config::AnalysisConfig,
     domain::{
-        AgentSession, AnalysisProvider, Claim, Clarification, ContextNote, ContextSource,
-        EvidenceStrength, ExtractedPaper, GlossaryEntry, KeyQuote, LearningRamp, OutlineEntry,
-        OutlineRole, PageSpan, PaperAnalysis, PaperSection, PromptExperiment, PromptVariant,
-        QualityWarning, QuoteSignificance, SectionFamily, SectionKind, SectionSourceSpan,
+        AgentSession, AnalysisProvider, Claim, Clarification, ContextBasis, ContextKind,
+        ContextNote, ContextSource, EvidenceStrength, ExtractedPaper, GlossaryEntry, KeyQuote,
+        LearningRamp, OutlineEntry, OutlineRole, PageSpan, PaperAnalysis, PaperContext,
+        PaperSection, PromptExperiment, PromptVariant, QualityWarning, QuoteSignificance,
+        SectionFamily, SectionKind, SectionSourceSpan,
     },
     error::Error,
     layout::verify_quote,
+    paper_artifacts::dossier::Dossier,
 };
 
 // Deprecated: the offline reader is hidden from the UI. Kept as an internal
@@ -51,6 +53,15 @@ pub struct AnalysisOutcome {
     /// The analysis is usable but not a clean success: a model call failed
     /// or a verification pass did not run. Show it, flagged.
     pub degraded: bool,
+}
+
+/// A refreshed context and what the run noticed.
+#[derive(Debug)]
+pub struct ContextOutcome {
+    pub context: PaperContext,
+    pub warnings: Vec<QualityWarning>,
+    pub degraded: bool,
+    pub pipeline_version: String,
 }
 
 pub(crate) struct ExperimentVariantRequest<'a> {
@@ -151,22 +162,24 @@ impl AnalysisService {
     /// reader model. This is the new backend for `analyze` on model readers.
     ///
     /// The abstract is taken from the extraction, falling back to the
-    /// deterministic abstract extraction when the artifact's is absent.
+    /// deterministic abstract extraction when the artifact's is absent. The
+    /// context node runs after the core with `dossier`, which may be empty.
     pub async fn analyze_core_artifacts(
         &self,
         provider: AnalysisProvider,
         paper: &ExtractedPaper,
         pdf: &Path,
         artifact_directory: &Path,
+        dossier: Dossier,
         progress: Option<openrouter::ProgressSink>,
     ) -> Result<AnalysisOutcome> {
         use crate::paper_artifacts::{
             features::Features,
             resources::DEFAULT_DPI,
-            run::{Backend, CoreMode, ExtractOptions, core_pipeline, extract_with},
+            run::{CoreMode, ExtractOptions, core_pipeline, extract_with},
         };
         let checkpoint_directory = artifact_directory.join("checkpoints");
-        let features = Features::parse("none")?;
+        let features = Features::parse("context")?;
         let settings = &self.settings;
         let options = ExtractOptions {
             pdf: pdf.to_path_buf(),
@@ -186,20 +199,11 @@ impl AnalysisService {
             plan: Some(core_pipeline(features)),
             progress,
             checkpoints: Some(checkpoint_directory.clone()),
+            dossier,
+            seed: None,
         };
         let ledger = spend::SpendLedger::with_defaults();
-        let backend = if provider == AnalysisProvider::OpenRouter {
-            Backend::OpenRouter {
-                client: openrouter::client(options.timeout)?,
-                ledger: &ledger,
-            }
-        } else {
-            Backend::Plan {
-                analyzer: &self.local_cli,
-                provider,
-                directory: options.work_directory.clone(),
-            }
-        };
+        let backend = self.backend(provider, &options, &ledger)?;
         let record = extract_with(&options, backend).await?;
         let clean = record.succeeded();
         let degraded = record.degraded();
@@ -228,6 +232,7 @@ impl AnalysisService {
         }
         analysis.pipeline_version = Some(pipeline_version);
         analysis.quality_warnings.clone_from(&warnings);
+        analysis.abstract_agreement = record.abstract_agreement;
         // A finished run must not be replayed by the next one: a refresh asks
         // the model again. Keep the saved calls when any call failed or a
         // verification pass was skipped, so the retry pays only for what is
@@ -240,6 +245,101 @@ impl AnalysisService {
             session: None,
             warnings,
             degraded,
+        })
+    }
+
+    /// Where a structured model call of the paper-artifacts pipeline runs.
+    fn backend<'a>(
+        &'a self,
+        provider: AnalysisProvider,
+        options: &crate::paper_artifacts::run::ExtractOptions,
+        ledger: &'a spend::SpendLedger,
+    ) -> Result<crate::paper_artifacts::run::Backend<'a>> {
+        use crate::paper_artifacts::run::Backend;
+        Ok(if provider == AnalysisProvider::OpenRouter {
+            Backend::OpenRouter {
+                client: openrouter::client(options.timeout)?,
+                ledger,
+            }
+        } else {
+            Backend::Plan {
+                analyzer: &self.local_cli,
+                provider,
+                directory: options.work_directory.clone(),
+            }
+        })
+    }
+
+    /// Run the context node alone over the core fields of the last full run,
+    /// and return the new context. The core fields come from the stored
+    /// `paper-artifacts.json` record; an analysis made before that record
+    /// existed contributes its thesis and abstract instead.
+    pub async fn refresh_context(
+        &self,
+        provider: AnalysisProvider,
+        previous: &PaperAnalysis,
+        pdf: &Path,
+        artifact_directory: &Path,
+        dossier: Dossier,
+        progress: Option<openrouter::ProgressSink>,
+    ) -> Result<ContextOutcome> {
+        use crate::paper_artifacts::{
+            features::Features,
+            resources::DEFAULT_DPI,
+            run::{CoreMode, ExtractOptions, context_pipeline, extract_with},
+        };
+        let seed = tokio::fs::read(artifact_directory.join("paper-artifacts.json"))
+            .await
+            .ok()
+            .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok())
+            .and_then(|record| record.get("artifacts").cloned())
+            .filter(serde_json::Value::is_object)
+            .unwrap_or_else(|| {
+            serde_json::json!({
+                "card": {"thesis": {"text": previous.thesis, "evidence": [], "confidence": "medium"}},
+            })
+        });
+        let settings = &self.settings;
+        let options = ExtractOptions {
+            pdf: pdf.to_path_buf(),
+            model: settings.model.clone(),
+            judgment_model: settings.judgment_model.clone(),
+            passes: 1,
+            dpi: DEFAULT_DPI,
+            work_directory: artifact_directory.join("paper-artifacts"),
+            output: artifact_directory.join("paper-artifacts-context.json"),
+            paper_budget_usd: settings.paper_budget_usd,
+            timeout: std::time::Duration::from_secs(20 * 60),
+            features: Features::parse("context")?,
+            object_pages: 6,
+            reasoning: openrouter::ReasoningEffort::Low,
+            core_mode: CoreMode::Combined,
+            providers: settings.providers.clone(),
+            plan: Some(context_pipeline()),
+            progress,
+            checkpoints: None,
+            dossier,
+            seed: Some(seed),
+        };
+        let ledger = spend::SpendLedger::with_defaults();
+        let backend = self.backend(provider, &options, &ledger)?;
+        let record = extract_with(&options, backend).await?;
+        let degraded = !record.succeeded();
+        let context = record
+            .artifacts
+            .as_ref()
+            .and_then(context_from_artifacts)
+            .ok_or_else(|| {
+                Error::InvalidAnalysis(record.failures.first().map_or_else(
+                    || "the context node returned no context".to_owned(),
+                    |failure| failure.error.clone(),
+                ))
+            })?;
+        Ok(ContextOutcome {
+            context,
+            warnings: record.warnings,
+            degraded,
+            pipeline_version: record.pipeline_version,
         })
     }
 
@@ -464,6 +564,9 @@ pub(crate) struct AnalysisDraft {
     pub caveats: Vec<String>,
     #[serde(default)]
     pub reading_path: Vec<String>,
+    /// Why the paper matters, from the context node.
+    #[serde(default)]
+    pub context: Option<PaperContext>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -607,7 +710,73 @@ pub(crate) fn draft_from_artifacts(artifacts: &serde_json::Value) -> Result<Anal
         glossary: Vec::new(),
         caveats: Vec::new(),
         reading_path: Vec::new(),
+        context: context_from_artifacts(artifacts),
     })
+}
+
+/// The settled context of an artifacts record, when it has one.
+pub(crate) fn context_from_artifacts(artifacts: &serde_json::Value) -> Option<PaperContext> {
+    let context = artifacts.get(crate::paper_artifacts::context::FIELD)?;
+    if !context.is_object() {
+        return None;
+    }
+    serde_json::from_value(context.clone())
+        .map_err(|error| tracing::warn!(%error, "the stored context does not parse"))
+        .ok()
+}
+
+/// Put a refreshed context on a stored analysis: the context itself, its
+/// projection onto the brief and notes, and its warnings. Notes from the
+/// older web-research design are kept.
+pub(crate) fn apply_context(analysis: &mut PaperAnalysis, refreshed: ContextOutcome) {
+    let (brief, notes) = context_projection(&refreshed.context);
+    if !brief.is_empty() {
+        analysis.outsider_brief = brief;
+    }
+    analysis.context_notes.retain(|note| note.basis.is_none());
+    analysis.context_notes.extend(notes);
+    analysis.context = Some(refreshed.context);
+    let field = crate::paper_artifacts::context::FIELD;
+    analysis
+        .quality_warnings
+        .retain(|warning| warning.field != field);
+    analysis.quality_warnings.extend(
+        refreshed
+            .warnings
+            .into_iter()
+            .filter(|warning| warning.field == field),
+    );
+}
+
+/// What the older reader fields show of a context: the lead as the outsider
+/// brief, and the before and after claims as notes carrying their basis.
+pub(crate) fn context_projection(context: &PaperContext) -> (String, Vec<ContextNote>) {
+    let brief = context
+        .lead
+        .iter()
+        .map(|claim| claim.text.as_str())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let notes = [
+        (ContextKind::Before, &context.before),
+        (ContextKind::After, &context.after),
+    ]
+    .into_iter()
+    .flat_map(|(kind, claims)| {
+        claims.iter().map(move |claim| ContextNote {
+            kind,
+            text: claim.text.clone(),
+            source_ids: Vec::new(),
+            basis: Some(claim.basis),
+            work_ids: if claim.basis == ContextBasis::Dossier {
+                claim.work_ids.clone()
+            } else {
+                Vec::new()
+            },
+        })
+    })
+    .collect();
+    (brief, notes)
 }
 
 fn outline_entry_from_artifact(item: &serde_json::Value) -> Option<OutlineEntryDraft> {
@@ -731,11 +900,18 @@ fn normalize_analysis(
 ) -> Result<PaperAnalysis> {
     draft.thesis = clean_required("thesis", &draft.thesis)?;
     let author_abstract = validated_author_abstract(draft.author_abstract, paper);
-    let (outsider_brief, context_notes, context_sources) = normalize_context(
+    let (mut outsider_brief, mut context_notes, context_sources) = normalize_context(
         &draft.outsider_brief,
         draft.context_notes,
         draft.context_sources,
     );
+    if let Some(context) = &draft.context {
+        let (brief, notes) = context_projection(context);
+        if !brief.is_empty() {
+            outsider_brief = brief;
+        }
+        context_notes.extend(notes);
+    }
     if draft.sections.is_empty() {
         return Err(Error::InvalidAnalysis(
             "analysis did not contain any sections".to_owned(),
@@ -850,6 +1026,8 @@ fn normalize_analysis(
         reading_path: clean_list(draft.reading_path, 18),
         pipeline_version: None,
         quality_warnings: Vec::new(),
+        context: draft.context,
+        abstract_agreement: None,
     };
     validate_citations(&mut analysis, &paper.layout)?;
     Ok(analysis)
@@ -963,6 +1141,8 @@ fn normalize_context(
                 kind: note.kind,
                 text,
                 source_ids,
+                basis: None,
+                work_ids: Vec::new(),
             })
         })
         .take(6)
@@ -1234,6 +1414,7 @@ while [ "$#" -gt 0 ]; do
 done
 case "$prompt" in
   *"You are checking a draft record"*) printf '%s' '{"corrections":[]}' > "$output" ;;
+  *"why this paper matters"*) printf '%s' '{"context":{"lead":[{"text":"Single views were thought too weak.","basis":"background","evidence":[],"work_ids":[]}],"before":[],"contribution":[],"after":[],"read_alongside":[],"reception_note":"Not known."}}' > "$output" ;;
   *) printf '%s' '{"identity":{"title":"Paragraph Continuation","authors":[{"name":"A. Author","affiliation":null}]},"card":{"thesis":{"text":"Single-view estimation is enough.","evidence":[],"confidence":"high"}},"abstract":{"text":null,"page":null},"references":[],"sections":[{"title":"Front matter","kind":"other","family":"context","pages":{"start":1,"end":1},"summary":"The opening."}]}' > "$output" ;;
 esac
 "#,
@@ -1258,6 +1439,7 @@ esac
                 &paper,
                 &pdf,
                 directory.path(),
+                Dossier::default(),
                 None,
             )
             .await
@@ -1272,6 +1454,20 @@ esac
             [crate::domain::QualityWarningKind::SectionsLowCoverage]
         );
         assert_eq!(outcome.analysis.quality_warnings, outcome.warnings);
+        let context = outcome.analysis.context.as_ref().expect("context");
+        assert_eq!(context.lead[0].basis, ContextBasis::Background);
+        assert_eq!(context.reception_note.as_deref(), Some("Not known."));
+        assert_eq!(context.counts.dossier_works, 0);
+        assert_eq!(
+            outcome.analysis.outsider_brief,
+            "Single views were thought too weak."
+        );
+        let agreement = outcome
+            .analysis
+            .abstract_agreement
+            .as_ref()
+            .expect("abstract agreement");
+        assert!(!agreement.model_found);
         let version = outcome
             .analysis
             .pipeline_version
@@ -1376,6 +1572,8 @@ esac
             reading_path: Vec::new(),
             pipeline_version: None,
             quality_warnings: Vec::new(),
+            context: None,
+            abstract_agreement: None,
         }
     }
 
@@ -1633,6 +1831,135 @@ esac
         assert_eq!(draft.sections[0].family, SectionFamily::Context);
         assert_eq!(draft.sections[0].pages.start, 1);
         assert!(draft.sections[0].source_span.is_some());
+    }
+
+    fn settled_context() -> serde_json::Value {
+        serde_json::json!({
+            "lead": [
+                {"text": "It overturned the standard prediction.", "basis": "background", "evidence": [], "work_ids": []},
+                {"text": "It used a natural experiment.", "basis": "paper",
+                 "evidence": [{"quote": "a natural experiment", "page": 2}], "work_ids": []}
+            ],
+            "before": [{"text": "The competitive model predicted lower wages.", "basis": "dossier",
+                        "evidence": [], "work_ids": ["w1"]}],
+            "contribution": [{"text": "A comparison city design.", "basis": "paper",
+                              "evidence": [{"quote": "comparison cities", "page": 3}], "work_ids": []}],
+            "after": [{"text": "A reanalysis disputed it.", "basis": "background", "evidence": [],
+                       "work_ids": [], "downgraded": "unknown_work"}],
+            "read_alongside": [{"work_id": "w1", "title": "The Old Model", "authors": "A. Smith et al.",
+                                "year": 1974, "relation": "predecessor", "why": "The prediction it tested.",
+                                "basis": "dossier", "local_paper_id": null}],
+            "reception_note": null,
+            "counts": {"dossier_works": 3, "paper_claims": 2, "dossier_claims": 1, "background_claims": 2,
+                       "downgraded_quote_not_found": 0, "downgraded_unknown_work": 1,
+                       "unknown_work_ids": 1, "dropped_read_alongside": 0}
+        })
+    }
+
+    #[test]
+    fn should_map_the_context_onto_the_brief_the_notes_and_the_stored_context() {
+        let artifacts = serde_json::json!({
+            "card": {"thesis": {"text": "A sharper thesis.", "evidence": [], "confidence": "high"}},
+            "context": settled_context(),
+        });
+        let draft = draft_from_artifacts(&artifacts).expect("draft");
+        let context = draft.context.expect("context");
+        assert_eq!(context.lead.len(), 2);
+        assert_eq!(context.lead[1].basis, ContextBasis::Paper);
+        assert_eq!(context.lead[1].evidence[0].page, 2);
+        assert_eq!(
+            context.after[0].downgraded,
+            Some(crate::domain::ContextDowngrade::UnknownWork)
+        );
+        assert_eq!(context.read_alongside[0].work_id.as_deref(), Some("w1"));
+        assert_eq!(
+            context.read_alongside[0].relation,
+            crate::domain::NeighbourRelation::Predecessor
+        );
+        assert_eq!(context.counts.unknown_work_ids, 1);
+        assert_eq!(context.claims().count(), 5);
+
+        let (brief, notes) = context_projection(&context);
+        assert_eq!(
+            brief,
+            "It overturned the standard prediction. It used a natural experiment."
+        );
+        assert_eq!(notes.len(), 2);
+        assert_eq!(notes[0].kind, ContextKind::Before);
+        assert_eq!(notes[0].basis, Some(ContextBasis::Dossier));
+        assert_eq!(notes[0].work_ids, ["w1"]);
+        assert_eq!(notes[1].kind, ContextKind::After);
+        assert!(notes[1].work_ids.is_empty());
+    }
+
+    #[test]
+    fn should_replace_only_the_context_nodes_notes_when_a_context_is_refreshed() {
+        let mut analysis = analysis_with_sections(Vec::new());
+        analysis.context_notes = vec![
+            ContextNote {
+                kind: ContextKind::Legacy,
+                text: "A web-researched note.".to_owned(),
+                source_ids: vec!["s1".to_owned()],
+                basis: None,
+                work_ids: Vec::new(),
+            },
+            ContextNote {
+                kind: ContextKind::Before,
+                text: "A stale node note.".to_owned(),
+                source_ids: Vec::new(),
+                basis: Some(ContextBasis::Background),
+                work_ids: Vec::new(),
+            },
+        ];
+        analysis.quality_warnings = vec![QualityWarning {
+            kind: crate::domain::QualityWarningKind::ContextClaimsDowngraded,
+            field: "context".to_owned(),
+            message: "stale".to_owned(),
+        }];
+        let context: PaperContext = serde_json::from_value(settled_context()).expect("context");
+        apply_context(
+            &mut analysis,
+            ContextOutcome {
+                context,
+                warnings: Vec::new(),
+                degraded: false,
+                pipeline_version: "v".to_owned(),
+            },
+        );
+        let texts = analysis
+            .context_notes
+            .iter()
+            .map(|note| note.text.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            texts,
+            [
+                "A web-researched note.",
+                "The competitive model predicted lower wages.",
+                "A reanalysis disputed it."
+            ]
+        );
+        assert!(analysis.outsider_brief.starts_with("It overturned"));
+        assert!(analysis.context.is_some());
+        assert!(analysis.quality_warnings.is_empty());
+    }
+
+    #[test]
+    fn should_load_an_analysis_stored_before_the_context_node() {
+        let mut stored = serde_json::to_value(analysis_with_sections(Vec::new())).expect("JSON");
+        let fields = stored.as_object_mut().expect("object");
+        fields.remove("context");
+        fields.remove("abstract_agreement");
+        fields.insert(
+            "context_notes".to_owned(),
+            serde_json::json!([{"kind": "before", "text": "Old note.", "source_ids": ["s1"]}]),
+        );
+        let analysis: PaperAnalysis = serde_json::from_value(stored).expect("old analysis loads");
+        assert!(analysis.context.is_none());
+        assert!(analysis.abstract_agreement.is_none());
+        assert_eq!(analysis.context_notes[0].basis, None);
+        let written = serde_json::to_value(&analysis.context_notes[0]).expect("JSON");
+        assert!(written.get("basis").is_none(), "old notes keep their shape");
     }
 
     #[test]

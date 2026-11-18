@@ -294,9 +294,14 @@ enum Command {
         #[arg(long, default_value_t = 0.15)]
         paper_budget_usd: f64,
         /// Optional feature passes after the core pass: figures, tables,
-        /// algorithms, equations, objects, supercut, analysis, glossary, all, none.
+        /// algorithms, equations, objects, supercut, analysis, glossary,
+        /// context, all, none.
         #[arg(long, default_value = "")]
         features: String,
+        /// A neighbour dossier JSON for the context node. A library paper
+        /// gets its dossier from the citation graph when this is omitted.
+        #[arg(long)]
+        dossier: Option<PathBuf>,
         /// Pages per chunk for the chunked object pass.
         #[arg(long, default_value_t = 6, value_parser = clap::value_parser!(u16).range(1..=50))]
         object_pages: u16,
@@ -330,7 +335,7 @@ enum Command {
         #[arg(long)]
         force: bool,
     },
-    /// Refresh only cited research history and subsequent influence.
+    /// Refresh only the "why this paper matters" context, over the last core run.
     RefreshContext {
         query: String,
         #[arg(long, default_value = "openrouter")]
@@ -621,12 +626,17 @@ async fn run(cli: Cli) -> Result<()> {
             core_mode,
             providers,
             config,
+            dossier,
         } => {
+            let mut graph_dossier = None;
             let pdf = match (pdf, query) {
                 (Some(pdf), _) => pdf,
                 (None, Some(query)) => {
                     let id = resolve_paper(&state, &query).await?;
                     let paper = state.paper(&id).await?;
+                    if dossier.is_none() {
+                        graph_dossier = Some(state.neighbour_dossier(&id).await);
+                    }
                     cli.library.join(&paper.paper.relative_path)
                 }
                 (None, None) => {
@@ -663,6 +673,15 @@ async fn run(cli: Cli) -> Result<()> {
                 },
                 progress: None,
                 checkpoints: None,
+                dossier: match dossier {
+                    Some(path) => serde_json::from_slice(
+                        &tokio::fs::read(&path)
+                            .await
+                            .map_err(|error| Error::io(&path, error))?,
+                    )?,
+                    None => graph_dossier.unwrap_or_default(),
+                },
+                seed: None,
             };
             let ledger = lysilogy::analysis::spend::SpendLedger::with_defaults();
             let record =
@@ -749,7 +768,7 @@ async fn run(cli: Cli) -> Result<()> {
                 .await?;
             println!(
                 "{}",
-                serde_json::to_string_pretty(&view.analysis.and_then(|a| a.context_assessment))?
+                serde_json::to_string_pretty(&view.analysis.and_then(|a| a.context))?
             );
             Ok(())
         }
@@ -2570,8 +2589,15 @@ fn print_extract_summary(
     }
     println!("  pipeline: {}", record.pipeline_version);
     for retry in &record.plausibility_retries {
-        let outcome = if retry.kept_retry { "kept" } else { "discarded" };
-        println!("  retried {} for a degenerate answer; retry {outcome}", retry.call);
+        let outcome = if retry.kept_retry {
+            "kept"
+        } else {
+            "discarded"
+        };
+        println!(
+            "  retried {} for a degenerate answer; retry {outcome}",
+            retry.call
+        );
     }
     for warning in &record.warnings {
         println!("  warning: {}", warning.message);

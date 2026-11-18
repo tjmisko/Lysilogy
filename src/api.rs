@@ -682,6 +682,7 @@ impl AppState {
                         Error::InvalidRequest("Analyze this paper before refreshing it".to_owned())
                     })?;
                     let pdf = self.source_path(id).await?;
+                    let dossier = self.neighbour_dossier(id).await;
                     let (progress, forwarder) = self.jobs.progress_reporter(id, task);
                     let refreshed = self
                         .analysis
@@ -690,6 +691,7 @@ impl AppState {
                             &paper,
                             &pdf,
                             &self.store.paper_dir(id),
+                            dossier,
                             Some(progress),
                         )
                         .await;
@@ -697,6 +699,7 @@ impl AppState {
                     let refreshed = refreshed?;
                     match component {
                         AnalysisComponent::Structure => {
+                            analysis.outline.clone_from(&refreshed.analysis.outline);
                             analysis.sections.clone_from(&refreshed.analysis.sections);
                             analysis.generated_at = refreshed.analysis.generated_at;
                         }
@@ -705,15 +708,32 @@ impl AppState {
                                 .author_abstract
                                 .clone_from(&refreshed.analysis.author_abstract);
                             analysis.abstract_extraction = refreshed.analysis.abstract_extraction;
+                            analysis.abstract_agreement = refreshed.analysis.abstract_agreement;
                         }
                         AnalysisComponent::Context => unreachable!(),
                     }
                 }
                 AnalysisComponent::Context => {
-                    return Err(Error::InvalidRequest(
-                        "Context research is disabled until its node is rebuilt without web"
-                            .to_owned(),
-                    ));
+                    let analysis = analysis.as_mut().ok_or_else(|| {
+                        Error::InvalidRequest("Analyze this paper before refreshing it".to_owned())
+                    })?;
+                    let pdf = self.source_path(id).await?;
+                    let dossier = self.neighbour_dossier(id).await;
+                    let (progress, forwarder) = self.jobs.progress_reporter(id, task);
+                    let refreshed = self
+                        .analysis
+                        .refresh_context(
+                            provider,
+                            analysis,
+                            &pdf,
+                            &self.store.paper_dir(id),
+                            dossier,
+                            Some(progress),
+                        )
+                        .await;
+                    forwarder.stop().await;
+                    let refreshed = refreshed?;
+                    crate::analysis::apply_context(analysis, refreshed);
                 }
             }
             self.jobs.task_completed(id, task).await?;
@@ -915,12 +935,14 @@ impl AppState {
             }
             AnalysisProvider::Codex | AnalysisProvider::Claude | AnalysisProvider::OpenRouter => {
                 let pdf = self.source_path(id).await?;
+                let dossier = self.neighbour_dossier(id).await;
                 self.analysis
                     .analyze_core_artifacts(
                         provider,
                         paper,
                         &pdf,
                         &self.store.paper_dir(id),
+                        dossier,
                         Some(progress),
                     )
                     .await

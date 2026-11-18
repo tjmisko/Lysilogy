@@ -9,6 +9,23 @@ use super::{
     QUESTION_SCHEMA, REFERENCES_SCHEMA, RELATIONS_SCHEMA, SECTIONS_SCHEMA, TYPE_SCHEMA,
 };
 
+/// What the abstract is and is not. The reader shows it as the authors'
+/// abstract, and a deterministic extraction cross-checks it, so a summary
+/// in its place is worse than nothing.
+pub const ABSTRACT_INSTRUCTION: &str = "Return the `abstract` field: the authors' own abstract, copied exactly as printed, paragraphs separated by a blank line. \
+The reader is shown this as the authors' words, so it must be their text and only their text: start at the first sentence of the abstract and stop at its last, \
+leaving out the heading, keywords, classification codes, a cite-as line, footnotes and the start of the introduction. Do not summarize, shorten, fix or paraphrase it. \
+Papers that print no labelled abstract sometimes open with an unlabelled summary paragraph set apart from the main text; copy that if it is plainly the abstract. \
+Null only if the paper has no abstract.";
+
+/// The thesis is the first line a reader sees; it must carry the finding.
+pub const CARD_INSTRUCTION: &str = "Return the `card` field. \
+The thesis is the first sentence a reader sees about this paper, before the abstract, so it has to carry the finding: one plain sentence that says what the paper shows, \
+claims or builds, specific enough that it could not describe a different paper. State the result, not the topic: \
+for an illustrative study from medicine, \"We study hand-washing and maternal mortality\" is a topic, while \"Requiring doctors to wash their hands in chlorinated lime cut maternal deaths in the first clinic from about 10% to under 2%\" is a finding. \
+Use the paper's own hedges (a paper that suggests should not be made to prove), avoid jargon an outsider would not know when a plain word will do, and leave out hype. \
+Then the position: the works it builds on, contrasts with or critiques, and replicates, each with a one-line why.";
+
 /// One core field and the call that fills it.
 pub struct CoreField {
     pub name: &'static str,
@@ -40,14 +57,14 @@ pub const CORE_FIELDS: &[CoreField] = &[
         name: "abstract",
         stage: "extract.abstract",
         schema: ABSTRACT_SCHEMA,
-        instruction: "Return the `abstract` field: the abstract copied verbatim, paragraphs separated by a blank line. Null only if these pages contain no abstract.",
+        instruction: ABSTRACT_INSTRUCTION,
         page_limit: Some(3),
     },
     CoreField {
         name: "card",
         stage: "extract.card",
         schema: CARD_SCHEMA,
-        instruction: "Return the `card` field: the thesis in one plain sentence; the position (what it builds on, contrasts with, critiques, replicates), each with a one-line why.",
+        instruction: CARD_INSTRUCTION,
         page_limit: None,
     },
     CoreField {
