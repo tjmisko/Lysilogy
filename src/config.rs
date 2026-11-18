@@ -28,6 +28,16 @@ pub struct AnalysisConfig {
     /// No further model call starts once one paper has spent this much.
     /// Generous enough that a normal paper always reaches its self-check.
     pub paper_budget_usd: f64,
+    /// The model that labels why a paper cites each work, over `OpenRouter`;
+    /// `None` uses `judgment_model`, then `model`. Labels are short judgment
+    /// calls, so the stronger model costs little per edge.
+    pub label_model: Option<String>,
+    /// No further label call starts once one paper's labelling has spent
+    /// this much; the rest are left for a later run, which resumes from the
+    /// cache.
+    pub label_budget_usd: f64,
+    /// Most label calls for one paper in one run (cache hits are free).
+    pub label_limit: usize,
 }
 
 impl Default for AnalysisConfig {
@@ -37,6 +47,9 @@ impl Default for AnalysisConfig {
             judgment_model: None,
             providers: vec!["deepinfra".to_owned()],
             paper_budget_usd: 0.50,
+            label_model: None,
+            label_budget_usd: 0.10,
+            label_limit: 40,
         }
     }
 }
@@ -71,7 +84,30 @@ impl AnalysisConfig {
                 "analysis.paper_budget_usd must be a positive number".into(),
             ));
         }
+        if self
+            .label_model
+            .as_deref()
+            .is_some_and(|model| model.trim().is_empty())
+        {
+            return Err(Error::InvalidRequest(
+                "analysis.label_model must not be empty; omit it to use the judgment model".into(),
+            ));
+        }
+        if !self.label_budget_usd.is_finite() || self.label_budget_usd < 0.0 {
+            return Err(Error::InvalidRequest(
+                "analysis.label_budget_usd must be zero or a positive number".into(),
+            ));
+        }
         Ok(())
+    }
+
+    /// The model that writes edge labels over `OpenRouter`.
+    #[must_use]
+    pub fn label_model(&self) -> &str {
+        self.label_model
+            .as_deref()
+            .or(self.judgment_model.as_deref())
+            .unwrap_or(&self.model)
     }
 }
 
@@ -174,6 +210,12 @@ mod tests {
         assert_eq!(defaults.judgment_model, None);
         assert_eq!(defaults.providers, ["deepinfra"]);
         assert!(defaults.paper_budget_usd >= 0.5);
+        assert_eq!(
+            defaults.label_model(),
+            defaults.model,
+            "labels default to the core model"
+        );
+        assert!(defaults.label_budget_usd > 0.0 && defaults.label_limit > 0);
 
         tokio::fs::write(
             &path,
@@ -188,6 +230,11 @@ mod tests {
         );
         assert!((config.paper_budget_usd - 1.25).abs() < f64::EPSILON);
         assert_eq!(
+            config.label_model(),
+            "anthropic/claude-opus-4",
+            "labels use the judgment model when one is set"
+        );
+        assert_eq!(
             config.providers,
             ["deepinfra"],
             "unset fields keep defaults"
@@ -199,6 +246,8 @@ mod tests {
             r#"{"analysis":{"providers":[""]}}"#,
             r#"{"analysis":{"judgment_model":""}}"#,
             r#"{"analysis":{"budget":1}}"#,
+            r#"{"analysis":{"label_model":" "}}"#,
+            r#"{"analysis":{"label_budget_usd":-1}}"#,
         ] {
             tokio::fs::write(&path, invalid).await.unwrap();
             assert!(AppConfig::load(&path, true).await.is_err(), "{invalid}");

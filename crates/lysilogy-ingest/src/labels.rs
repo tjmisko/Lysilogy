@@ -1,21 +1,33 @@
 //! Grounded relationship labels for local citation edges.
 //!
 //! A model reads the passages in which a paper cites a work and answers with a
-//! relation, a reason, and a verbatim quote. The answer is only kept when the
-//! quote is an exact substring of a passage the model was shown ("grounding").
-//! Raw model output is cached in `source.source_record` so reruns cost nothing,
-//! including reruns of answers that failed grounding.
+//! relation, how much the paper engages with the work, a reason, and a
+//! verbatim quote. The answer is only kept when the quote is an exact
+//! substring of a passage the model was shown ("grounding"). Raw model output
+//! is cached in `source.source_record` so reruns cost nothing, including
+//! reruns of answers that failed grounding.
+//!
+//! Labels come from two paths that share one store: the core reading's
+//! admitted relations seed a cheap first label ([`seed`]), and this labeler
+//! fills the edges that have citing passages but no label. [`merge_decision`]
+//! is the one rule for what happens when a new label meets an existing one.
+//! The contract is in `docs/edge-labels.md`.
 
-use std::collections::BTreeMap;
+pub mod seed;
+
+use std::collections::{BTreeMap, HashMap};
 use std::fmt::Write as _;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use lysilogy_core::{AssertionId, Coverage, DocumentVersionId, SourceRecordId, WorkId};
+use lysilogy_core::{
+    AssertionId, Coverage, DocumentVersionId, MentionId, RelationshipOrigin, ReviewState,
+    SourceRecordId, WorkId,
+};
 use lysilogy_db::evidence::{EvidenceRepository, StoredMention};
-use lysilogy_db::relationship::{NewAiClaim, RelationshipRepository};
+use lysilogy_db::relationship::{LabelPath, NewAiClaim, RelationshipRepository, StoredClaim};
 use lysilogy_db::source_record::SourceRecordRepository;
 use lysilogy_db::work::WorkRepository;
 use serde::{Deserialize, Serialize};
@@ -27,13 +39,25 @@ use crate::Result;
 use crate::bibliography::BibliographicFields;
 use crate::concurrency::{BoxFuture, join_all};
 
-/// Bump when the prompt or the request shape changes, so old cache entries are not reused.
-pub const LABEL_PROMPT_VERSION: u32 = 1;
+/// Bump when the prompt or the request shape changes.
+///
+/// Old cache entries are then not reused. Version 2 briefs the model on the role the work plays, shows
+/// the citing paper's thesis, the cited work's abstract, wider passages and
+/// the citation markers, and asks for `engagement`.
+pub const LABEL_PROMPT_VERSION: u32 = 2;
 
 /// Source record kind for cached raw model output.
 pub const LABEL_RECORD_KIND: &str = "relationship_label";
 
+/// The brief the labeler model reads before the edge's data.
+pub const LABEL_BRIEF: &str = include_str!("../../../prompts/edge-label.md");
+
 /// The relation vocabulary the model must choose from.
+///
+/// Unchanged since version 1: stored labels, the prominence counts (`uses_method`,
+/// `uses_data` and `extends` count as method citations, `background` as
+/// background) and the core reading's schema all use it. How much the paper
+/// does with a work is the separate `engagement`, not a new relation.
 pub const RELATIONS: &[&str] = &[
     "background",
     "uses_method",
@@ -46,19 +70,30 @@ pub const RELATIONS: &[&str] = &[
     "other",
 ];
 
+/// How much the citing paper does with the cited work.
+pub const ENGAGEMENTS: &[&str] = &["substantive", "perfunctory", "not_shown"];
+
 /// Strict output schema: every property is required and no others are allowed.
+///
+/// The properties are in the order the model should decide them:
+/// find the evidence, judge engagement, choose the relation, then write the
+/// reason.
 pub const LABEL_SCHEMA: &str = r#"{
   "type": "object",
   "additionalProperties": false,
-  "required": ["relation", "reason", "quote", "passage_index"],
+  "required": ["passage_index", "quote", "engagement", "relation", "reason"],
   "properties": {
+    "passage_index": { "type": "integer" },
+    "quote": { "type": "string" },
+    "engagement": {
+      "type": "string",
+      "enum": ["substantive", "perfunctory", "not_shown"]
+    },
     "relation": {
       "type": "string",
       "enum": ["background", "uses_method", "uses_data", "extends", "supports", "contrasts", "critiques", "compares", "other"]
     },
-    "reason": { "type": "string" },
-    "quote": { "type": "string" },
-    "passage_index": { "type": "integer" }
+    "reason": { "type": "string" }
   }
 }"#;
 
@@ -73,6 +108,12 @@ const MIN_QUOTE_WORDS: usize = 3;
 
 /// Longest bibliography entry text shown to the model, in characters.
 const MAX_ENTRY_TEXT_CHARS: usize = 400;
+
+/// Longest cited abstract shown to the model, in characters.
+const MAX_ABSTRACT_CHARS: usize = 1_200;
+
+/// Longest citing thesis shown to the model, in characters.
+const MAX_THESIS_CHARS: usize = 400;
 
 /// Most cited authors shown to the model.
 const MAX_AUTHORS: usize = 3;
@@ -97,15 +138,35 @@ pub struct CitedWorkBrief {
     pub year: Option<i32>,
     pub authors: Vec<String>,
     pub entry_text: Option<String>,
+    /// The authors' abstract, when the library holds and has analysed the work.
+    pub abstract_text: Option<String>,
+}
+
+/// What the model is told about one passage besides its text.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
+pub struct PassageContext {
+    /// The citation marker as printed, e.g. `[3, 7-9]` or `(Smith, 2001)`.
+    pub marker: Option<String>,
+    /// How many works that marker cites at once; 1 when it cites only this work.
+    pub cited_together: usize,
+    pub page: Option<i32>,
+    /// The sentence carrying the citation, when the passage shows text around it.
+    pub citing_sentence: Option<String>,
 }
 
 /// One edge to label.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
 pub struct LabelRequest {
     pub citing_title: Option<String>,
+    /// The citing paper's thesis, so the model can see what the argument is.
+    pub citing_thesis: Option<String>,
     pub cited: CitedWorkBrief,
-    /// Distinct passages, in text order, whitespace-collapsed.
+    /// Distinct passages, in text order, whitespace-collapsed. A quote must
+    /// come from one of these.
     pub passages: Vec<String>,
+    /// One entry per passage, in the same order; may be shorter when nothing
+    /// is known about the later passages.
+    pub contexts: Vec<PassageContext>,
 }
 
 /// The model's answer, before grounding.
@@ -115,6 +176,9 @@ pub struct LabelDraft {
     pub reason: String,
     pub quote: String,
     pub passage_index: usize,
+    /// `substantive`, `perfunctory` or `not_shown`; absent in version 1 answers.
+    #[serde(default)]
+    pub engagement: Option<String>,
 }
 
 /// Why a labeler produced no draft.
@@ -129,6 +193,9 @@ pub enum LabelerError {
     /// The model answered with something that is not a label.
     #[error("labeler returned a malformed answer: {0}")]
     Malformed(String),
+    /// The label budget is spent; the edge is left for a later run.
+    #[error("label budget spent: {0}")]
+    Budget(String),
 }
 
 /// Where a grounded quote sits.
@@ -147,6 +214,7 @@ pub enum GroundingRejection {
     QuoteTooShort,
     QuoteNotInPassage,
     InvalidRelation,
+    InvalidEngagement,
     EmptyReason,
     ReasonTooLong,
 }
@@ -160,20 +228,70 @@ impl GroundingRejection {
             Self::QuoteTooShort => "quote_too_short",
             Self::QuoteNotInPassage => "quote_not_in_passage",
             Self::InvalidRelation => "invalid_relation",
+            Self::InvalidEngagement => "invalid_engagement",
             Self::EmptyReason => "empty_reason",
             Self::ReasonTooLong => "reason_too_long",
         }
     }
 }
 
-/// The fixed-format prompt for one edge.
+/// How many works one citation marker cites at once.
+///
+/// Numeric markers count their numbers, with ranges expanded (`[3, 7-9]` is
+/// four); author-year markers count their semicolon-separated parts. Anything
+/// unreadable counts as one.
+#[must_use]
+pub fn cited_together(marker: &str) -> usize {
+    let inner = marker
+        .trim()
+        .trim_start_matches(['[', '('])
+        .trim_end_matches([']', ')'])
+        .trim();
+    let numeric = inner.chars().any(|character| character.is_ascii_digit())
+        && inner.chars().all(|character| {
+            character.is_ascii_digit() || matches!(character, ',' | ';' | '-' | '\u{2013}' | ' ')
+        });
+    if numeric {
+        let mut count = 0;
+        for part in inner.split([',', ';']).map(str::trim) {
+            if part.is_empty() {
+                continue;
+            }
+            if let Some((first, last)) = part.split_once(['-', '\u{2013}'])
+                && let (Ok(first), Ok(last)) =
+                    (first.trim().parse::<usize>(), last.trim().parse::<usize>())
+                && last >= first
+                && last - first < 200
+            {
+                count += last - first + 1;
+                continue;
+            }
+            count += 1;
+        }
+        return count.max(1);
+    }
+    inner
+        .split(';')
+        .filter(|part| !part.trim().is_empty())
+        .count()
+        .max(1)
+}
+
+fn clip_chars(text: &str, limit: usize) -> String {
+    let compact = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    if compact.chars().count() <= limit {
+        return compact;
+    }
+    let mut clipped: String = compact.chars().take(limit).collect();
+    clipped.push('\u{2026}');
+    clipped
+}
+
+/// The prompt for one edge: the brief, then the edge's data.
 #[must_use]
 pub fn label_prompt(request: &LabelRequest) -> String {
-    let mut prompt = String::from(
-        "You are labeling why one paper cites another. Read the numbered passages from the \
-         citing paper, each of which cites the work described below, and decide how the \
-         citing paper relates to the cited work.\n\n",
-    );
+    let mut prompt = String::from(LABEL_BRIEF.trim_end());
+    prompt.push_str("\n\n---\n\nThe arrow to label.\n\n");
     let unknown = "(unknown title)";
     let cited = &request.cited;
     let _ = writeln!(
@@ -181,7 +299,18 @@ pub fn label_prompt(request: &LabelRequest) -> String {
         "Citing paper: {}",
         request.citing_title.as_deref().unwrap_or(unknown)
     );
-    let _ = writeln!(prompt, "Cited work:");
+    if let Some(thesis) = request
+        .citing_thesis
+        .as_deref()
+        .filter(|thesis| !thesis.trim().is_empty())
+    {
+        let _ = writeln!(
+            prompt,
+            "Its thesis: {}",
+            clip_chars(thesis, MAX_THESIS_CHARS)
+        );
+    }
+    let _ = writeln!(prompt, "\nCited work:");
     let _ = writeln!(
         prompt,
         "  Title: {}",
@@ -196,31 +325,53 @@ pub fn label_prompt(request: &LabelRequest) -> String {
     if let Some(entry_text) = &cited.entry_text {
         let _ = writeln!(prompt, "  Bibliography entry: {entry_text}");
     }
-    let _ = writeln!(prompt, "\nPassages:");
+    match cited
+        .abstract_text
+        .as_deref()
+        .filter(|text| !text.trim().is_empty())
+    {
+        Some(text) => {
+            let _ = writeln!(
+                prompt,
+                "  Abstract: {}",
+                clip_chars(text, MAX_ABSTRACT_CHARS)
+            );
+        }
+        None => prompt.push_str("  Abstract: not held by Lysilogy\n"),
+    }
+    let _ = writeln!(prompt, "\nPassages ({}):", request.passages.len());
     for (index, passage) in request.passages.iter().enumerate() {
         let _ = writeln!(prompt, "[{index}] {passage}");
+        let Some(context) = request.contexts.get(index) else {
+            continue;
+        };
+        if let Some(sentence) = &context.citing_sentence {
+            let _ = writeln!(prompt, "    Citing sentence: {sentence}");
+        }
+        if let Some(marker) = &context.marker {
+            let together = match context.cited_together {
+                0 | 1 => "cites only this work".to_owned(),
+                count => format!("cites {count} works at once"),
+            };
+            let _ = writeln!(prompt, "    Citation marker: {marker} ({together})");
+        }
+        if let Some(page) = context.page {
+            let _ = writeln!(prompt, "    Page: {page}");
+        }
     }
-    let _ = write!(
-        prompt,
-        "\nRelations: {}.\n\n\
-         Answer with JSON: relation (one of the relations above), reason (one or two \
-         sentences, at most {MAX_REASON_CHARS} characters, saying why the citing paper cites \
-         the work), quote (text copied VERBATIM, character for character, from exactly one \
-         numbered passage, at least {MIN_QUOTE_WORDS} words, never just a citation marker), \
-         and passage_index (the number of the passage the quote comes from).\n",
-        RELATIONS.join(", ")
-    );
     prompt
 }
 
 /// SHA-256 (hex) of the canonical request, which keys the label cache.
 #[must_use]
 pub fn label_cache_key(request: &LabelRequest) -> String {
+    cache_key_for_version(request, LABEL_PROMPT_VERSION)
+}
+
+fn cache_key_for_version(request: &LabelRequest, version: u32) -> String {
     let canonical = json!({
-        "prompt_version": LABEL_PROMPT_VERSION,
-        "citing_title": request.citing_title,
-        "cited": request.cited,
-        "passages": request.passages,
+        "prompt_version": version,
+        "request": request,
     });
     format!("{:x}", Sha256::digest(canonical.to_string().as_bytes()))
 }
@@ -241,26 +392,48 @@ pub fn ground_quote(
     if quote.is_empty() {
         return Err(GroundingRejection::EmptyQuote);
     }
-    let words = quote
-        .split_whitespace()
-        .filter(|word| word.chars().any(char::is_alphabetic))
-        .count();
-    if words < MIN_QUOTE_WORDS {
+    if !quote_has_enough_words(quote) {
         return Err(GroundingRejection::QuoteTooShort);
     }
     let grounded = locate_quote(passages, draft.passage_index, quote)
         .ok_or(GroundingRejection::QuoteNotInPassage)?;
-    if !RELATIONS.contains(&draft.relation.as_str()) {
+    check_label_text(&draft.relation, draft.engagement.as_deref(), &draft.reason)?;
+    Ok(grounded)
+}
+
+/// Whether a quote has at least [`MIN_QUOTE_WORDS`] words with letters.
+#[must_use]
+pub fn quote_has_enough_words(quote: &str) -> bool {
+    quote
+        .split_whitespace()
+        .filter(|word| word.chars().any(char::is_alphabetic))
+        .count()
+        >= MIN_QUOTE_WORDS
+}
+
+/// The relation, engagement and reason checks every label path shares.
+///
+/// # Errors
+/// The first [`GroundingRejection`] that applies.
+pub fn check_label_text(
+    relation: &str,
+    engagement: Option<&str>,
+    reason: &str,
+) -> std::result::Result<(), GroundingRejection> {
+    if !RELATIONS.contains(&relation) {
         return Err(GroundingRejection::InvalidRelation);
     }
-    let reason = draft.reason.trim();
+    if engagement.is_some_and(|engagement| !ENGAGEMENTS.contains(&engagement)) {
+        return Err(GroundingRejection::InvalidEngagement);
+    }
+    let reason = reason.trim();
     if reason.is_empty() {
         return Err(GroundingRejection::EmptyReason);
     }
     if reason.chars().count() > MAX_REASON_CHARS {
         return Err(GroundingRejection::ReasonTooLong);
     }
-    Ok(grounded)
+    Ok(())
 }
 
 fn locate_quote(passages: &[String], named: usize, quote: &str) -> Option<GroundedQuote> {
@@ -287,6 +460,74 @@ fn locate_quote(passages: &[String], named: usize, quote: &str) -> Option<Ground
     })
 }
 
+/// A label already on an edge, as the merge rule sees it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ExistingLabel<'a> {
+    pub path: LabelPath,
+    pub relation: &'a str,
+    /// A person accepted, rejected or wrote it.
+    pub reviewed: bool,
+}
+
+impl<'a> ExistingLabel<'a> {
+    /// The merge view of a stored claim.
+    #[must_use]
+    pub fn of(claim: &'a StoredClaim) -> Self {
+        Self {
+            path: claim.path(),
+            relation: &claim.relation,
+            reviewed: claim.origin == RelationshipOrigin::User
+                || claim.review_state != ReviewState::Unreviewed,
+        }
+    }
+}
+
+/// What to do with a new label on an edge.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MergeDecision {
+    /// The edge has no current label: write it.
+    Insert,
+    /// Replace the current label, which is unreviewed and from a path this
+    /// one outranks or a staler run of the same path.
+    Replace { disagrees: bool },
+    /// Keep the current label; `disagrees` when the new one names another relation.
+    Keep { disagrees: bool },
+}
+
+/// The one rule for combining label paths into one current label per edge.
+///
+/// - A person's label, or any label a person accepted or rejected, is never
+///   replaced by automation.
+/// - The core reading's relation is the cheap first label. A newer core
+///   reading replaces an older unreviewed core label (same relation or not:
+///   the newer run is the current reading of the paper).
+/// - The edge labeler read the edge's own passages with a brief written for
+///   this question, so its unreviewed label outranks a core label: a core
+///   relation never replaces it, and it replaces a core label when it is
+///   asked to relabel.
+/// - A relabel by the edge labeler (after a prompt change) replaces its own
+///   older unreviewed label.
+#[must_use]
+pub fn merge_decision(
+    existing: Option<ExistingLabel<'_>>,
+    candidate: LabelPath,
+    relation: &str,
+) -> MergeDecision {
+    let Some(existing) = existing else {
+        return MergeDecision::Insert;
+    };
+    let disagrees = existing.relation != relation;
+    if existing.reviewed || existing.path == LabelPath::User {
+        return MergeDecision::Keep { disagrees };
+    }
+    match (existing.path, candidate) {
+        (LabelPath::EdgeLabeler, LabelPath::CoreRelation) | (_, LabelPath::User) => {
+            MergeDecision::Keep { disagrees }
+        }
+        _ => MergeDecision::Replace { disagrees },
+    }
+}
+
 /// How a label pass runs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct LabelOptions {
@@ -294,6 +535,10 @@ pub struct LabelOptions {
     pub limit: usize,
     /// Model calls in flight at once.
     pub concurrency: usize,
+    /// Also label edges whose current label is unreviewed AI output, and
+    /// replace it under [`merge_decision`]. Off by default: one label per
+    /// edge, and the labeler fills only edges without one.
+    pub relabel_unreviewed: bool,
 }
 
 impl Default for LabelOptions {
@@ -301,25 +546,66 @@ impl Default for LabelOptions {
         Self {
             limit: 25,
             concurrency: 2,
+            relabel_unreviewed: false,
         }
     }
 }
 
 /// What one label pass did.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
+///
+/// Every edge it saw lands in exactly one of
+/// `already_labeled`, `edges_without_passages`, `over_limit`, `over_budget`,
+/// `failed`, `rejected_for_grounding`, `labeled`, `replaced` or `kept`.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct LabelSummary {
-    /// Local edges that have at least one mention.
+    pub prompt_version: u32,
+    /// Local edges of the paper.
     pub edges_considered: usize,
+    /// Edges with neither a stored mention nor a citing sentence from the
+    /// core reading: nothing to show the model.
+    pub edges_without_passages: usize,
+    /// Edges whose only passages came from the core reading's citations.
+    pub edges_from_core_citations: usize,
     pub model_calls: usize,
     pub cache_hits: usize,
+    /// New labels on edges that had none.
     pub labeled: usize,
+    /// Labels that replaced an unreviewed AI label (relabel only).
+    pub replaced: usize,
+    /// Answers kept out because the edge's label was reviewed meanwhile.
+    pub kept: usize,
     pub rejected_for_grounding: usize,
     pub rejections: BTreeMap<String, usize>,
     pub failed: usize,
     /// Edges left unlabeled because the call limit was reached.
     pub over_limit: usize,
+    /// Edges left unlabeled because the label budget was spent.
+    pub over_budget: usize,
     pub already_labeled: usize,
+    /// Engagement of the labels written, by value (`unstated` for none).
+    pub engagement: BTreeMap<String, usize>,
+    /// Labels written over a core label that named another relation.
+    pub disagreements_with_core: usize,
 }
+
+/// What the caller knows that the graph does not.
+#[derive(Default)]
+pub struct LabelBrief {
+    /// The citing paper's thesis from its analysis.
+    pub citing_thesis: Option<String>,
+    /// Abstracts of cited works the library holds, by Work.
+    pub cited_abstracts: HashMap<WorkId, String>,
+    /// Wider text around a stored mention, shown in place of its passage.
+    /// It must contain the stored passage; otherwise the passage is shown.
+    pub surround: Option<Box<Surround>>,
+    /// Citing sentences for edges without stored mentions, by cited Work:
+    /// the core reading's admitted citations.
+    pub extra_passages: HashMap<WorkId, Vec<String>>,
+}
+
+/// Wider text around a stored mention.
+pub type Surround = dyn Fn(&StoredMention) -> Option<String> + Send + Sync;
 
 /// The repositories the label pass works through.
 pub struct LabelContext<'a> {
@@ -332,14 +618,11 @@ pub struct LabelContext<'a> {
 /// One edge ready to label.
 struct EdgeJob {
     assertion: AssertionId,
-    mentions: Vec<StoredMention>,
+    /// The stored mention behind each passage, `None` for a core citation.
+    mentions: Vec<Option<MentionId>>,
     request: LabelRequest,
     cache_source_key: String,
-}
-
-/// A model call that has to be made.
-struct PendingCall {
-    job: EdgeJob,
+    existing: Option<StoredClaim>,
 }
 
 /// A raw draft ready to ground.
@@ -349,21 +632,27 @@ struct Drafted {
     draft: LabelDraft,
 }
 
-/// Label the local edges of `citing_work` that have no current claim.
+/// Label the local edges of `citing_work` that have no current claim (or,
+/// with [`LabelOptions::relabel_unreviewed`], an unreviewed AI claim).
 ///
 /// Edges are taken by mention count (most first), then by text position.
-/// Labeler errors count as `failed` and never stop the pass.
+/// Labeler errors count as `failed` (or `over_budget`) and never stop the pass.
 ///
 /// # Errors
 /// Database failures.
+#[allow(clippy::too_many_lines)] // One pass: select edges, call, then record, with every outcome counted.
 pub async fn label_edges(
     ctx: &LabelContext<'_>,
     citing_work: WorkId,
     document_version: DocumentVersionId,
     labeler: &dyn RelationshipLabeler,
+    brief: &LabelBrief,
     options: LabelOptions,
 ) -> Result<LabelSummary> {
-    let mut summary = LabelSummary::default();
+    let mut summary = LabelSummary {
+        prompt_version: LABEL_PROMPT_VERSION,
+        ..LabelSummary::default()
+    };
     let citing_title = ctx
         .works
         .get(citing_work)
@@ -373,30 +662,55 @@ pub async fn label_edges(
         .evidence
         .local_edges(citing_work, document_version)
         .await?;
-    edges.retain(|(_, _, mentions)| !mentions.is_empty());
+    summary.edges_considered = edges.len();
     edges.sort_by_key(|(_, _, mentions)| {
         (
             std::cmp::Reverse(mentions.len()),
             mentions.first().and_then(|mention| mention.marker_start),
         )
     });
-    summary.edges_considered = edges.len();
+    let assertions: Vec<AssertionId> = edges.iter().map(|(_, assertion, _)| *assertion).collect();
+    let mut current = ctx
+        .relationships
+        .current_claims_by_assertion(&assertions)
+        .await?;
 
     let model_key = labeler.model_key();
     let mut cached = Vec::new();
     let mut pending = Vec::new();
     for (cited, assertion, mentions) in edges {
-        if ctx.relationships.has_current_claim(assertion).await? {
-            summary.already_labeled += 1;
+        let existing = current.remove(&assertion);
+        if let Some(claim) = &existing {
+            let relabel = options.relabel_unreviewed && !ExistingLabel::of(claim).reviewed;
+            if !relabel {
+                summary.already_labeled += 1;
+                continue;
+            }
+        }
+        let extra = brief
+            .extra_passages
+            .get(&cited)
+            .map_or(&[][..], Vec::as_slice);
+        if mentions
+            .iter()
+            .all(|mention| mention.passage.trim().is_empty())
+            && extra.is_empty()
+        {
+            summary.edges_without_passages += 1;
             continue;
         }
-        let request = build_request(ctx, citing_title.as_deref(), cited, &mentions).await?;
+        if mentions.is_empty() {
+            summary.edges_from_core_citations += 1;
+        }
+        let (request, mention_ids) =
+            build_request(ctx, brief, citing_title.as_deref(), cited, &mentions, extra).await?;
         let cache_source_key = format!("{model_key}|{}", label_cache_key(&request));
         let job = EdgeJob {
             assertion,
-            mentions,
+            mentions: mention_ids,
             request,
             cache_source_key,
+            existing,
         };
         let hit = ctx
             .records
@@ -416,7 +730,7 @@ pub async fn label_edges(
             summary.over_limit += 1;
             continue;
         }
-        pending.push(PendingCall { job });
+        pending.push(job);
     }
 
     let mut drafted = cached;
@@ -424,20 +738,20 @@ pub async fn label_edges(
     let semaphore = Arc::new(Semaphore::new(options.concurrency.max(1)));
     let calls = pending
         .iter()
-        .map(|call| {
+        .map(|job| {
             let future: BoxFuture<'_, Result<CallOutcome>> =
-                Box::pin(run_call(ctx, labeler, &semaphore, &call.job));
+                Box::pin(run_call(ctx, labeler, &semaphore, job));
             future
         })
         .collect();
     let outcomes = join_all(calls).await;
-    for (call, outcome) in pending.into_iter().zip(outcomes) {
+    for (job, outcome) in pending.into_iter().zip(outcomes) {
         match outcome? {
-            CallOutcome::Drafted(record, draft) => drafted.push(Drafted {
-                job: call.job,
-                record,
-                draft,
-            }),
+            CallOutcome::Drafted(record, draft) => drafted.push(Drafted { job, record, draft }),
+            CallOutcome::Failed(LabelerError::Budget(reason)) => {
+                tracing::info!(%reason, "relationship label left for a later run");
+                summary.over_budget += 1;
+            }
             CallOutcome::Failed(error) => {
                 tracing::warn!(%error, "relationship labeler failed");
                 summary.failed += 1;
@@ -504,38 +818,79 @@ async fn record_draft(
             return Ok(());
         }
     };
-    let passage = &job.request.passages[grounded.passage_index];
-    let mention = job
-        .mentions
-        .iter()
-        .find(|mention| &mention.passage == passage)
-        .map(|mention| mention.id);
+    let mention = job.mentions.get(grounded.passage_index).copied().flatten();
     let quote = draft.quote.trim();
-    let inserted = ctx
-        .relationships
-        .insert_ai_claim(&NewAiClaim {
-            assertion: job.assertion,
-            mention,
-            relation: &draft.relation,
-            reason: draft.reason.trim(),
-            quote,
-            model: model_key,
-            record,
-        })
-        .await?;
-    if inserted.is_some() {
-        summary.labeled += 1;
+    let claim = NewAiClaim {
+        assertion: job.assertion,
+        mention,
+        relation: &draft.relation,
+        reason: draft.reason.trim(),
+        quote,
+        model: model_key,
+        record,
+        path: LabelPath::EdgeLabeler,
+        engagement: draft.engagement.as_deref(),
+        prompt_version: i32::try_from(LABEL_PROMPT_VERSION).ok(),
+    };
+    let engagement = draft
+        .engagement
+        .clone()
+        .unwrap_or_else(|| "unstated".to_owned());
+    let decision = merge_decision(
+        job.existing.as_ref().map(ExistingLabel::of),
+        LabelPath::EdgeLabeler,
+        &draft.relation,
+    );
+    let written = match (decision, &job.existing) {
+        (MergeDecision::Replace { disagrees }, Some(existing)) => {
+            match ctx
+                .relationships
+                .replace_ai_claim(existing.id, &claim)
+                .await
+            {
+                Ok(Some(_)) => {
+                    summary.replaced += 1;
+                    if disagrees && existing.path() == LabelPath::CoreRelation {
+                        summary.disagreements_with_core += 1;
+                    }
+                    true
+                }
+                Ok(None) => false,
+                Err(lysilogy_db::DbError::Conflict(_)) => {
+                    summary.kept += 1;
+                    false
+                }
+                Err(error) => return Err(error.into()),
+            }
+        }
+        (MergeDecision::Keep { .. }, _) => {
+            summary.kept += 1;
+            false
+        }
+        _ => {
+            let inserted = ctx.relationships.insert_ai_claim(&claim).await?;
+            if inserted.is_some() {
+                summary.labeled += 1;
+            }
+            inserted.is_some()
+        }
+    };
+    if written {
+        *summary.engagement.entry(engagement).or_default() += 1;
     }
     Ok(())
 }
 
-/// The model-facing description of one edge.
+/// The model-facing description of one edge, and the stored mention behind
+/// each passage.
 async fn build_request(
     ctx: &LabelContext<'_>,
+    brief: &LabelBrief,
     citing_title: Option<&str>,
     cited: WorkId,
     mentions: &[StoredMention],
-) -> Result<LabelRequest> {
+    extra: &[String],
+) -> Result<(LabelRequest, Vec<Option<MentionId>>)> {
     let work = ctx.works.get(cited).await?;
     let entry = match mentions.iter().find_map(|mention| mention.entry) {
         Some(entry_id) => ctx.evidence.entry(entry_id).await?,
@@ -563,6 +918,7 @@ async fn build_request(
     let authors = fields
         .as_ref()
         .and_then(|fields| fields.authors.value.clone())
+        .or_else(|| work.as_ref().and_then(|work| work.display_authors.clone()))
         .unwrap_or_default()
         .into_iter()
         .take(MAX_AUTHORS)
@@ -570,31 +926,73 @@ async fn build_request(
     let entry_text = entry
         .as_ref()
         .map(|entry| entry.raw_text.chars().take(MAX_ENTRY_TEXT_CHARS).collect());
-    Ok(LabelRequest {
-        citing_title: citing_title.map(str::to_owned),
-        cited: CitedWorkBrief {
-            title,
-            year,
-            authors,
-            entry_text,
+    let (passages, contexts, mention_ids) = edge_passages(brief, mentions, extra);
+    Ok((
+        LabelRequest {
+            citing_title: citing_title.map(str::to_owned),
+            citing_thesis: brief.citing_thesis.clone(),
+            cited: CitedWorkBrief {
+                title,
+                year,
+                authors,
+                entry_text,
+                abstract_text: brief.cited_abstracts.get(&cited).cloned(),
+            },
+            passages,
+            contexts,
         },
-        passages: distinct_passages(mentions),
-    })
+        mention_ids,
+    ))
 }
 
-/// Distinct passages in text order, at most [`MAX_PASSAGES`].
-fn distinct_passages(mentions: &[StoredMention]) -> Vec<String> {
+/// Distinct passages in text order, at most [`MAX_PASSAGES`]: each stored
+/// mention's passage (widened by [`LabelBrief::surround`] when it can be),
+/// then the core reading's citing sentences that no passage already holds.
+fn edge_passages(
+    brief: &LabelBrief,
+    mentions: &[StoredMention],
+    extra: &[String],
+) -> (Vec<String>, Vec<PassageContext>, Vec<Option<MentionId>>) {
     let mut passages: Vec<String> = Vec::new();
+    let mut contexts = Vec::new();
+    let mut ids = Vec::new();
     for mention in mentions {
-        if mention.passage.trim().is_empty() || passages.contains(&mention.passage) {
-            continue;
-        }
-        passages.push(mention.passage.clone());
         if passages.len() == MAX_PASSAGES {
             break;
         }
+        let stored = mention.passage.trim();
+        if stored.is_empty() || passages.iter().any(|passage| passage.contains(stored)) {
+            continue;
+        }
+        let wide = brief
+            .surround
+            .as_ref()
+            .and_then(|surround| surround(mention))
+            .map(|text| text.split_whitespace().collect::<Vec<_>>().join(" "))
+            .filter(|text| text.contains(stored) && text.len() > stored.len());
+        let citing_sentence = wide.as_ref().map(|_| stored.to_owned());
+        passages.push(wide.unwrap_or_else(|| stored.to_owned()));
+        contexts.push(PassageContext {
+            marker: mention.marker_text.clone(),
+            cited_together: mention.marker_text.as_deref().map_or(1, cited_together),
+            page: mention.page,
+            citing_sentence,
+        });
+        ids.push(Some(mention.id));
     }
-    passages
+    for sentence in extra {
+        if passages.len() == MAX_PASSAGES {
+            break;
+        }
+        let sentence = sentence.split_whitespace().collect::<Vec<_>>().join(" ");
+        if sentence.is_empty() || passages.iter().any(|passage| passage.contains(&sentence)) {
+            continue;
+        }
+        passages.push(sentence);
+        contexts.push(PassageContext::default());
+        ids.push(None);
+    }
+    (passages, contexts, ids)
 }
 
 type ScriptedFn =
@@ -662,6 +1060,7 @@ mod tests {
             reason: "It builds on the cited method.".to_owned(),
             quote: quote.to_owned(),
             passage_index,
+            engagement: Some("substantive".to_owned()),
         }
     }
 
@@ -673,11 +1072,14 @@ mod tests {
                 year: Some(2019),
                 authors: vec!["Ada Adams".to_owned()],
                 entry_text: Some("[1] Adams. The cited work. 2019.".to_owned()),
+                abstract_text: None,
             },
             passages: passages(&[
                 "We extend the cited method [1].",
                 "See also [1] for details.",
             ]),
+            citing_thesis: None,
+            contexts: vec![],
         }
     }
 
@@ -858,7 +1260,7 @@ mod tests {
         assert!(prompt.contains("[1] See also [1] for details."), "{prompt}");
         assert!(prompt.contains("Title: The cited work"), "{prompt}");
         assert!(prompt.contains("Year: 2019"), "{prompt}");
-        assert!(prompt.contains("VERBATIM"), "{prompt}");
+        assert!(prompt.contains("character for character"), "{prompt}");
         for relation in RELATIONS {
             assert!(prompt.contains(relation), "{relation}");
         }
@@ -918,10 +1320,9 @@ mod tests {
             .iter()
             .map(|passage| mention(passage))
             .collect();
-        assert_eq!(
-            distinct_passages(&mentions),
-            vec!["a", "b", "c", "d", "e", "f"]
-        );
+        let (texts, contexts, ids) = edge_passages(&LabelBrief::default(), &mentions, &[]);
+        assert_eq!(texts, vec!["a", "b", "c", "d", "e", "f"]);
+        assert_eq!((contexts.len(), ids.len()), (6, 6));
     }
 
     static COUNTER: AtomicU64 = AtomicU64::new(0);
@@ -938,6 +1339,7 @@ mod tests {
         citing: WorkId,
         version: DocumentVersionId,
         assertions: Vec<AssertionId>,
+        cited: Vec<WorkId>,
     }
 
     impl Harness {
@@ -991,6 +1393,7 @@ mod tests {
                 citing,
                 version: DocumentVersionId::from_uuid(version),
                 assertions: Vec::new(),
+                cited: Vec::new(),
             };
             harness.add_edges(edges).await;
             Some(harness)
@@ -1038,6 +1441,17 @@ mod tests {
                     .add_entry_assertion(self.citing, cited, entry)
                     .await
                     .expect("assertion");
+                self.evidence
+                    .record_resolution(
+                        entry,
+                        cited,
+                        lysilogy_core::ResolutionStatus::Accepted,
+                        lysilogy_core::ResolutionMethod::Identifier,
+                        Some(1.0),
+                    )
+                    .await
+                    .expect("resolution");
+                self.cited.push(cited);
                 let start = i32::try_from(100 * (index + 1)).unwrap_or(0);
                 self.evidence
                     .insert_mention(&NewMention {
@@ -1064,25 +1478,54 @@ mod tests {
             }
         }
 
-        async fn run(&self, labeler: &ScriptedLabeler, limit: usize) -> LabelSummary {
-            let context = LabelContext {
+        fn context(&self) -> LabelContext<'_> {
+            LabelContext {
                 works: &self.works,
                 records: &self.records,
                 evidence: &self.evidence,
                 relationships: &self.relationships,
-            };
+            }
+        }
+
+        async fn run(&self, labeler: &ScriptedLabeler, limit: usize) -> LabelSummary {
+            self.run_with(labeler, &LabelBrief::default(), limit, false)
+                .await
+        }
+
+        async fn run_with(
+            &self,
+            labeler: &ScriptedLabeler,
+            brief: &LabelBrief,
+            limit: usize,
+            relabel_unreviewed: bool,
+        ) -> LabelSummary {
             label_edges(
-                &context,
+                &self.context(),
                 self.citing,
                 self.version,
                 labeler,
+                brief,
                 LabelOptions {
                     limit,
                     concurrency: 2,
+                    relabel_unreviewed,
                 },
             )
             .await
             .expect("label edges")
+        }
+
+        async fn seed(&self, reading: &seed::CoreReading) -> seed::CoreSeedOutcome {
+            seed::seed_core_labels(&self.context(), self.citing, self.version, reading, 0)
+                .await
+                .expect("seed")
+        }
+
+        async fn current(&self) -> BTreeMap<AssertionId, StoredClaim> {
+            self.relationships
+                .current_claims_by_assertion(&self.assertions)
+                .await
+                .expect("current")
         }
 
         async fn claim_count(&self) -> i64 {
@@ -1108,6 +1551,7 @@ mod tests {
                 reason: "The passage extends the approach.".to_owned(),
                 quote: "extends the reward modelling approach".to_owned(),
                 passage_index: request.passages.len().saturating_sub(1),
+                engagement: Some("substantive".to_owned()),
             })
         })
     }
@@ -1222,6 +1666,7 @@ mod tests {
                 reason: "Because.".to_owned(),
                 quote: "a sentence the model invented".to_owned(),
                 passage_index: 0,
+                engagement: Some("substantive".to_owned()),
             })
         });
         let summary = harness.run(&labeler, 25).await;
@@ -1255,6 +1700,7 @@ mod tests {
                 reason: "Fine.".to_owned(),
                 quote: "extends the reward modelling approach".to_owned(),
                 passage_index: 0,
+                engagement: Some("substantive".to_owned()),
             })
         });
         let summary = harness.run(&labeler, 25).await;
@@ -1295,5 +1741,470 @@ mod tests {
 
         let none = harness.run(&labeler, 0).await;
         assert_eq!((none.model_calls, none.already_labeled), (0, 4));
+    }
+
+    fn core_relation(key: &str, relation: &str, confidence: &str) -> seed::CoreRelation {
+        seed::CoreRelation {
+            reference_key: key.to_owned(),
+            relation: relation.to_owned(),
+            why: "Takes the reward modelling approach as its starting point.".to_owned(),
+            quote: "extends the reward modelling approach".to_owned(),
+            page: Some(1),
+            confidence: Some(confidence.to_owned()),
+        }
+    }
+
+    fn reading(run: &str, relations: Vec<seed::CoreRelation>) -> seed::CoreReading {
+        seed::CoreReading {
+            relations,
+            run_key: run.to_owned(),
+            model: "openrouter:core".to_owned(),
+            ..seed::CoreReading::default()
+        }
+    }
+
+    #[test]
+    fn should_keep_reviewed_labels_and_rank_the_labeler_over_core_relations() {
+        let core = |relation, reviewed| ExistingLabel {
+            path: LabelPath::CoreRelation,
+            relation,
+            reviewed,
+        };
+        let labeler = |relation, reviewed| ExistingLabel {
+            path: LabelPath::EdgeLabeler,
+            relation,
+            reviewed,
+        };
+        assert_eq!(
+            merge_decision(None, LabelPath::CoreRelation, "extends"),
+            MergeDecision::Insert
+        );
+        assert_eq!(
+            merge_decision(
+                Some(labeler("uses_method", false)),
+                LabelPath::CoreRelation,
+                "extends"
+            ),
+            MergeDecision::Keep { disagrees: true },
+            "a core relation never replaces the labeler's reading of the passages"
+        );
+        assert_eq!(
+            merge_decision(
+                Some(core("extends", false)),
+                LabelPath::EdgeLabeler,
+                "background"
+            ),
+            MergeDecision::Replace { disagrees: true }
+        );
+        assert_eq!(
+            merge_decision(
+                Some(core("extends", false)),
+                LabelPath::CoreRelation,
+                "extends"
+            ),
+            MergeDecision::Replace { disagrees: false },
+            "a newer core reading replaces an older one"
+        );
+        for path in [LabelPath::CoreRelation, LabelPath::EdgeLabeler] {
+            assert_eq!(
+                merge_decision(Some(core("extends", true)), path, "critiques"),
+                MergeDecision::Keep { disagrees: true },
+                "reviewed labels are never replaced"
+            );
+        }
+        let user = ExistingLabel {
+            path: LabelPath::User,
+            relation: "critiques",
+            reviewed: false,
+        };
+        assert_eq!(
+            merge_decision(Some(user), LabelPath::EdgeLabeler, "critiques"),
+            MergeDecision::Keep { disagrees: false }
+        );
+    }
+
+    #[test]
+    fn should_count_works_cited_together_in_one_marker() {
+        assert_eq!(cited_together("[3]"), 1);
+        assert_eq!(cited_together("[3, 7-9]"), 4);
+        assert_eq!(cited_together("[2\u{2013}5; 11]"), 5);
+        assert_eq!(
+            cited_together("(Smith, 2001; Jones and Lee, 2003; Okafor, 2010)"),
+            3
+        );
+        assert_eq!(cited_together("Smith (2001)"), 1);
+        assert_eq!(cited_together(""), 1);
+    }
+
+    #[test]
+    fn should_show_thesis_abstract_markers_and_citing_sentence_in_the_prompt() {
+        let mut request = sample_request();
+        request.citing_thesis = Some("Reefs recover faster when grazers return.".to_owned());
+        request.cited.abstract_text =
+            Some("We build a bleaching index from satellites.".to_owned());
+        request.passages[0] =
+            "Earlier text. We extend the cited method [1]. Later text.".to_owned();
+        request.contexts = vec![PassageContext {
+            marker: Some("[1, 4-6]".to_owned()),
+            cited_together: 4,
+            page: Some(3),
+            citing_sentence: Some("We extend the cited method [1].".to_owned()),
+        }];
+        let prompt = label_prompt(&request);
+        assert!(
+            prompt.starts_with(LABEL_BRIEF.trim_end()),
+            "the brief leads"
+        );
+        for expected in [
+            "Its thesis: Reefs recover faster when grazers return.",
+            "Abstract: We build a bleaching index from satellites.",
+            "[0] Earlier text. We extend the cited method [1]. Later text.",
+            "Citing sentence: We extend the cited method [1].",
+            "Citation marker: [1, 4-6] (cites 4 works at once)",
+            "Page: 3",
+            "[1] See also [1] for details.",
+        ] {
+            assert!(prompt.contains(expected), "{expected}\n{prompt}");
+        }
+        assert!(label_prompt(&sample_request()).contains("Abstract: not held by Lysilogy"));
+        for engagement in ENGAGEMENTS {
+            assert!(prompt.contains(engagement), "{engagement}");
+        }
+    }
+
+    #[test]
+    fn should_reject_an_engagement_outside_the_vocabulary() {
+        let texts = passages(&["We extend the cited method [1] to new tasks."]);
+        let mut label = draft("extend the cited method", 0);
+        label.engagement = Some("central".to_owned());
+        assert_eq!(
+            ground_quote(&texts, &label),
+            Err(GroundingRejection::InvalidEngagement)
+        );
+        label.engagement = None;
+        assert!(
+            ground_quote(&texts, &label).is_ok(),
+            "version 1 answers had none"
+        );
+        let schema: Value = serde_json::from_str(LABEL_SCHEMA).unwrap();
+        assert_eq!(
+            schema["properties"]["engagement"]["enum"],
+            json!(ENGAGEMENTS)
+        );
+        // Property order reaches the provider where serde_json keeps it, so
+        // check the text, which is what is sent.
+        let mut order = ["passage_index", "quote", "engagement", "relation", "reason"]
+            .map(|key| (LABEL_SCHEMA.find(&format!("\"{key}\": {{")).unwrap(), key))
+            .to_vec();
+        order.sort_unstable();
+        assert_eq!(
+            order.iter().map(|(_, key)| *key).collect::<Vec<_>>(),
+            ["passage_index", "quote", "engagement", "relation", "reason"],
+            "evidence first, the reason last"
+        );
+    }
+
+    #[test]
+    fn should_change_the_cache_key_when_the_prompt_version_changes() {
+        let request = sample_request();
+        assert_ne!(
+            cache_key_for_version(&request, LABEL_PROMPT_VERSION - 1),
+            label_cache_key(&request)
+        );
+    }
+
+    #[test]
+    fn should_widen_passages_and_add_core_citations_only_when_new() {
+        let mention = |passage: &str, marker: &str| StoredMention {
+            id: lysilogy_core::MentionId::new(),
+            assertion: AssertionId::new(),
+            entry: None,
+            style: None,
+            marker_text: Some(marker.to_owned()),
+            page: Some(2),
+            marker_start: None,
+            marker_end: None,
+            passage_start: None,
+            passage_end: None,
+            passage: passage.to_owned(),
+            rects: None,
+        };
+        let mentions = vec![
+            mention("We adopt their index [2].", "[2]"),
+            mention("Reefs vary [2, 5, 9].", "[2, 5, 9]"),
+        ];
+        let brief = LabelBrief {
+            surround: Some(Box::new(|mention: &StoredMention| {
+                (mention.marker_text.as_deref() == Some("[2]")).then(|| {
+                    "Heat stress matters.  We adopt their index [2]. It is daily.".to_owned()
+                })
+            })),
+            ..LabelBrief::default()
+        };
+        let extra = vec![
+            "We adopt their index [2].".to_owned(),
+            "A sentence the core reading found [2].".to_owned(),
+        ];
+        let (texts, contexts, ids) = edge_passages(&brief, &mentions, &extra);
+        assert_eq!(
+            texts,
+            [
+                "Heat stress matters. We adopt their index [2]. It is daily.",
+                "Reefs vary [2, 5, 9].",
+                "A sentence the core reading found [2].",
+            ]
+        );
+        assert_eq!(
+            contexts[0].citing_sentence.as_deref(),
+            Some("We adopt their index [2].")
+        );
+        assert_eq!(contexts[1].cited_together, 3);
+        assert_eq!(contexts[1].citing_sentence, None);
+        assert!(ids[0].is_some() && ids[1].is_some() && ids[2].is_none());
+    }
+
+    #[tokio::test]
+    async fn should_not_reuse_a_cached_answer_from_an_older_prompt_version_but_resume_from_this_one()
+     {
+        let _guard = LOCK.lock().await;
+        let Some(harness) = Harness::new(2).await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        // Cache an answer for every edge under the previous prompt version,
+        // as a run before the bump would have.
+        let context = harness.context();
+        for (cited, _, mentions) in harness
+            .evidence
+            .local_edges(harness.citing, harness.version)
+            .await
+            .unwrap()
+        {
+            let (request, _) = build_request(
+                &context,
+                &LabelBrief::default(),
+                None,
+                cited,
+                &mentions,
+                &[],
+            )
+            .await
+            .unwrap();
+            let old_key = format!(
+                "fake:model|{}",
+                cache_key_for_version(&request, LABEL_PROMPT_VERSION - 1)
+            );
+            let stale = serde_json::to_value(LabelDraft {
+                relation: "background".to_owned(),
+                reason: "Old prompt.".to_owned(),
+                quote: "extends the reward modelling approach".to_owned(),
+                passage_index: 0,
+                engagement: None,
+            })
+            .unwrap();
+            harness
+                .records
+                .upsert(LABEL_RECORD_KIND, &old_key, Coverage::Complete, &stale)
+                .await
+                .unwrap();
+        }
+        let labeler = quoting_labeler();
+        let first = harness.run(&labeler, 1).await;
+        assert_eq!(
+            (first.cache_hits, first.model_calls, first.over_limit),
+            (0, 1, 1),
+            "old-version answers are not reused"
+        );
+        let resumed = harness.run(&labeler, 1).await;
+        assert_eq!((resumed.already_labeled, resumed.model_calls), (1, 1));
+        assert_eq!(labeler.calls(), 2);
+        let claims = harness.current().await;
+        assert_eq!(claims.len(), 2);
+        assert!(claims.values().all(|claim| claim.relation == "extends"
+            && claim.prompt_version == i32::try_from(LABEL_PROMPT_VERSION).ok()
+            && claim.path() == LabelPath::EdgeLabeler
+            && claim.engagement.as_deref() == Some("substantive")));
+    }
+
+    #[tokio::test]
+    async fn should_seed_core_relations_and_report_unresolvable_keys() {
+        let _guard = LOCK.lock().await;
+        let Some(harness) = Harness::new(3).await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let mut invalid = core_relation("3", "refutes", "high");
+        invalid.why = "Invented relation.".to_owned();
+        let core = reading(
+            "run-1",
+            vec![
+                core_relation("1", "uses_method", "high"),
+                core_relation("[1]", "extends", "high"),
+                core_relation("2", "supports", "low"),
+                core_relation("Nobody (1999)", "critiques", "high"),
+                core_relation("", "background", "medium"),
+                invalid,
+            ],
+        );
+        let outcome = harness.seed(&core).await;
+        let summary = &outcome.summary;
+        assert_eq!(summary.relations, 6);
+        assert_eq!(summary.inserted, 1);
+        assert_eq!(summary.duplicate_edge, 1);
+        assert_eq!(summary.low_confidence, 1);
+        assert_eq!(summary.unresolved.get("no_matching_entry"), Some(&1));
+        assert_eq!(summary.unresolved.get("empty_key"), Some(&1));
+        assert_eq!(summary.invalid.get("invalid_relation"), Some(&1));
+        assert_eq!(
+            summary
+                .unresolved_keys
+                .iter()
+                .map(|key| key.key.as_str())
+                .collect::<Vec<_>>(),
+            ["Nobody (1999)", ""]
+        );
+        let counted = summary.inserted
+            + summary.duplicate_edge
+            + summary.low_confidence
+            + summary.unresolved.values().sum::<usize>()
+            + summary.invalid.values().sum::<usize>();
+        assert_eq!(
+            counted, summary.relations,
+            "every relation is accounted for"
+        );
+
+        let claims = harness.current().await;
+        let seeded = &claims[&harness.assertions[0]];
+        assert_eq!(seeded.path(), LabelPath::CoreRelation);
+        assert_eq!(seeded.relation, "uses_method");
+        assert_eq!(seeded.model.as_deref(), Some("openrouter:core"));
+        assert!(
+            seeded.mention.is_some(),
+            "the quote sits in a stored passage"
+        );
+
+        let again = harness.seed(&core).await;
+        assert_eq!(
+            (again.summary.inserted, again.summary.unchanged),
+            (0, 1),
+            "seeding is idempotent"
+        );
+
+        // The labeler fills the edges the core reading did not label, the
+        // low-confidence one included.
+        let labeler = quoting_labeler();
+        let labelled = harness.run(&labeler, 25).await;
+        assert_eq!((labelled.already_labeled, labelled.labeled), (1, 2));
+    }
+
+    #[tokio::test]
+    async fn should_record_disagreement_between_core_relation_and_labeler() {
+        let _guard = LOCK.lock().await;
+        let Some(harness) = Harness::new(2).await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        harness
+            .seed(&reading(
+                "run-1",
+                vec![core_relation("1", "uses_method", "high")],
+            ))
+            .await;
+        let background = ScriptedLabeler::new("fake:model", |request| {
+            Ok(LabelDraft {
+                relation: "background".to_owned(),
+                reason: "Cited in passing for the approach.".to_owned(),
+                quote: "extends the reward modelling approach".to_owned(),
+                passage_index: request.passages.len().saturating_sub(1),
+                engagement: Some("perfunctory".to_owned()),
+            })
+        });
+        let plain = harness.run(&background, 25).await;
+        assert_eq!(
+            (plain.already_labeled, plain.labeled, plain.replaced),
+            (1, 1, 0),
+            "by default the labeler fills only unlabelled edges"
+        );
+        let relabel = harness
+            .run_with(&background, &LabelBrief::default(), 25, true)
+            .await;
+        assert_eq!(relabel.replaced, 1, "the core label is replaced on relabel");
+        assert_eq!(relabel.disagreements_with_core, 1);
+        assert_eq!(relabel.engagement.get("perfunctory"), Some(&1));
+        let claims = harness.current().await;
+        assert_eq!(claims.len(), 2, "one current label per edge");
+        let first = &claims[&harness.assertions[0]];
+        assert_eq!(
+            (first.path(), first.relation.as_str()),
+            (LabelPath::EdgeLabeler, "background")
+        );
+
+        // A later core reading meets the labeler's label: it is kept, and the
+        // disagreement is listed for the run report.
+        let later = harness
+            .seed(&reading(
+                "run-2",
+                vec![core_relation("1", "uses_method", "high")],
+            ))
+            .await;
+        assert_eq!(
+            (later.summary.kept_existing, later.summary.inserted),
+            (1, 0)
+        );
+        let disagreement = &later.summary.disagreements[0];
+        assert_eq!(disagreement.existing_relation, "background");
+        assert_eq!(disagreement.existing_path, LabelPath::EdgeLabeler);
+        assert!(!disagreement.replaced);
+        assert_eq!(disagreement.cited_work, harness.cited[0].to_string());
+    }
+
+    #[tokio::test]
+    async fn should_label_an_edge_from_core_citations_when_it_has_no_stored_mention() {
+        let _guard = LOCK.lock().await;
+        let Some(harness) = Harness::new(1).await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        sqlx::query("delete from graph.citation_mention where assertion_id = any($1)")
+            .bind(
+                harness
+                    .assertions
+                    .iter()
+                    .map(|id| id.as_uuid())
+                    .collect::<Vec<_>>(),
+            )
+            .execute(&harness.pool)
+            .await
+            .unwrap();
+        let labeler = quoting_labeler();
+        let none = harness.run(&labeler, 25).await;
+        assert_eq!(
+            (none.edges_without_passages, none.model_calls),
+            (1, 0),
+            "counted, not hidden"
+        );
+
+        let mut core = reading("run-1", Vec::new());
+        core.citations = vec![seed::CoreCitation {
+            reference_key: "1".to_owned(),
+            context: "Our design extends the reward modelling approach of [1].".to_owned(),
+            page: Some(2),
+        }];
+        let outcome = harness.seed(&core).await;
+        assert_eq!(outcome.summary.citation_passages, 1);
+        let brief = LabelBrief {
+            extra_passages: outcome.extra_passages,
+            ..LabelBrief::default()
+        };
+        let labelled = harness.run_with(&labeler, &brief, 25, false).await;
+        assert_eq!(
+            (labelled.edges_from_core_citations, labelled.labeled),
+            (1, 1)
+        );
+        let claim = &harness.current().await[&harness.assertions[0]];
+        assert!(
+            claim.mention.is_none(),
+            "a core citing sentence has no stored mention"
+        );
     }
 }

@@ -116,6 +116,12 @@ impl AnalysisService {
         &self.settings
     }
 
+    /// The local CLI harnesses the plan providers run on.
+    #[must_use]
+    pub(crate) const fn local_cli(&self) -> &LocalCliAnalyzer {
+        &self.local_cli
+    }
+
     pub async fn extract_abstract(
         &self,
         provider: AnalysisProvider,

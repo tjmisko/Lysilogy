@@ -79,7 +79,7 @@ pub struct AppState {
     extra_libraries: Arc<RwLock<Vec<ExtraLibrary>>>,
     pub(crate) store: ArtifactStore,
     pub(crate) extractor: PdfExtractor,
-    analysis: AnalysisService,
+    pub(crate) analysis: AnalysisService,
     citation_http: crate::citation_graph::GraphHttp,
     pub(crate) graph: Option<GraphState>,
     pub(crate) literature: crate::literature::LiteratureClient,
@@ -885,6 +885,22 @@ impl AppState {
         drop(highlight_guard);
         self.jobs
             .task_completed(id, "persist")
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
+        // Label why the paper cites each work. The analysis is saved; this
+        // step records its own failure on the task and never fails the job.
+        self.jobs
+            .transition(id, ProcessingStage::Analysis, "labels")
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
+        let labels = Box::pin(self.label_paper_edges(id, provider)).await;
+        let status = if labels.status == crate::edge_labels::EdgeLabelStatus::Failed {
+            crate::domain::AnalysisTaskStatus::Failed
+        } else {
+            crate::domain::AnalysisTaskStatus::Completed
+        };
+        self.jobs
+            .task_finished(id, "labels", status, labels.task_detail())
             .await
             .map_err(|error| (ProcessingStage::Persistence, error))?;
         self.jobs

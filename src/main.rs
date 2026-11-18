@@ -747,14 +747,13 @@ async fn run(cli: Cli) -> Result<()> {
             force,
         } => {
             let id = resolve_paper(&state, &query).await?;
-            let view = state
-                .refresh_component(
-                    &id,
-                    provider,
-                    force,
-                    lysilogy::domain::AnalysisComponent::Abstract,
-                )
-                .await?;
+            let view = Box::pin(state.refresh_component(
+                &id,
+                provider,
+                force,
+                lysilogy::domain::AnalysisComponent::Abstract,
+            ))
+            .await?;
             println!(
                 "{}",
                 serde_json::to_string_pretty(&view.analysis.and_then(|a| a.abstract_extraction))?
@@ -767,14 +766,13 @@ async fn run(cli: Cli) -> Result<()> {
             force,
         } => {
             let id = resolve_paper(&state, &query).await?;
-            let view = state
-                .refresh_component(
-                    &id,
-                    provider,
-                    force,
-                    lysilogy::domain::AnalysisComponent::Context,
-                )
-                .await?;
+            let view = Box::pin(state.refresh_component(
+                &id,
+                provider,
+                force,
+                lysilogy::domain::AnalysisComponent::Context,
+            ))
+            .await?;
             println!(
                 "{}",
                 serde_json::to_string_pretty(&view.analysis.and_then(|a| a.context))?
@@ -918,14 +916,13 @@ async fn run(cli: Cli) -> Result<()> {
         } => {
             let id = resolve_paper(&state, &query).await?;
             println!("Regrouping sections for {id} with {provider}…");
-            let view = state
-                .refresh_component(
-                    &id,
-                    provider,
-                    force,
-                    lysilogy::domain::AnalysisComponent::Structure,
-                )
-                .await?;
+            let view = Box::pin(state.refresh_component(
+                &id,
+                provider,
+                force,
+                lysilogy::domain::AnalysisComponent::Structure,
+            ))
+            .await?;
             if let Some(analysis) = view.analysis {
                 println!(
                     "{}: {} reading units",

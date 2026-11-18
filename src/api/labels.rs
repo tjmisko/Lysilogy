@@ -14,16 +14,13 @@ use chrono::{DateTime, Utc};
 use lysilogy_core::{RelationshipClaimId, RelationshipOrigin, ReviewState, WorkId};
 use lysilogy_db::{
     DbError,
-    relationship::{StoredClaim, StoredClaimWithMention},
+    relationship::{LabelPath, StoredClaim, StoredClaimWithMention},
 };
-use lysilogy_ingest::labels::{GroundingRejection, LabelDraft, RELATIONS, ground_quote};
+use lysilogy_ingest::labels::{GroundingRejection, LabelDraft, check_label_text, ground_quote};
 use serde::{Deserialize, Serialize};
 
 use super::{AppState, GraphError, graph_error, graph_or_unavailable, graph_query_failure};
 use crate::domain::PaperId;
-
-/// The longest reason a person may write, as in the model grounding rule.
-const MAX_REASON_CHARS: usize = 600;
 
 /// Where a label's evidence sits in the citing paper.
 #[derive(Debug, Serialize)]
@@ -51,6 +48,11 @@ pub(super) struct EdgeLabel {
     pub model: Option<String>,
     pub created_at: DateTime<Utc>,
     pub mention: Option<EdgeMention>,
+    /// Which path wrote it: `core_relation`, `edge_labeler` or `user`.
+    pub path: LabelPath,
+    /// `substantive`, `perfunctory` or `not_shown`, when the labeler said.
+    pub engagement: Option<String>,
+    pub prompt_version: Option<i32>,
 }
 
 /// An edge with the evidence behind it.
@@ -157,6 +159,9 @@ async fn edge_label(state: &AppState, stored: &StoredClaimWithMention) -> EdgeLa
         model: claim.model.clone(),
         created_at: claim.created_at,
         mention,
+        path: claim.path(),
+        engagement: claim.engagement.clone(),
+        prompt_version: claim.prompt_version,
     }
 }
 
@@ -249,6 +254,7 @@ fn rejection_response(rejection: GroundingRejection) -> Response {
             "The quote must be copied exactly from the citing passage."
         }
         GroundingRejection::InvalidRelation => "That relation is not in the vocabulary.",
+        GroundingRejection::InvalidEngagement => "That engagement is not in the vocabulary.",
         GroundingRejection::EmptyReason => "The reason is empty.",
         GroundingRejection::ReasonTooLong => "The reason is too long.",
     };
@@ -261,17 +267,7 @@ fn rejection_response(rejection: GroundingRejection) -> Response {
 
 /// Relation and reason checks for a claim with no passage to ground in.
 fn check_without_passage(relation: &str, reason: &str) -> Result<(), GroundingRejection> {
-    if !RELATIONS.contains(&relation) {
-        return Err(GroundingRejection::InvalidRelation);
-    }
-    let reason = reason.trim();
-    if reason.is_empty() {
-        return Err(GroundingRejection::EmptyReason);
-    }
-    if reason.chars().count() > MAX_REASON_CHARS {
-        return Err(GroundingRejection::ReasonTooLong);
-    }
-    Ok(())
+    check_label_text(relation, None, reason)
 }
 
 async fn edit_label(
@@ -305,13 +301,25 @@ async fn edit_label(
         .or_else(|| existing.claim.quote.clone())
         .map(|quote| quote.trim().to_owned())
         .filter(|quote| !quote.is_empty());
+    // A quote kept as it was was grounded when the label was written: a
+    // labeler quote may come from the text around the stored passage, and a
+    // core-reading quote was admitted against the page text. Only a new
+    // quote is checked against the passage.
+    let unchanged = quote.is_some() && quote == existing.claim.quote;
     let stored_quote = match (&quote, &existing.passage) {
+        (Some(quote), _) if unchanged => {
+            if let Err(rejection) = check_without_passage(&relation, &reason) {
+                return rejection_response(rejection);
+            }
+            Some(quote.as_str())
+        }
         (Some(quote), Some(passage)) => {
             let draft = LabelDraft {
                 relation: relation.clone(),
                 reason: reason.clone(),
                 quote: quote.clone(),
                 passage_index: 0,
+                engagement: None,
             };
             match ground_quote(std::slice::from_ref(passage), &draft) {
                 Ok(_) => Some(quote.as_str()),
@@ -500,6 +508,7 @@ mod tests {
                 reason: "It motivates the setup.".to_owned(),
                 quote: request.passages[0].clone(),
                 passage_index: 0,
+                engagement: Some("substantive".to_owned()),
             })
         });
         let labels = state

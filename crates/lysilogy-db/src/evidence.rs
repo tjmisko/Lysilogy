@@ -176,6 +176,21 @@ impl EvidenceRepository {
         rows.iter().map(entry_from_row).collect()
     }
 
+    /// Every entry of a document version's bibliography, in ordinal order.
+    pub async fn entries_for_version(
+        &self,
+        version: DocumentVersionId,
+    ) -> Result<Vec<StoredEntry>> {
+        let rows = sqlx::query(&format!(
+            "select {ENTRY_COLUMNS} from source.bibliography_entry \
+             where citing_version_id = $1 order by ordinal, entry_key"
+        ))
+        .bind(version.as_uuid())
+        .fetch_all(&self.pool)
+        .await?;
+        rows.iter().map(entry_from_row).collect()
+    }
+
     /// Entries of a document version that are accepted as a Work, in ordinal
     /// order, each with that Work.
     pub async fn resolved_entries(

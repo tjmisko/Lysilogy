@@ -159,9 +159,31 @@ impl JobTracker {
         (sink, ProgressForwarder(handle))
     }
 
+    /// Finish a task with a closing line that stays when the job completes,
+    /// e.g. what the edge labels step did or why it was skipped.
+    pub async fn task_finished(
+        &self,
+        paper_id: &PaperId,
+        task_id: &str,
+        status: AnalysisTaskStatus,
+        detail: String,
+    ) -> Result<()> {
+        self.update_task(paper_id, task_id, status, Some(detail))
+            .await
+    }
+
     pub async fn complete(&self, paper_id: &PaperId, resumable: bool) -> Result<()> {
         let mut tasklist = self.tasks_from_job(paper_id).await?;
         for task in &mut tasklist {
+            // A task that finished with its own closing line keeps it, and a
+            // step that failed without failing the job stays failed.
+            let finished = matches!(
+                task.status,
+                AnalysisTaskStatus::Completed | AnalysisTaskStatus::Failed
+            ) && task.detail.is_some();
+            if finished {
+                continue;
+            }
             task.status = AnalysisTaskStatus::Completed;
             task.detail = None;
         }
@@ -350,6 +372,10 @@ fn tasks_for(kind: AnalysisJobKind) -> Vec<AnalysisTask> {
                 "Self-check the draft and admit quotations against the source",
             ),
             ("persist", "Validate and save the finished paper atlas"),
+            (
+                "labels",
+                "Label why the paper cites each work in the citation graph",
+            ),
         ]
         .as_slice(),
         AnalysisJobKind::Revision => [
@@ -510,7 +536,7 @@ mod tests {
         job.tasks[1].detail = Some("page 4 of 12".to_owned());
         let parsed = parse_tasklist(&render_tasklist(&job));
         assert_eq!(parsed, job.tasks);
-        assert_eq!(progress(&parsed, &job.status), 37);
+        assert_eq!(progress(&parsed, &job.status), 30);
     }
 
     #[tokio::test]
@@ -619,6 +645,56 @@ mod tests {
             .count();
         assert_eq!(failed, 1);
         assert_eq!(queue.jobs[0].tasks[1].id, "core");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_keep_a_finished_tasks_closing_line_when_the_job_completes() -> Result<()> {
+        let directory = tempdir().map_err(|error| Error::io("tempdir", error))?;
+        let store = ArtifactStore::new(directory.path());
+        store.initialize().await?;
+        let tracker = JobTracker::load(store).await?;
+        let id = PaperId::from_relative_path(std::path::Path::new("paper.pdf"));
+        tracker
+            .begin(
+                id.clone(),
+                "A paper".to_owned(),
+                AnalysisProvider::OpenRouter,
+                AnalysisJobKind::Initial,
+                None,
+            )
+            .await?;
+        tracker
+            .transition(&id, ProcessingStage::Analysis, "core")
+            .await?;
+        tracker
+            .task_finished(
+                &id,
+                "labels",
+                AnalysisTaskStatus::Failed,
+                "Failed: graph query".to_owned(),
+            )
+            .await?;
+        tracker.complete(&id, false).await?;
+        let queue = tracker.queue().await?;
+        let job = &queue.jobs[0];
+        assert_eq!(job.status, AnalysisJobStatus::Completed);
+        let labels = job
+            .tasks
+            .iter()
+            .find(|task| task.id == "labels")
+            .expect("labels task");
+        assert_eq!(labels.status, AnalysisTaskStatus::Failed);
+        assert_eq!(labels.detail.as_deref(), Some("Failed: graph query"));
+        let core = job
+            .tasks
+            .iter()
+            .find(|task| task.id == "core")
+            .expect("core task");
+        assert_eq!(
+            (core.status, core.detail.as_deref()),
+            (AnalysisTaskStatus::Completed, None)
+        );
         Ok(())
     }
 

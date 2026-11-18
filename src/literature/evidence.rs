@@ -31,10 +31,11 @@ use crate::{
 pub const LOCAL_EVIDENCE_REQUIRES_WORK: &str = "local_evidence_requires_work";
 
 /// Everything needed to find a paper's local evidence in the graph.
-struct LocalEvidenceTarget {
-    citing_work: lysilogy_core::WorkId,
-    document_sha256: String,
-    document_version: lysilogy_core::DocumentVersionId,
+#[derive(Clone, Debug)]
+pub(crate) struct LocalEvidenceTarget {
+    pub(crate) citing_work: lysilogy_core::WorkId,
+    pub(crate) document_sha256: String,
+    pub(crate) document_version: lysilogy_core::DocumentVersionId,
 }
 
 impl AppState {
@@ -83,7 +84,67 @@ impl AppState {
         }))
     }
 
-    /// Label the paper's local citation edges with `labeler`. Returns `None`
+    /// The paper's Work and current document version found from its catalog
+    /// path alone, for steps that run outside a literature job. `None` when
+    /// the paper has no document row, no Work link, or no recorded version
+    /// for its current bytes (the literature flow has not run on it).
+    pub(crate) async fn linked_evidence_target(
+        &self,
+        id: &PaperId,
+    ) -> Result<Option<LocalEvidenceTarget>> {
+        let graph = self.graph_for_literature()?;
+        let (source, relative_path) = self
+            .catalog
+            .read()
+            .await
+            .get(id)
+            .map(|entry| {
+                (
+                    entry.source_path.clone(),
+                    entry.overview.relative_path.clone(),
+                )
+            })
+            .ok_or_else(|| Error::PaperNotFound(id.to_string()))?;
+        let found = async {
+            let workspace = graph.documents.ensure_default_workspace().await?;
+            let Some(document) = graph
+                .documents
+                .find_by_path(workspace, &relative_path)
+                .await?
+            else {
+                return Ok(None);
+            };
+            let link = graph.documents.work_link(document.id).await?;
+            Ok::<_, lysilogy_db::DbError>(link.map(|link| (document.id, link.work_id)))
+        }
+        .await
+        .map_err(lysilogy_ingest::IngestError::from)?;
+        let Some((document_id, work)) = found else {
+            return Ok(None);
+        };
+        let citing_work = graph
+            .works
+            .resolve_redirect(work)
+            .await
+            .map_err(lysilogy_ingest::IngestError::from)?;
+        let (document_sha256, _) = hash_file(&source)
+            .await
+            .map_err(|error| Error::io(&source, error))?;
+        let version = graph
+            .documents
+            .version_for_sha(document_id, &document_sha256)
+            .await
+            .map_err(lysilogy_ingest::IngestError::from)?;
+        Ok(version.map(|document_version| LocalEvidenceTarget {
+            citing_work,
+            document_sha256,
+            document_version,
+        }))
+    }
+
+    /// Label the paper's local citation edges with `labeler`, briefed as the
+    /// automatic step briefs it (thesis, held abstracts, wider passages) but
+    /// without seeding from the core reading. Returns `None`
     /// (the caller reports [`LOCAL_EVIDENCE_REQUIRES_WORK`]) when the paper
     /// has no Work. Run [`Self::run_local_evidence`] first.
     pub async fn label_local_edges(
@@ -103,11 +164,14 @@ impl AppState {
             evidence: &graph.evidence,
             relationships: &graph.relationships,
         };
+        let brief =
+            Box::pin(self.label_brief(graph, id, &target, std::collections::HashMap::new())).await;
         let labels = label_edges(
             &context,
             target.citing_work,
             target.document_version,
             labeler,
+            &brief,
             options,
         )
         .await?;
@@ -193,6 +257,15 @@ impl AppState {
         let Some(target) = self.local_evidence_target(id, summary).await? else {
             return Ok(None);
         };
+        self.run_local_evidence_at(id, target).await.map(Some)
+    }
+
+    /// [`Self::run_local_evidence`] for a target already found.
+    pub(crate) async fn run_local_evidence_at(
+        &self,
+        id: &PaperId,
+        target: LocalEvidenceTarget,
+    ) -> Result<LocalEvidenceSummary> {
         let LocalEvidenceTarget {
             citing_work,
             document_sha256,
@@ -227,7 +300,7 @@ impl AppState {
             },
         )
         .await?;
-        Ok(Some(evidence))
+        Ok(evidence)
     }
 }
 
