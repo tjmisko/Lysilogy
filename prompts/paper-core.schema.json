@@ -25,8 +25,7 @@
         "venue",
         "identifiers",
         "publication_state",
-        "evidence",
-        "confidence"
+        "evidence"
       ],
       "properties": {
         "title": {
@@ -51,13 +50,14 @@
             "properties": {
               "name": {
                 "type": "string",
-                "description": "As printed."
+                "description": "As printed, without footnote marks."
               },
               "affiliation": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "The affiliation printed next to the name, else null."
               }
             }
           },
@@ -128,15 +128,6 @@
             "description": "A verbatim passage from the paper and the page it is on."
           },
           "description": "Verbatim support. Empty only when the item is a model judgment."
-        },
-        "confidence": {
-          "type": "string",
-          "enum": [
-            "high",
-            "medium",
-            "low"
-          ],
-          "description": "How sure you are that this item is correct."
         }
       }
     },
@@ -144,11 +135,14 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "value",
         "reason",
-        "confidence"
+        "value"
       ],
       "properties": {
+        "reason": {
+          "type": "string",
+          "description": "One line on what the paper mainly does, written before choosing the value."
+        },
         "value": {
           "type": "string",
           "enum": [
@@ -160,19 +154,8 @@
             "position",
             "replication",
             "resource"
-          ]
-        },
-        "reason": {
-          "type": "string"
-        },
-        "confidence": {
-          "type": "string",
-          "enum": [
-            "high",
-            "medium",
-            "low"
           ],
-          "description": "How sure you are that this item is correct."
+          "description": "survey: mainly reviews others' work; a paper with new theorems, methods or results is not a survey. method: proposes a new method, model or algorithm. empirical: tests a question on data or experiments. theory: derives results formally. dataset: introduces a dataset or benchmark. position: argues for a view or research agenda, including lectures and essays. replication: re-tests a previously published result; a reprint or corrected edition is not a replication. resource: software, a tool or another artefact for others to use."
         }
       }
     },
@@ -181,8 +164,7 @@
       "additionalProperties": false,
       "required": [
         "text",
-        "page",
-        "confidence"
+        "page"
       ],
       "properties": {
         "text": {
@@ -190,22 +172,13 @@
             "string",
             "null"
           ],
-          "description": "The authors' own abstract copied verbatim from the page, paragraphs joined with a blank line; never a summary or a paraphrase. Null if the paper prints no abstract."
+          "description": "The authors' own abstract copied verbatim from the page, lines within a paragraph joined with single spaces and paragraphs separated by a blank line; never a summary, a paraphrase or the opening of the introduction. Null if the paper prints no abstract."
         },
         "page": {
           "type": [
             "integer",
             "null"
           ]
-        },
-        "confidence": {
-          "type": "string",
-          "enum": [
-            "high",
-            "medium",
-            "low"
-          ],
-          "description": "How sure you are that this item is correct."
         }
       }
     },
@@ -260,7 +233,7 @@
                 "medium",
                 "low"
               ],
-              "description": "How sure you are that this item is correct."
+              "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
             }
           }
         },
@@ -291,11 +264,11 @@
                       "string",
                       "null"
                     ],
-                    "description": "The key of the entry in `references`, or null if it is not in the bibliography."
+                    "description": "The in-text key exactly as the paper prints it, e.g. 'Smith and Jones (2004)' or '12'; null if you cannot match it to the bibliography. Never make one up."
                   },
                   "cited_work": {
                     "type": "string",
-                    "description": "Short name of the cited work, e.g. 'Smith et al. 2020'."
+                    "description": "One specific cited work, e.g. 'Smith et al. 2020'. Name a body of literature in `why`, not here."
                   },
                   "why": {
                     "type": "string",
@@ -331,7 +304,7 @@
                       "medium",
                       "low"
                     ],
-                    "description": "How sure you are that this item is correct."
+                    "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
                   }
                 }
               },
@@ -355,11 +328,11 @@
                       "string",
                       "null"
                     ],
-                    "description": "The key of the entry in `references`, or null if it is not in the bibliography."
+                    "description": "The in-text key exactly as the paper prints it, e.g. 'Smith and Jones (2004)' or '12'; null if you cannot match it to the bibliography. Never make one up."
                   },
                   "cited_work": {
                     "type": "string",
-                    "description": "Short name of the cited work, e.g. 'Smith et al. 2020'."
+                    "description": "One specific cited work, e.g. 'Smith et al. 2020'. Name a body of literature in `why`, not here."
                   },
                   "why": {
                     "type": "string",
@@ -395,7 +368,7 @@
                       "medium",
                       "low"
                     ],
-                    "description": "How sure you are that this item is correct."
+                    "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
                   }
                 }
               },
@@ -419,11 +392,11 @@
                       "string",
                       "null"
                     ],
-                    "description": "The key of the entry in `references`, or null if it is not in the bibliography."
+                    "description": "The in-text key exactly as the paper prints it, e.g. 'Smith and Jones (2004)' or '12'; null if you cannot match it to the bibliography. Never make one up."
                   },
                   "cited_work": {
                     "type": "string",
-                    "description": "Short name of the cited work, e.g. 'Smith et al. 2020'."
+                    "description": "One specific cited work, e.g. 'Smith et al. 2020'. Name a body of literature in `why`, not here."
                   },
                   "why": {
                     "type": "string",
@@ -459,11 +432,11 @@
                       "medium",
                       "low"
                     ],
-                    "description": "How sure you are that this item is correct."
+                    "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
                   }
                 }
               },
-              "description": "Work it replicates or that replicates it."
+              "description": "Earlier work whose result this paper re-tests."
             }
           }
         }
@@ -474,8 +447,7 @@
       "additionalProperties": false,
       "required": [
         "text",
-        "evidence",
-        "confidence"
+        "evidence"
       ],
       "properties": {
         "text": {
@@ -504,15 +476,6 @@
             "description": "A verbatim passage from the paper and the page it is on."
           },
           "description": "Verbatim support. Empty only when the item is a model judgment."
-        },
-        "confidence": {
-          "type": "string",
-          "enum": [
-            "high",
-            "medium",
-            "low"
-          ],
-          "description": "How sure you are that this item is correct."
         }
       }
     },
@@ -569,51 +532,17 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "title",
-          "kind",
-          "family",
           "outline_first",
           "outline_last",
           "pages",
           "source_span",
+          "question",
           "summary",
-          "question"
+          "title",
+          "kind",
+          "family"
         ],
         "properties": {
-          "title": {
-            "type": "string",
-            "description": "A short topic title that names the unit's idea or finding, not a breadcrumb of the paper's own headings."
-          },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "abstract",
-              "background",
-              "research_question",
-              "theory",
-              "methods",
-              "data",
-              "results",
-              "discussion",
-              "limitations",
-              "conclusion",
-              "references",
-              "appendix",
-              "other"
-            ]
-          },
-          "family": {
-            "type": "string",
-            "enum": [
-              "context",
-              "question",
-              "method",
-              "evidence",
-              "interpretation",
-              "caveat",
-              "reference"
-            ]
-          },
           "outline_first": {
             "type": [
               "integer",
@@ -672,17 +601,51 @@
               }
             }
           },
+          "question": {
+            "type": "string",
+            "description": "Write this first: the one question every part of this unit helps answer. If you cannot write one question, change the range."
+          },
           "summary": {
             "type": "string",
             "description": "One or two sentences that synthesize the whole unit."
           },
-          "question": {
+          "title": {
             "type": "string",
-            "description": "One line: the question this unit answers for the reader, which is why its parts belong together."
+            "description": "Written after the question: a short title by role. Setup and method units name what they set up; result and interpretation units state the finding. Not a breadcrumb of the paper's own headings, and not two topics joined by 'and'."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "abstract",
+              "background",
+              "research_question",
+              "theory",
+              "methods",
+              "data",
+              "results",
+              "discussion",
+              "limitations",
+              "conclusion",
+              "references",
+              "appendix",
+              "other"
+            ]
+          },
+          "family": {
+            "type": "string",
+            "enum": [
+              "context",
+              "question",
+              "method",
+              "evidence",
+              "interpretation",
+              "caveat",
+              "reference"
+            ]
           }
         }
       },
-      "description": "Coherent topic-based reading units, usually 2-3 pages and generally 1-5 pages of content. Keep related headings, variants, and examples together. Increasing PDF order, non-overlapping spans. Never a list of the paper's own headings."
+      "description": "Reading units that each answer one question, usually one to five pages of content. Increasing PDF order, non-overlapping spans, covering the main text."
     },
     "references": {
       "type": "array",
@@ -812,7 +775,7 @@
               "medium",
               "low"
             ],
-            "description": "How sure you are that this item is correct."
+            "description": "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. low: you had to infer it, or the text was hard to read."
           }
         }
       }

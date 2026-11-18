@@ -59,6 +59,9 @@ use crate::{
 };
 
 const FIELDS_PROMPT: &str = include_str!("../../prompts/paper-fields.md");
+/// How quotes are checked and what may not be invented, after the paper, for
+/// the calls that extract rather than judge.
+const EXTRACTION_RULES: &str = include_str!("../../prompts/extraction-rules.md");
 const SECTIONS_POLICY: &str = include_str!("../../prompts/sectioning.md");
 const SECTIONS_FROM_OUTLINE: &str = include_str!("../../prompts/sectioning-outline.md");
 const SECTIONS_FROM_PAGES: &str = include_str!("../../prompts/sectioning-pages.md");
@@ -740,7 +743,6 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
         options.dpi,
     )
     .await?;
-    let text = text_parts(&resources);
     let source = SourceText::new(&resources.paper.pages);
     let session = Session::new(
         backend,
@@ -800,6 +802,13 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
     let hide_objects = plan.calls.iter().any(|call| !object_kinds(call).is_empty());
     let schema = plan_schema(&plan);
     let judge = options.judgment_model.as_deref().unwrap_or(&options.model);
+    // The self-check reads the paper as the plan calls did, so their cached
+    // prefix serves it; page images are left out, because it checks text.
+    let text = if plan.input.format == InputFormat::Raw && !plan.input.images {
+        rendered_parts(&resources, &plan.input, None).await?
+    } else {
+        text_parts(&resources)
+    };
     let check_pass = match draft.as_mut() {
         Some(current) if self_check_enabled => {
             let view = CheckView {
@@ -1081,16 +1090,19 @@ async fn self_check(
         // the dossier and quote admission instead.
         fields.remove(context::FIELD);
     }
-    let parts = vec![
+    // The paper comes first, after the same preamble the plan calls use, so
+    // a provider's prefix cache can serve the paper bytes; the draft, which
+    // differs on every run, comes last.
+    let mut parts = vec![ContentPart::Text(FIELDS_PROMPT.to_owned())];
+    parts.extend(text.iter().cloned());
+    parts.extend([
         ContentPart::Text(CHECK_PROMPT.to_owned()),
+        ContentPart::Text(EXTRACTION_RULES.to_owned()),
         ContentPart::Text(format!(
             "Draft:\n```json\n{}\n```",
             serde_json::to_string(&view)?
         )),
-        ContentPart::Text("Paper:".to_owned()),
-    ];
-    let mut parts = parts;
-    parts.extend(text.iter().cloned());
+    ]);
     let Some(response) = session
         .call_with::<CheckResponse>(
             CHECK_STAGE,
@@ -1199,7 +1211,7 @@ enum SectionsMode {
     Pages,
 }
 
-fn unit_instruction(name: &str, page_count: usize, mode: SectionsMode) -> String {
+fn unit_instruction(name: &str, main_pages: usize, mode: SectionsMode) -> String {
     let instruction = CORE_FIELDS
         .iter()
         .find(|field| field.name == name)
@@ -1219,7 +1231,7 @@ fn unit_instruction(name: &str, page_count: usize, mode: SectionsMode) -> String
             |field| field.instruction,
         );
     instruction
-        .replace("{{sections}}", &sections_guidance(page_count, mode))
+        .replace("{{sections}}", &sections_guidance(main_pages, mode))
         .replace("{{outline}}", OUTLINE_PROMPT)
 }
 
@@ -1278,6 +1290,7 @@ fn pipeline_texts(plan: &RunConfig, reasoning: ReasoningEffort) -> Vec<String> {
         FIELDS_PROMPT.to_owned(),
         sections_guidance(1, SectionsMode::Outline),
         sections_guidance(1, SectionsMode::Pages),
+        EXTRACTION_RULES.to_owned(),
         OUTLINE_PROMPT.to_owned(),
         SECTIONS_GROUPED_SCHEMA.to_owned(),
         title_hint("{title}"),
@@ -1562,10 +1575,14 @@ async fn plan_call(
     let Ok(schema) = serde_json::to_string(&schema) else {
         return PlanCallResult::failed(&call.name);
     };
+    let main_pages = grouping_outline.as_ref().map_or_else(
+        || plausibility::main_text_pages(pages),
+        |entries| outline::body_pages(entries, pages.len()),
+    );
     let instruction = call
         .fields
         .iter()
-        .map(|field| unit_instruction(field, pages.len(), mode))
+        .map(|field| unit_instruction(field, main_pages, mode))
         .collect::<Vec<_>>()
         .join("\n");
     let mut parts = vec![ContentPart::Text(FIELDS_PROMPT.to_owned())];
@@ -1595,11 +1612,21 @@ async fn plan_call(
     if let Some(entries) = &grouping_outline {
         parts.push(ContentPart::Text(outline::render_outline(entries)));
     }
+    let judgment = call.fields.iter().all(|field| field == context::FIELD);
     if call.fields.iter().any(|field| field == context::FIELD) {
+        parts.push(ContentPart::Text(context::dates(
+            &draft,
+            &session.dossier,
+            resources.paper.metadata.year,
+            Utc::now().date_naive(),
+        )));
         if let Some(brief) = context::core_brief(&draft) {
             parts.push(ContentPart::Text(brief));
         }
         parts.push(ContentPart::Text(dossier::render(&session.dossier)));
+    }
+    if !judgment {
+        parts.push(ContentPart::Text(EXTRACTION_RULES.to_owned()));
     }
     parts.push(ContentPart::Text(instruction));
     if let Some(note) = retry_note {
@@ -1899,10 +1926,8 @@ fn likely_title(resources: &PageResources) -> Option<String> {
 /// against the printed heading, never as the answer.
 fn title_hint(title: &str) -> String {
     format!(
-        "A deterministic guess at the title, taken from the largest horizontal text near the top of page 1: \"{title}\". \
-         It is usually right, but layout heuristics can pick up a journal banner, a logo, a running head, or only part of a long title. \
-         If it matches the title heading printed on the first page, use it as `identity.title`, completing it if the printed title runs longer. \
-         If it does not match, ignore it and read the title from the page."
+        "Read the title from the title heading on page 1. For comparison, a layout heuristic picked this line as the largest text near the top: \"{title}\". \
+         It is often wrong (it can be a journal banner, an arXiv stamp, a running head or part of a long title), so use it only if it is the same text as the printed title heading."
     )
 }
 
@@ -1917,18 +1942,20 @@ fn draft_subset(draft: &serde_json::Map<String, Value>, fields: &[String]) -> Op
     (!subset.is_empty()).then_some(Value::Object(subset))
 }
 
-/// The sectioning policy, how units are marked in this mode, and a
-/// page-count budget, for `{{sections}}`.
-fn sections_guidance(page_count: usize, mode: SectionsMode) -> String {
-    let pages = page_count.max(1);
-    let lower = pages.div_ceil(4);
+/// The sectioning policy, how units are marked in this mode, and a rough
+/// unit count for calibration, for `{{sections}}`. The count is drawn from
+/// the main-text pages only, so a long bibliography or appendix does not
+/// push the model to cut the argument finer.
+fn sections_guidance(main_pages: usize, mode: SectionsMode) -> String {
+    let pages = main_pages.max(1);
+    let lower = pages.div_ceil(5);
     let upper = pages.div_ceil(2).max(lower);
     let marking = match mode {
         SectionsMode::Outline => SECTIONS_FROM_OUTLINE,
         SectionsMode::Pages => SECTIONS_FROM_PAGES,
     };
     format!(
-        "{SECTIONS_POLICY}\n{marking}\nThis PDF contains {pages} pages. A useful map is usually about {lower}\u{2013}{upper} substantive reading units, so each unit covers roughly 2\u{2013}3 pages of content. Prefer the smaller number: merge adjacent units that answer the same question before splitting a topic. References, appendices, and adjacent articles are not part of the main-text budget. This is a planning guide, not a quota or a reason to drop content."
+        "{SECTIONS_POLICY}\n{marking}\nThe paper's main text runs to about {pages} pages, before the references and appendices. For calibration only: papers of this length usually have somewhere between {lower} and {upper} main-text units. Do not merge or split to hit this number; the question each unit answers decides."
     )
 }
 
@@ -2599,21 +2626,76 @@ mod tests {
     fn should_offer_the_title_candidate_as_a_hint_that_may_be_wrong() {
         let hint = title_hint("Attention Is All You Need");
         assert!(hint.contains("\"Attention Is All You Need\""));
-        assert!(hint.contains("If it does not match, ignore it"));
+        assert!(hint.starts_with("Read the title from the title heading on page 1"));
+        assert!(hint.contains("It is often wrong"));
+        assert!(!hint.contains("usually right"), "the hint must not prime the guess");
         assert!(!hint.to_lowercase().contains("authoritative"));
-        assert!(!hint.contains("exact string"));
     }
 
     #[test]
-    fn should_state_a_page_budget_in_the_section_guidance() {
+    fn should_give_a_unit_count_for_calibration_only_from_the_main_text() {
         for mode in [SectionsMode::Outline, SectionsMode::Pages] {
-            let guidance = sections_guidance(8, mode);
-            assert!(guidance.contains("This PDF contains 8 pages"));
-            assert!(guidance.contains("2\u{2013}4 substantive reading units"));
+            let guidance = sections_guidance(10, mode);
+            assert!(guidance.contains("about 10 pages, before the references"));
+            assert!(guidance.contains("between 2 and 5 main-text units"));
+            assert!(guidance.contains("Do not merge or split to hit this number"));
+            assert!(!guidance.contains("Prefer the smaller number"));
             assert!(guidance.starts_with(SECTIONS_POLICY));
         }
         assert!(sections_guidance(8, SectionsMode::Outline).contains(SECTIONS_FROM_OUTLINE));
         assert!(sections_guidance(8, SectionsMode::Pages).contains(SECTIONS_FROM_PAGES));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_put_the_paper_before_the_draft_in_the_self_check() {
+        use std::os::unix::fs::PermissionsExt;
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let script = directory.path().join("stub-codex");
+        std::fs::write(
+            &script,
+            format!(
+                r#"#!/bin/sh
+cat > "{prompt}"
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--output-last-message" ]; then shift; output="$1"; fi
+  shift
+done
+printf '%s' '{{"corrections":[]}}' > "$output"
+"#,
+                prompt = directory.path().join("prompt.txt").display(),
+            ),
+        )
+        .expect("stub script");
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700))
+            .expect("executable");
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let session = checkpointed_session(&cli, directory.path());
+        let resources = resources();
+        let text = text_parts(&resources);
+        let source = SourceText::new(&resources.paper.pages);
+        let schema = json!({});
+        let view = CheckView {
+            text: &text,
+            source: &source,
+            hide_objects: false,
+            schema: &schema,
+            model: "m",
+        };
+        let mut current = draft();
+        let checked = self_check(&mut current, &view, &session)
+            .await
+            .expect("self-check");
+        assert_eq!(checked.status, StageStatus::Ran);
+        let prompt = std::fs::read_to_string(directory.path().join("prompt.txt")).expect("prompt");
+        let preamble = prompt.find(FIELDS_PROMPT.trim()).expect("preamble");
+        let paper = prompt.find("<<page 1>>").expect("paper");
+        let task = prompt.find("You are checking a draft record").expect("task");
+        let draft = prompt.find("Draft:").expect("draft");
+        assert!(
+            preamble < paper && paper < task && task < draft,
+            "the shared prefix (preamble, paper) comes first and the draft last"
+        );
     }
 
     #[test]

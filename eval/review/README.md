@@ -75,21 +75,28 @@ two views show and what you said matters, in this order:
   abstract under `eval/spike/ground-truth/oracles` when one exists
   (`amodei2016`, `kaplan2020`, `autor2013`).
 - **Thesis** gets one quick score; it is the line most readers see first.
-- **Why it matters** is the highest-value component and gets the most
-  dimensions: accuracy, specificity ("could this be pasted onto another
-  paper?"), orientation value, the read-alongside papers, provenance and
-  economy. A false claim about the field is a hard reject, recorded
-  separately from the scores so it cannot be averaged away. The panel shows
-  the evaluation set's neighbours under the output for comparison.
+- **Why it matters** is the highest-value component: accuracy, orientation
+  (does it say what this paper changed, in terms that fit only this paper and
+  add to the abstract?), the read-alongside papers, and a pass/fail on
+  whether it is honest about what it does not know. A false claim about the
+  field is a hard reject, recorded separately from the scores so it cannot be
+  averaged away. The panel shows the evaluation set's neighbours, and the
+  dossier the model was given, under the output for comparison.
 - **Outline** counts errors against the printed headings (missing, spurious,
-  wrong level or page) and adds one overall score. Counts are cheaper to give
-  and easier to compare than a feeling about structure.
+  wrong level or page). Counts are cheaper to give and easier to compare than
+  a feeling about structure; the panel shows when admission dropped headings
+  the model returned, so a missing heading can be told from a dropped one.
 - **Reading units** (the logical segmentation) grades whether each unit
-  answers one question, whether boundaries fall where the argument turns,
-  granularity (too many / about right / too few), whether titles carry a
-  claim rather than a genre label, and whether summaries are faithful and
-  specific. This is the part models have found hardest, so it is split
-  finely enough to show which of those fails.
+  carries one idea with boundaries where the argument turns, granularity (too
+  many / about right / too few), and the titles and summaries together:
+  setup and method units should name what they set up, result units should
+  state the finding, and summaries should be faithful and specific.
+
+The rubric was cut from 21 graded items to 14 (rubric `reader-review-v2`)
+because dimensions that measure the same thing (specificity, economy and
+orientation all measured genericness) add noise to prompt comparisons rather
+than signal. Reviews graded against v1 keep their dimension ids; the summary
+reports what each review recorded.
 - **Overall** and free notes, then **issue flags**: component, severity, an
   optional tag, a note and the quoted text. Flags are the raw material for
   regression cases: the export puts each one next to the exact output it was

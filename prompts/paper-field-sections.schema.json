@@ -11,51 +11,17 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "title",
-          "kind",
-          "family",
           "outline_first",
           "outline_last",
           "pages",
           "source_span",
+          "question",
           "summary",
-          "question"
+          "title",
+          "kind",
+          "family"
         ],
         "properties": {
-          "title": {
-            "type": "string",
-            "description": "A short topic title that names the unit's idea or finding, not a breadcrumb of the paper's own headings."
-          },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "abstract",
-              "background",
-              "research_question",
-              "theory",
-              "methods",
-              "data",
-              "results",
-              "discussion",
-              "limitations",
-              "conclusion",
-              "references",
-              "appendix",
-              "other"
-            ]
-          },
-          "family": {
-            "type": "string",
-            "enum": [
-              "context",
-              "question",
-              "method",
-              "evidence",
-              "interpretation",
-              "caveat",
-              "reference"
-            ]
-          },
           "outline_first": {
             "type": [
               "integer",
@@ -114,17 +80,51 @@
               }
             }
           },
+          "question": {
+            "type": "string",
+            "description": "Write this first: the one question every part of this unit helps answer. If you cannot write one question, change the range."
+          },
           "summary": {
             "type": "string",
             "description": "One or two sentences that synthesize the whole unit."
           },
-          "question": {
+          "title": {
             "type": "string",
-            "description": "One line: the question this unit answers for the reader, which is why its parts belong together."
+            "description": "Written after the question: a short title by role. Setup and method units name what they set up; result and interpretation units state the finding. Not a breadcrumb of the paper's own headings, and not two topics joined by 'and'."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "abstract",
+              "background",
+              "research_question",
+              "theory",
+              "methods",
+              "data",
+              "results",
+              "discussion",
+              "limitations",
+              "conclusion",
+              "references",
+              "appendix",
+              "other"
+            ]
+          },
+          "family": {
+            "type": "string",
+            "enum": [
+              "context",
+              "question",
+              "method",
+              "evidence",
+              "interpretation",
+              "caveat",
+              "reference"
+            ]
           }
         }
       },
-      "description": "Coherent topic-based reading units, usually 2-3 pages and generally 1-5 pages of content. Keep related headings, variants, and examples together. Increasing PDF order, non-overlapping spans. Never a list of the paper's own headings."
+      "description": "Reading units that each answer one question, usually one to five pages of content. Increasing PDF order, non-overlapping spans, covering the main text."
     }
   },
   "description": "The paper's reading map."

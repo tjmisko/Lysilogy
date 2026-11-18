@@ -203,12 +203,7 @@ fn section_warnings(artifacts: &Value, pages: &[ExtractedPage]) -> Vec<QualityWa
             format!("The section map is empty for a {page_count}-page paper."),
         )];
     }
-    // The main text ends where the references begin, when they can be found.
-    let body = references_heading_page(pages)
-        .map_or(page_count, |page| {
-            usize::try_from(page).unwrap_or(page_count)
-        })
-        .clamp(1, page_count.max(1));
+    let body = main_text_pages(pages);
     let mut warnings = Vec::new();
     let substantive = units
         .iter()
@@ -381,6 +376,18 @@ fn reference_warnings(artifacts: &Value, pages: &[ExtractedPage]) -> Vec<Quality
         })
         .into_iter()
         .collect()
+}
+
+/// The pages of main text: up to the page where the references begin, when
+/// a references heading can be found, else every page.
+#[must_use]
+pub fn main_text_pages(pages: &[ExtractedPage]) -> usize {
+    let page_count = pages.len();
+    references_heading_page(pages)
+        .map_or(page_count, |page| {
+            usize::try_from(page).unwrap_or(page_count)
+        })
+        .clamp(1, page_count.max(1))
 }
 
 /// The first page after the first one with a references or bibliography

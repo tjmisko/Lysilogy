@@ -167,24 +167,153 @@ mod tests {
         }
     }
 
+    /// The property names of `schema` at `pointer`, in the order a model
+    /// fills them.
+    fn property_order(schema: &str, pointer: &str) -> Vec<String> {
+        let schema: Value = serde_json::from_str(schema).expect("schema");
+        schema
+            .pointer(pointer)
+            .and_then(Value::as_object)
+            .map(|properties| properties.keys().cloned().collect())
+            .unwrap_or_default()
+    }
+
+    fn position(order: &[String], key: &str) -> usize {
+        order
+            .iter()
+            .position(|name| name == key)
+            .unwrap_or_else(|| panic!("no {key} in {order:?}"))
+    }
+
     #[test]
-    fn should_state_the_same_typical_unit_size_in_the_sections_schema_and_policy() {
-        let policy = include_str!("../prompts/sectioning.md");
-        assert!(
-            policy.contains("usually 2\u{2013}3 pages"),
-            "policy changed"
-        );
+    fn should_ask_for_a_units_extent_and_question_before_its_title() {
         for (name, text) in [
             ("core", CORE_SCHEMA),
             ("field-sections", SECTIONS_SCHEMA),
             ("field-sections-grouped", SECTIONS_GROUPED_SCHEMA),
             ("paper-artifacts", PAPER_ARTIFACTS_SCHEMA),
         ] {
+            let order = property_order(text, "/properties/sections/items/properties");
+            let question = position(&order, "question");
+            assert!(position(&order, "outline_last") < question, "{name}: {order:?}");
+            assert!(question < position(&order, "summary"), "{name}: {order:?}");
+            assert!(position(&order, "summary") < position(&order, "title"), "{name}: {order:?}");
             let schema: Value = serde_json::from_str(text).expect("schema");
             let description = schema["properties"]["sections"]["description"]
                 .as_str()
                 .unwrap_or_default();
-            assert!(description.contains("usually 2-3 pages"), "{name}");
+            assert!(!description.contains("Never"), "{name}: {description}");
+        }
+    }
+
+    #[test]
+    fn should_ask_for_the_context_lead_after_the_parts_it_distils() {
+        let order = property_order(CONTEXT_SCHEMA, "/properties/context/properties");
+        assert_eq!(order.last().map(String::as_str), Some("lead"), "{order:?}");
+        assert!(position(&order, "before") < position(&order, "after"));
+    }
+
+    #[test]
+    fn should_ask_for_the_type_reason_before_its_value() {
+        let order = property_order(TYPE_SCHEMA, "/properties/type/properties");
+        assert_eq!(order, ["reason", "value"]);
+    }
+
+    #[test]
+    fn should_include_every_prompt_file_somewhere_in_the_source() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let mut source = String::new();
+        let mut directories = vec![root.join("src")];
+        while let Some(directory) = directories.pop() {
+            for entry in std::fs::read_dir(&directory).expect("source directory") {
+                let path = entry.expect("entry").path();
+                if path.is_dir() {
+                    directories.push(path);
+                } else if path.extension().is_some_and(|extension| extension == "rs") {
+                    source.push_str(&std::fs::read_to_string(&path).expect("source file"));
+                }
+            }
+        }
+        for entry in std::fs::read_dir(root.join("prompts")).expect("prompts") {
+            let path = entry.expect("entry").path();
+            if path.extension().is_some_and(|extension| extension == "md") {
+                let name = path.file_name().and_then(|name| name.to_str()).unwrap_or_default();
+                assert!(
+                    source.contains(&format!("prompts/{name}\")")),
+                    "prompts/{name} is not included anywhere; edits to it would change nothing"
+                );
+            }
+        }
+    }
+
+    /// Phrases tied to papers in the evaluation set that a prompt or the
+    /// rubric must not use as examples: a model could copy them onto that
+    /// paper, and a grader primed with the same words would reward the copy.
+    /// Titles are checked by three-word runs; the list adds the papers'
+    /// signature terms, which titles miss.
+    const EVAL_SET_TERMS: &[&str] = &[
+        "import exposure",
+        "import competition",
+        "china syndrome",
+        "mariel",
+        "boatlift",
+        "minimum wage",
+        "fast-food",
+        "lemons",
+        "quarter of birth",
+        "compulsory schooling",
+        "residual learning",
+        "scaling laws",
+        "self-attention",
+        "borjas",
+        "bartik",
+    ];
+
+    fn words(text: &str) -> Vec<String> {
+        text.split(|c: char| !c.is_alphanumeric() && c != '-')
+            .filter(|word| !word.is_empty())
+            .map(str::to_lowercase)
+            .collect()
+    }
+
+    #[test]
+    fn should_keep_evaluation_set_papers_out_of_prompt_examples() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let manifest: Value = serde_json::from_str(
+            &std::fs::read_to_string(root.join("eval/review/papers.json")).expect("manifest"),
+        )
+        .expect("manifest JSON");
+        let mut phrases = EVAL_SET_TERMS
+            .iter()
+            .map(|term| (*term).to_owned())
+            .collect::<Vec<_>>();
+        for paper in manifest["papers"].as_array().expect("papers") {
+            let title = words(paper["title"].as_str().unwrap_or_default());
+            phrases.extend(title.windows(3).map(|run| run.join(" ")));
+        }
+        let mut texts = vec![(
+            "eval/review/rubric.json".to_owned(),
+            std::fs::read_to_string(root.join("eval/review/rubric.json")).expect("rubric"),
+        )];
+        for entry in std::fs::read_dir(root.join("prompts")).expect("prompts") {
+            let path = entry.expect("entry").path();
+            texts.push((
+                path.display().to_string(),
+                std::fs::read_to_string(&path).expect("prompt"),
+            ));
+        }
+        texts.push((
+            "core_fields.rs".to_owned(),
+            include_str!("paper_artifacts/core_fields.rs").to_owned(),
+        ));
+        for (name, text) in texts {
+            let text = words(&text).join(" ");
+            for phrase in &phrases {
+                assert!(
+                    !format!(" {text} ").contains(&format!(" {phrase} ")),
+                    "{name} uses \"{phrase}\", which belongs to a paper in the evaluation set"
+                );
+            }
         }
     }
 

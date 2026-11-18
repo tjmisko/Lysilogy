@@ -43,7 +43,9 @@ percent-encoding = "2.3.2"
 reqwest = { version = "0.13.4", default-features = false, features = ["rustls"] }
 rustix = { version = "1.1.4", features = ["fs"] }
 serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.143"
+# Objects keep their key order, so a schema's property order (the order a
+# model fills the fields in) survives parsing and reaches the provider.
+serde_json = { version = "1.0.143", features = ["preserve_order"] }
 sha2 = "0.10"
 thiserror = "2.0.16"
 futures-util = "0.3.34"

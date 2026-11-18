@@ -1,1 +1,3 @@
 This paper has no printed outline the application could use, so mark each unit's extent yourself. Give its first and last PDF page in `pages`, and in `source_span` a short phrase copied exactly from where the unit begins and another from where it ends, each with its page; the application uses these phrases to find the boundaries in the PDF. Set `outline_first` and `outline_last` to null. Spans must come in increasing page order and must not overlap.
+
+The units together cover the paper's main text from its first page of argument to its conclusion; a map that stops on the first page or covers only front matter is never right for a paper longer than a couple of pages. If you cannot find the boundaries, prefer a few page-aligned units with honest titles over one unit.

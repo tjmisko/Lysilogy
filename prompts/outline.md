@@ -5,7 +5,7 @@ You will see a list of heading candidates that simple heuristics found in the te
 For each heading give:
 
 - `number`: the printed number or letter exactly as printed, such as `3`, `3.2`, `IV.` or `A.`, or null when the heading is unnumbered.
-- `title`: the heading text exactly as printed, without its number. Copy it from the page, including its capitalisation; join a heading that wraps onto a second line. The application looks for this text on the page you name and drops any heading it cannot find, so do not paraphrase or tidy it.
+- `title`: the heading text exactly as it appears in the page text above, without its number, including its capitalisation as given there (a heading set in small capitals may come through in capitals; keep it that way); join a heading that wraps onto a second line. The application looks for this text on the page you name and drops any heading it cannot find, so do not paraphrase or tidy it.
 - `level`: 1 for top-level headings, 2 for their subsections, 3 below that. Follow the numbering where there is one, and the typography where there is not.
 - `page`: the PDF page the heading is printed on.
 - `role`: `front_matter` for the abstract, keywords and similar material before the main text; `main` for the paper's argument from the introduction through the conclusion; `back_matter` for acknowledgments, funding, author contributions and declarations; `references` for the bibliography; `appendix` for appendices and supplementary material.

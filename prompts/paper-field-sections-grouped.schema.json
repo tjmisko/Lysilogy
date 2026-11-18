@@ -11,18 +11,34 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "title",
-          "kind",
-          "family",
           "outline_first",
           "outline_last",
+          "question",
           "summary",
-          "question"
+          "title",
+          "kind",
+          "family"
         ],
         "properties": {
+          "outline_first": {
+            "type": "integer",
+            "description": "Index of the first outline entry in this unit."
+          },
+          "outline_last": {
+            "type": "integer",
+            "description": "Index of the last outline entry in this unit; equal to outline_first for a one-entry unit."
+          },
+          "question": {
+            "type": "string",
+            "description": "Write this first: the one question every part of this unit helps answer. If you cannot write one question, change the range."
+          },
+          "summary": {
+            "type": "string",
+            "description": "One or two sentences that synthesize the whole unit."
+          },
           "title": {
             "type": "string",
-            "description": "A short topic title that names the unit's idea or finding, not a breadcrumb of the paper's own headings."
+            "description": "Written after the question: a short title by role. Setup and method units name what they set up; result and interpretation units state the finding. Not a breadcrumb of the paper's own headings, and not two topics joined by 'and'."
           },
           "kind": {
             "type": "string",
@@ -53,26 +69,10 @@
               "caveat",
               "reference"
             ]
-          },
-          "outline_first": {
-            "type": "integer",
-            "description": "Index of the first outline entry in this unit."
-          },
-          "outline_last": {
-            "type": "integer",
-            "description": "Index of the last outline entry in this unit; equal to outline_first for a one-entry unit."
-          },
-          "summary": {
-            "type": "string",
-            "description": "One or two sentences that synthesize the whole unit."
-          },
-          "question": {
-            "type": "string",
-            "description": "One line: the question this unit answers for the reader, which is why its parts belong together."
           }
         }
       },
-      "description": "Coherent reading units, usually 2-3 pages of content each, as contiguous ranges of the given outline entries in order, without gaps or overlaps. Never one unit per heading."
+      "description": "Reading units as contiguous ranges of the given outline entries, in order, without gaps or overlaps. Group headings that answer the same question; a printed section that is already one idea may be its own unit."
     }
   },
   "description": "The paper's reading map as ranges of its outline."

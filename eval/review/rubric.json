@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "id": "reader-review-v1",
+  "id": "reader-review-v2",
   "name": "Reader output review",
   "purpose": "Grade what Lysilogy shows on the Abstract and Overview views for one paper, against the paper itself and the papers around it. Grade each component on its own before forming an overall view. Not produced is a real outcome: mark it and grade what that means for the reader.",
   "time_budget_minutes": 10,
@@ -20,7 +20,12 @@
       "id": "abstract",
       "label": "Abstract",
       "question": "Is the text shown as the authors' abstract exactly the authors' abstract?",
-      "reads": ["author_abstract", "abstract_extraction", "abstract_agreement", "quality_warnings"],
+      "reads": [
+        "author_abstract",
+        "abstract_extraction",
+        "abstract_agreement",
+        "quality_warnings"
+      ],
       "guidance": "Compare with the PDF's first page, or with the oracle abstract when the manifest names one. Whitespace, hyphenation at line ends and ligatures do not count as errors; dropped or added sentences do.",
       "dimensions": [
         {
@@ -34,13 +39,31 @@
           "kind": "choice",
           "label": "What went wrong",
           "question": "The main failure, when it is not exact.",
-          "when": { "dimension": "exact", "equals": false },
+          "when": {
+            "dimension": "exact",
+            "equals": false
+          },
           "options": [
-            { "id": "truncated", "label": "Truncated: sentences missing" },
-            { "id": "extra_text", "label": "Extra text: keywords, affiliations, introduction, footnotes" },
-            { "id": "wrong_block", "label": "Wrong block: not the abstract at all" },
-            { "id": "garbled", "label": "Garbled: order, encoding or column interleaving" },
-            { "id": "missing", "label": "Missing: no abstract although the paper has one" }
+            {
+              "id": "truncated",
+              "label": "Truncated: sentences missing"
+            },
+            {
+              "id": "extra_text",
+              "label": "Extra text: keywords, affiliations, introduction, footnotes"
+            },
+            {
+              "id": "wrong_block",
+              "label": "Wrong block: not the abstract at all"
+            },
+            {
+              "id": "garbled",
+              "label": "Garbled: order, encoding or column interleaving"
+            },
+            {
+              "id": "missing",
+              "label": "Missing: no abstract although the paper has one"
+            }
           ]
         }
       ]
@@ -49,7 +72,10 @@
       "id": "thesis",
       "label": "Thesis line",
       "question": "Does the one-line thesis state what this paper contributes, in words a smart outsider understands?",
-      "reads": ["thesis", "quality_warnings"],
+      "reads": [
+        "thesis",
+        "quality_warnings"
+      ],
       "guidance": "A quick check: thirty seconds.",
       "dimensions": [
         {
@@ -70,7 +96,13 @@
       "label": "Why it matters",
       "priority": 1,
       "question": "After reading the context on the first view, do you know why this paper matters: what came before, what it changed, and what to read alongside it?",
-      "reads": ["context", "outsider_brief", "context_notes", "context_sources", "quality_warnings"],
+      "reads": [
+        "context",
+        "outsider_brief",
+        "context_notes",
+        "context_sources",
+        "quality_warnings"
+      ],
       "guidance": "This is the highest-value component. Judge it against the neighbours listed in the manifest and your own knowledge. A single false claim about the field is a hard reject, however good the rest is.",
       "hard_reject": {
         "id": "false_claim",
@@ -84,31 +116,20 @@
           "label": "Accuracy",
           "question": "Is what it says about the field before and after the paper true?",
           "anchors": {
-            "0": "A consequential false claim (also mark the hard reject).",
+            "1": "Gets the outline of the history wrong in a way that would mislead.",
             "2": "True in outline, with a wrong date, attribution or emphasis.",
             "4": "Everything checks out, including who did what and when."
           }
         },
         {
-          "id": "specificity",
-          "kind": "score",
-          "label": "Specificity",
-          "question": "Could this text be pasted onto another paper in the field?",
-          "anchors": {
-            "0": "Yes: 'an influential paper that sparked much follow-up work'.",
-            "2": "Names the right debate or predecessor but not what this paper did to it.",
-            "4": "Names the specific prior belief, method or result this paper displaced or extended."
-          }
-        },
-        {
           "id": "orientation",
           "kind": "score",
-          "label": "Orientation value",
-          "question": "Could you now explain to a colleague why this paper is worth reading and what it changed?",
+          "label": "Orientation",
+          "question": "Could you now explain to a colleague why this paper is worth reading and what it changed, in terms that fit only this paper?",
           "anchors": {
-            "0": "No better oriented than from the title.",
-            "2": "You know the topic and roughly why it was noticed.",
-            "4": "You know the question before it, the move it made, and what the field did next."
+            "0": "Generic enough to paste onto another paper in the field ('an influential paper that sparked much follow-up work'), or a restatement of the abstract.",
+            "2": "Names the right debate or predecessor but not what this paper did to it; useful but padded.",
+            "4": "Names the specific prior belief, method or result this paper displaced or extended, and what the field did next; nearly every sentence adds something the abstract does not."
           }
         },
         {
@@ -123,26 +144,10 @@
           }
         },
         {
-          "id": "provenance",
-          "kind": "score",
-          "label": "Provenance",
-          "question": "Can you tell what comes from the paper, what from cited sources, and what is the model's own inference?",
-          "anchors": {
-            "0": "Everything is asserted in the same voice.",
-            "2": "Sources are listed but not tied to the statements they support.",
-            "4": "Each consequential statement is attributable, and inference is labelled as such."
-          }
-        },
-        {
-          "id": "economy",
-          "kind": "score",
-          "label": "Economy",
-          "question": "How much of it earns its place?",
-          "anchors": {
-            "0": "Mostly throat-clearing or repetition of the abstract.",
-            "2": "Useful, but padded.",
-            "4": "Nearly every sentence adds something the abstract does not."
-          }
+          "id": "honest_unknown",
+          "kind": "pass_fail",
+          "label": "Honest about the unknown",
+          "question": "Are the background and citation-graph labels right, and does it admit what it does not know about the paper's reception instead of asserting influence?"
         }
       ]
     },
@@ -150,7 +155,10 @@
       "id": "outline",
       "label": "Outline",
       "question": "Does the outline list the paper's sections as printed, with the right levels and pages?",
-      "reads": ["outline", "quality_warnings"],
+      "reads": [
+        "outline",
+        "quality_warnings"
+      ],
       "guidance": "Count against the printed headings in the PDF. Front matter, references and appendices count when the paper prints them as headings.",
       "dimensions": [
         {
@@ -170,17 +178,6 @@
           "kind": "count",
           "label": "Wrong level or page",
           "question": "Entries with the wrong nesting level or a page off by more than one."
-        },
-        {
-          "id": "overall",
-          "kind": "score",
-          "label": "Outline overall",
-          "question": "Would you use this as the table of contents?",
-          "anchors": {
-            "0": "Absent or unusable.",
-            "2": "Recognisable, but with errors you would have to correct by hand.",
-            "4": "Matches the printed structure."
-          }
         }
       ]
     },
@@ -188,29 +185,22 @@
       "id": "logical",
       "label": "Reading units",
       "question": "Does the logical segmentation group the paper into coherent units that a reader can take one at a time?",
-      "reads": ["sections", "outline", "quality_warnings"],
+      "reads": [
+        "sections",
+        "outline",
+        "quality_warnings"
+      ],
       "guidance": "A good unit answers one question (what is the problem, how is it measured, what is the main result, does it survive robustness checks). It may merge several printed sections or split a long one.",
       "dimensions": [
         {
-          "id": "coherence",
+          "id": "one_idea",
           "kind": "score",
-          "label": "Grouping coherence",
-          "question": "Does each unit answer one question?",
+          "label": "One idea per unit",
+          "question": "Does each unit answer one question, with boundaries where the argument turns?",
           "anchors": {
-            "0": "Units are arbitrary page ranges or mirror the outline with no grouping thought.",
-            "2": "Most units hang together, one or two mix unrelated material.",
-            "4": "Every unit has a clear single job in the argument."
-          }
-        },
-        {
-          "id": "boundaries",
-          "kind": "score",
-          "label": "Boundaries",
-          "question": "Do units start and end where the argument turns?",
-          "anchors": {
-            "0": "Boundaries cut through the middle of an argument.",
-            "2": "Roughly right, with a unit that starts or ends a page off.",
-            "4": "Each boundary falls at a real turn in the paper."
+            "0": "Units are arbitrary page ranges, glue unrelated topics together, or mirror the outline with no grouping thought.",
+            "2": "Most units hang together; one or two mix two questions or cut through an argument.",
+            "4": "Every unit has a single job in the argument, and each boundary falls at a real turn."
           }
         },
         {
@@ -219,42 +209,29 @@
           "label": "Granularity",
           "question": "How many units, for this paper?",
           "options": [
-            { "id": "too_many", "label": "Too many" },
-            { "id": "right", "label": "About right" },
-            { "id": "too_few", "label": "Too few" }
+            {
+              "id": "too_many",
+              "label": "Too many"
+            },
+            {
+              "id": "right",
+              "label": "About right"
+            },
+            {
+              "id": "too_few",
+              "label": "Too few"
+            }
           ]
         },
         {
-          "id": "titles",
+          "id": "titles_summaries",
           "kind": "score",
-          "label": "Title informativeness",
-          "question": "Does each title tell you what the unit establishes, rather than its genre?",
+          "label": "Titles and summaries",
+          "question": "Does each title tell you what the unit gives you, and does each summary say faithfully and specifically what the unit establishes?",
           "anchors": {
-            "0": "Genre labels: 'Introduction', 'Methods', 'Results'.",
-            "2": "Topic labels: 'Import exposure measure'.",
-            "4": "Claim-bearing titles: 'Exposure is instrumented with other rich countries' imports'."
-          }
-        },
-        {
-          "id": "summary_fidelity",
-          "kind": "score",
-          "label": "Summary fidelity",
-          "question": "Does each summary say only what that unit actually says?",
-          "anchors": {
-            "0": "A summary misstates a result or describes the wrong unit.",
-            "2": "Faithful but drops a material caveat or number.",
-            "4": "Faithful, with the load-bearing numbers and qualifications."
-          }
-        },
-        {
-          "id": "summary_specificity",
-          "kind": "score",
-          "label": "Summary specificity",
-          "question": "Could a summary be pasted onto a different paper?",
-          "anchors": {
-            "0": "'This section presents the results.'",
-            "2": "Names the topic but not the finding.",
-            "4": "States the finding or move, specific to this paper."
+            "0": "Genre labels (Introduction, Results), or summaries that could fit any paper or misstate a result.",
+            "2": "A topic label on a result unit, or summaries that name the topic but not the finding or drop a material caveat.",
+            "4": "Setup and method units name what they set up; result and interpretation units state the finding (for example 'The treatment is assigned by lottery, so the comparison is causal'); summaries are faithful and carry the load-bearing numbers."
           }
         }
       ]
@@ -274,9 +251,18 @@
   "issues": {
     "purpose": "Flag each concrete problem you would want a prompt change to fix. Flags become regression cases, so quote the offending text when you can.",
     "severities": [
-      { "id": "blocker", "label": "Blocker: misleads the reader" },
-      { "id": "major", "label": "Major: a reader would notice and lose trust" },
-      { "id": "minor", "label": "Minor: polish" }
+      {
+        "id": "blocker",
+        "label": "Blocker: misleads the reader"
+      },
+      {
+        "id": "major",
+        "label": "Major: a reader would notice and lose trust"
+      },
+      {
+        "id": "minor",
+        "label": "Minor: polish"
+      }
     ],
     "tags": [
       "false_claim",

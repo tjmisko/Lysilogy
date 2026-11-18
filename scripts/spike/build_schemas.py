@@ -38,10 +38,12 @@ evidence = obj("A verbatim passage from the paper and the page it is on.",
     quote=s("Copied exactly from the page text, 8 to 300 characters."),
     page=i("1-based page number."))
 evidence_list = arr(evidence, "Verbatim support. Empty only when the item is a model judgment.")
-confidence = enum(["high", "medium", "low"], "How sure you are that this item is correct.")
+confidence = enum(["high", "medium", "low"],
+    "high: the paper states it directly in the quoted passage. medium: the paper says it, but not in one place. "
+    "low: you had to infer it, or the text was hard to read.")
 position_item = obj(
-    reference_key=s("The key of the entry in `references`, or null if it is not in the bibliography.", null=True),
-    cited_work=s("Short name of the cited work, e.g. 'Smith et al. 2020'."),
+    reference_key=s("The in-text key exactly as the paper prints it, e.g. 'Smith and Jones (2004)' or '12'; null if you cannot match it to the bibliography. Never make one up.", null=True),
+    cited_work=s("One specific cited work, e.g. 'Smith et al. 2020'. Name a body of literature in `why`, not here."),
     why=s("One plain-language line on the relation."),
     evidence=evidence_list, confidence=confidence)
 relation_kinds = ["background", "uses_method", "uses_data", "extends", "supports", "contrasts", "critiques", "compares", "other"]
@@ -56,23 +58,34 @@ section_families = ["context", "question", "method", "evidence", "interpretation
 identity = obj(
     title=s("As printed, without line-break hyphens."),
     subtitle=s(null=True),
-    authors=arr(obj(name=s("As printed."), affiliation=s(null=True)), "All authors, in printed order."),
+    authors=arr(obj(name=s("As printed, without footnote marks."),
+                    affiliation=s("The affiliation printed next to the name, else null.", null=True)),
+                "All authors, in printed order."),
     year=i(null=True), venue=s(null=True),
     identifiers=obj(doi=s(null=True), arxiv=s("arXiv identifier without the 'arXiv:' prefix.", null=True)),
     publication_state=enum(["preprint", "published", "unknown"]),
-    evidence=evidence_list, confidence=confidence)
-paper_type = obj(value=enum(["survey", "method", "empirical", "theory", "dataset", "position", "replication", "resource"]),
-         reason=s(), confidence=confidence)
-abstract = obj(text=s("The authors' own abstract copied verbatim from the page, paragraphs joined with a blank line; never a summary or a paraphrase. Null if the paper prints no abstract.", null=True),
-             page=i(null=True), confidence=confidence)
+    evidence=evidence_list)
+# The reason comes first so the choice follows from it rather than the reason
+# rationalising a label already written.
+paper_type = obj(
+    reason=s("One line on what the paper mainly does, written before choosing the value."),
+    value=enum(["survey", "method", "empirical", "theory", "dataset", "position", "replication", "resource"],
+        "survey: mainly reviews others' work; a paper with new theorems, methods or results is not a survey. "
+        "method: proposes a new method, model or algorithm. empirical: tests a question on data or experiments. "
+        "theory: derives results formally. dataset: introduces a dataset or benchmark. "
+        "position: argues for a view or research agenda, including lectures and essays. "
+        "replication: re-tests a previously published result; a reprint or corrected edition is not a replication. "
+        "resource: software, a tool or another artefact for others to use."))
+abstract = obj(text=s("The authors' own abstract copied verbatim from the page, lines within a paragraph joined with single spaces and paragraphs separated by a blank line; never a summary, a paraphrase or the opening of the introduction. Null if the paper prints no abstract.", null=True),
+             page=i(null=True))
 thesis = obj(text=s("One plain sentence stating what the paper finds or shows, not what it is about."),
              evidence=evidence_list, confidence=confidence)
 card_core = obj(
     thesis=thesis,
     position=obj(predecessors=arr(position_item, "Work this paper builds on."),
                  targets=arr(position_item, "Work it contrasts with or critiques."),
-                 replications=arr(position_item, "Work it replicates or that replicates it.")))
-question = obj(text=s("The research question or hypothesis."), evidence=evidence_list, confidence=confidence)
+                 replications=arr(position_item, "Earlier work whose result this paper re-tests.")))
+question = obj(text=s("The research question or hypothesis."), evidence=evidence_list)
 outline_roles = ["front_matter", "main", "back_matter", "references", "appendix"]
 outline = arr(obj(
     number=s("The heading's printed number or letter exactly as printed, e.g. '2', '2.1', 'IV.', 'A.'; null when the heading is unnumbered.", null=True),
@@ -86,36 +99,39 @@ outline = arr(obj(
 # outline entries and has its pages and source span derived by the
 # application; a unit made without an outline has null outline indices and
 # gives its own pages and span.
-unit_title = s("A short topic title that names the unit's idea or finding, not a breadcrumb of the paper's own headings.")
+unit_title = s("Written after the question: a short title by role. Setup and method units name what they set up; result and "
+               "interpretation units state the finding. Not a breadcrumb of the paper's own headings, and not two topics joined by 'and'.")
 unit_summary = s("One or two sentences that synthesize the whole unit.")
-unit_question = s("One line: the question this unit answers for the reader, which is why its parts belong together.")
+unit_question = s("Write this first: the one question every part of this unit helps answer. If you cannot write one question, change the range.")
 unit_pages = obj(start=i("First 1-based PDF page."), end=i("Last 1-based PDF page."))
 unit_span = obj(start_text=s("A short verbatim phrase from where the unit begins."), start_page=i(),
                 end_text=s("A short verbatim phrase from where the unit ends."), end_page=i())
+# Properties are in the order the model should decide them: the extent, then
+# the question it answers, then the summary, and the title last.
 sections = arr(obj(
-    title=unit_title,
-    kind=enum(section_kinds),
-    family=enum(section_families),
     outline_first=i("Index of the first outline entry in the unit; null when no outline was given.", null=True),
     outline_last=i("Index of the last outline entry in the unit; null when no outline was given.", null=True),
     pages=unit_pages,
     source_span=unit_span,
+    question=unit_question,
     summary=unit_summary,
-    question=unit_question),
-    "Coherent topic-based reading units, usually 2-3 pages and generally 1-5 pages of content. "
-    "Keep related headings, variants, and examples together. Increasing PDF order, non-overlapping spans. Never a list of the paper's own headings.")
+    title=unit_title,
+    kind=enum(section_kinds),
+    family=enum(section_families)),
+    "Reading units that each answer one question, usually one to five pages of content. "
+    "Increasing PDF order, non-overlapping spans, covering the main text.")
 # What the model is asked for when the paper has a usable outline: ranges of
 # outline entries only. Pages and spans are derived from the outline.
 sections_grouped = arr(obj(
-    title=unit_title,
-    kind=enum(section_kinds),
-    family=enum(section_families),
     outline_first=i("Index of the first outline entry in this unit."),
     outline_last=i("Index of the last outline entry in this unit; equal to outline_first for a one-entry unit."),
+    question=unit_question,
     summary=unit_summary,
-    question=unit_question),
-    "Coherent reading units, usually 2-3 pages of content each, as contiguous ranges of the given outline entries "
-    "in order, without gaps or overlaps. Never one unit per heading.")
+    title=unit_title,
+    kind=enum(section_kinds),
+    family=enum(section_families)),
+    "Reading units as contiguous ranges of the given outline entries, in order, without gaps or overlaps. "
+    "Group headings that answer the same question; a printed section that is already one idea may be its own unit.")
 references = arr(obj(key=s("The in-text marker, e.g. '12' or 'Smith et al., 2020'."),
                    title=s(null=True), authors=arr(s()), year=i(null=True), venue=s(null=True), doi=s(null=True),
                    page=i()), "Every bibliography entry, in order.")
@@ -163,24 +179,31 @@ context_claim = obj(
     basis=context_basis,
     evidence=arr(evidence, "For a paper claim: one or two verbatim quotes that state it. Empty for other claims."),
     work_ids=arr(s(), "For a dossier claim: the ids of the dossier records that support it, exactly as given. Empty for other claims."))
-neighbour_relations = ["predecessor", "successor", "critique", "replication"]
+neighbour_relations = ["predecessor", "successor", "critique", "replication", "survey", "parallel"]
+read_alongside_basis = enum(["paper", "dossier", "background"],
+    "dossier: the work is in the dossier and `work_id` is set. background: you know the work yourself; `work_id` is null. "
+    "paper: the paper itself cites it.")
 read_alongside = arr(obj(
     work_id=s("The dossier id of the work, exactly as given; null when the work is not in the dossier.", null=True),
-    title=s("The work's title."),
+    title=s("The work's exact title. If you know the work but not its exact title, give the authors and year and describe it in `why` instead of guessing."),
     authors=s("Short author string, e.g. 'Card' or 'Vaswani et al.'.", null=True),
     year=i(null=True),
     relation=enum(neighbour_relations, "predecessor: came before and this paper builds on or answers it. successor: came after and builds on this paper. "
-                  "critique: disputes this paper, or this paper disputes it. replication: reruns or re-tests the result."),
+                  "critique: disputes this paper, or this paper disputes it. replication: reruns or re-tests the result. "
+                  "survey: an overview or textbook treatment of the question. parallel: independent work on the same question at about the same time."),
     why=s("One line on what the reader gets from reading it next to this paper."),
-    basis=context_basis),
-    "Three to six neighbouring works worth reading next to this one.")
+    basis=read_alongside_basis),
+    "Up to six neighbouring works worth reading next to this one; only works you could cite accurately. Two right works beat five with one invented.")
+# The lead comes last: it distils the parts, so the model works them out
+# first. The reader shows the lead first whatever the JSON order.
 context = obj(
-    lead=arr(context_claim, "Two to four sentences, one claim each: why this paper matters to a smart reader from another field."),
     before=arr(context_claim, "The state of the question before the paper: the specific prior results, methods and debates it entered."),
     contribution=arr(context_claim, "What is new relative to `before`: the specific result, method or reframing this paper added."),
     after=arr(context_claim, "What happened after: who built on it, who disputed it, how it is used now. Empty when you do not know."),
+    reception_note=s("When you do not know how the paper was received, say so here in one sentence (for example that it is too recent); otherwise null.", null=True),
     read_alongside=read_alongside,
-    reception_note=s("When you do not know how the paper was received, say so here in one sentence (for example that it is too recent); otherwise null.", null=True))
+    lead=arr(context_claim, "Written last: two to four sentences that distil before, contribution and after for a reader from another field. "
+             "Say what changed, or, when reception is unknown, what the paper attempts that its predecessors did not."))
 
 CORE = {
     "identity": identity,
@@ -211,7 +234,7 @@ full["card"] = obj(
     thesis=thesis,
     position=obj(predecessors=arr(position_item, "Work this paper builds on."),
                  targets=arr(position_item, "Work it contrasts with or critiques."),
-                 replications=arr(position_item, "Work it replicates or that replicates it.")),
+                 replications=arr(position_item, "Earlier work whose result this paper re-tests.")),
     headline_results=headline_results, read_signal=read_signal)
 paper = obj("The paper-alone artifacts of one scientific paper.", **full)
 
@@ -221,7 +244,8 @@ check = obj(
         path=s("JSON Pointer into the draft, e.g. '/identity/title' or '/objects/3/latex'. For add, point at the array, e.g. '/objects'."),
         action=enum(["replace", "remove", "add", "flag"]),
         value_json=s("The new value encoded as a JSON string, for replace and add; null for remove and flag.", null=True),
-        reason=s(), evidence=evidence_list)))
+        reason=s("For a flag: what is wrong and what you would change, in one sentence. Otherwise a short reason."),
+        evidence=arr(evidence, "At least one verbatim quote that shows the correction is right; a correction without one is discarded."))))
 
 repair = obj(
     "Repairs for quotes that are not verbatim in the paper.",

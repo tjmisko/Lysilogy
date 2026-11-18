@@ -9,73 +9,14 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "lead",
         "before",
         "contribution",
         "after",
+        "reception_note",
         "read_alongside",
-        "reception_note"
+        "lead"
       ],
       "properties": {
-        "lead": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "text",
-              "basis",
-              "evidence",
-              "work_ids"
-            ],
-            "properties": {
-              "text": {
-                "type": "string",
-                "description": "One claim, in a sentence or two of plain prose."
-              },
-              "basis": {
-                "type": "string",
-                "enum": [
-                  "paper",
-                  "dossier",
-                  "background"
-                ],
-                "description": "paper: the paper itself says this, and `evidence` quotes it. dossier: a record in the neighbour dossier supports it, and `work_ids` names the record. background: your own knowledge of the field; the reader sees it labelled unverified."
-              },
-              "evidence": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": [
-                    "quote",
-                    "page"
-                  ],
-                  "properties": {
-                    "quote": {
-                      "type": "string",
-                      "description": "Copied exactly from the page text, 8 to 300 characters."
-                    },
-                    "page": {
-                      "type": "integer",
-                      "description": "1-based page number."
-                    }
-                  },
-                  "description": "A verbatim passage from the paper and the page it is on."
-                },
-                "description": "For a paper claim: one or two verbatim quotes that state it. Empty for other claims."
-              },
-              "work_ids": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "description": "For a dossier claim: the ids of the dossier records that support it, exactly as given. Empty for other claims."
-              }
-            }
-          },
-          "description": "Two to four sentences, one claim each: why this paper matters to a smart reader from another field."
-        },
         "before": {
           "type": "array",
           "items": {
@@ -253,6 +194,13 @@
           },
           "description": "What happened after: who built on it, who disputed it, how it is used now. Empty when you do not know."
         },
+        "reception_note": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "When you do not know how the paper was received, say so here in one sentence (for example that it is too recent); otherwise null."
+        },
         "read_alongside": {
           "type": "array",
           "items": {
@@ -277,7 +225,7 @@
               },
               "title": {
                 "type": "string",
-                "description": "The work's title."
+                "description": "The work's exact title. If you know the work but not its exact title, give the authors and year and describe it in `why` instead of guessing."
               },
               "authors": {
                 "type": [
@@ -298,9 +246,11 @@
                   "predecessor",
                   "successor",
                   "critique",
-                  "replication"
+                  "replication",
+                  "survey",
+                  "parallel"
                 ],
-                "description": "predecessor: came before and this paper builds on or answers it. successor: came after and builds on this paper. critique: disputes this paper, or this paper disputes it. replication: reruns or re-tests the result."
+                "description": "predecessor: came before and this paper builds on or answers it. successor: came after and builds on this paper. critique: disputes this paper, or this paper disputes it. replication: reruns or re-tests the result. survey: an overview or textbook treatment of the question. parallel: independent work on the same question at about the same time."
               },
               "why": {
                 "type": "string",
@@ -313,18 +263,70 @@
                   "dossier",
                   "background"
                 ],
-                "description": "paper: the paper itself says this, and `evidence` quotes it. dossier: a record in the neighbour dossier supports it, and `work_ids` names the record. background: your own knowledge of the field; the reader sees it labelled unverified."
+                "description": "dossier: the work is in the dossier and `work_id` is set. background: you know the work yourself; `work_id` is null. paper: the paper itself cites it."
               }
             }
           },
-          "description": "Three to six neighbouring works worth reading next to this one."
+          "description": "Up to six neighbouring works worth reading next to this one; only works you could cite accurately. Two right works beat five with one invented."
         },
-        "reception_note": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "When you do not know how the paper was received, say so here in one sentence (for example that it is too recent); otherwise null."
+        "lead": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "text",
+              "basis",
+              "evidence",
+              "work_ids"
+            ],
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "One claim, in a sentence or two of plain prose."
+              },
+              "basis": {
+                "type": "string",
+                "enum": [
+                  "paper",
+                  "dossier",
+                  "background"
+                ],
+                "description": "paper: the paper itself says this, and `evidence` quotes it. dossier: a record in the neighbour dossier supports it, and `work_ids` names the record. background: your own knowledge of the field; the reader sees it labelled unverified."
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "quote",
+                    "page"
+                  ],
+                  "properties": {
+                    "quote": {
+                      "type": "string",
+                      "description": "Copied exactly from the page text, 8 to 300 characters."
+                    },
+                    "page": {
+                      "type": "integer",
+                      "description": "1-based page number."
+                    }
+                  },
+                  "description": "A verbatim passage from the paper and the page it is on."
+                },
+                "description": "For a paper claim: one or two verbatim quotes that state it. Empty for other claims."
+              },
+              "work_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "For a dossier claim: the ids of the dossier records that support it, exactly as given. Empty for other claims."
+              }
+            }
+          },
+          "description": "Written last: two to four sentences that distil before, contribution and after for a reader from another field. Say what changed, or, when reception is unknown, what the paper attempts that its predecessors did not."
         }
       }
     }

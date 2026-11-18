@@ -32,7 +32,10 @@ analysis pipeline.
 - Raw page text beat markdown+priors on sections and graph and cost less (E1),
   though the comparison was confounded. E13's winner is raw text plus the
   deterministic page-1 title prior and the `ceil(pages/4)-ceil(pages/2)`
-  sections guidance.
+  sections guidance. Since 2026-11-18 that count is given for calibration
+  only, from main-text pages, because the size pressure produced units glued
+  together with "and" (61% of e13 unit titles); the title prior is offered as
+  a heuristic that is often wrong.
 - A combined core call at low effort, a schema-validated self-check, and
   verbatim quote admission are the parts worth keeping.
 

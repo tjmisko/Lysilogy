@@ -12,11 +12,12 @@ use super::{
 /// What the abstract is and is not. The reader shows it as the authors'
 /// abstract, and a deterministic extraction cross-checks it, so a summary
 /// in its place is worse than nothing.
-pub const ABSTRACT_INSTRUCTION: &str = "Return the `abstract` field: the authors' own abstract, copied exactly as printed, paragraphs separated by a blank line. \
+pub const ABSTRACT_INSTRUCTION: &str = "Return the `abstract` field: the authors' own abstract, copied word for word as printed. \
 The reader is shown this as the authors' words, so it must be their text and only their text: start at the first sentence of the abstract and stop at its last, \
 leaving out the heading, keywords, classification codes, a cite-as line, footnotes and the start of the introduction. Do not summarize, shorten, fix or paraphrase it. \
-Papers that print no labelled abstract sometimes open with an unlabelled summary paragraph set apart from the main text; copy that if it is plainly the abstract. \
-Null only if the paper has no abstract.";
+Join the lines within a paragraph with single spaces and close up words hyphenated across a line break; keep a blank line only between paragraphs. \
+Copy an unlabelled paragraph only when it is visibly set apart before the first heading or the start of the main text (a separate block, often indented or in a different type) and reads as a summary of the whole paper. \
+An introduction's opening paragraph is not an abstract, even if it summarises; when in doubt, return null. Null also when the paper has no abstract.";
 
 /// The thesis is the first line a reader sees; it must carry the finding.
 pub const CARD_INSTRUCTION: &str = "Return the `card` field. \
@@ -24,7 +25,9 @@ The thesis is the first sentence a reader sees about this paper, before the abst
 claims or builds, specific enough that it could not describe a different paper. State the result, not the topic: \
 for an illustrative study from medicine, \"We study hand-washing and maternal mortality\" is a topic, while \"Requiring doctors to wash their hands in chlorinated lime cut maternal deaths in the first clinic from about 10% to under 2%\" is a finding. \
 Use the paper's own hedges (a paper that suggests should not be made to prove), avoid jargon an outsider would not know when a plain word will do, and leave out hype. \
-Then the position: the works it builds on, contrasts with or critiques, and replicates, each with a one-line why.";
+Then the position: the works it builds on, the works it contrasts with or critiques, and the earlier work whose result it re-tests, each with a one-line why. \
+Each entry is one specific cited work; name a body of literature in `why`, not as a work. \
+`reference_key` is the in-text key exactly as the paper prints it (for example `Smith and Jones (2004)` or `12`), or null if you cannot match it to the bibliography; never make one up.";
 
 /// One core field and the call that fills it.
 pub struct CoreField {
@@ -43,14 +46,14 @@ pub const CORE_FIELDS: &[CoreField] = &[
         name: "identity",
         stage: "extract.identity",
         schema: IDENTITY_SCHEMA,
-        instruction: "Return the `identity` field: title and authors exactly as printed on the first page, authors in printed order, without affiliations or footnote marks. Year, venue, and identifiers only when the paper states them. Use the paper's own title heading and byline; ignore a cite-as note, running heads, journal cover lines, and accepted-for-publication banners.",
+        instruction: "Return the `identity` field: title and authors exactly as printed on the first page, authors in printed order and without footnote marks; put an author's affiliation in `affiliation` when it is printed next to the name, else null. Year, venue, and identifiers only when the paper states them. Use the paper's own title heading and byline; ignore a cite-as note, running heads, journal cover lines, and accepted-for-publication banners.",
         page_limit: None,
     },
     CoreField {
         name: "type",
         stage: "extract.type",
         schema: TYPE_SCHEMA,
-        instruction: "Return the `type` field: the kind of paper, and a one-line reason.",
+        instruction: "Return the `type` field: first a one-line reason saying what the paper mainly does, then the kind of paper that follows from it.",
         page_limit: None,
     },
     CoreField {

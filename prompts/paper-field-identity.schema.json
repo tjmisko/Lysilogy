@@ -16,8 +16,7 @@
         "venue",
         "identifiers",
         "publication_state",
-        "evidence",
-        "confidence"
+        "evidence"
       ],
       "properties": {
         "title": {
@@ -42,13 +41,14 @@
             "properties": {
               "name": {
                 "type": "string",
-                "description": "As printed."
+                "description": "As printed, without footnote marks."
               },
               "affiliation": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "The affiliation printed next to the name, else null."
               }
             }
           },
@@ -119,15 +119,6 @@
             "description": "A verbatim passage from the paper and the page it is on."
           },
           "description": "Verbatim support. Empty only when the item is a model judgment."
-        },
-        "confidence": {
-          "type": "string",
-          "enum": [
-            "high",
-            "medium",
-            "low"
-          ],
-          "description": "How sure you are that this item is correct."
         }
       }
     }

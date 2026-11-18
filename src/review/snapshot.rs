@@ -102,6 +102,23 @@ fn scalar_text(value: Option<&Value>) -> Option<String> {
     }
 }
 
+/// `value` with every object's keys in sorted order.
+fn canonical(value: &Value) -> Value {
+    match value {
+        Value::Object(object) => {
+            let mut keys = object.keys().collect::<Vec<_>>();
+            keys.sort();
+            Value::Object(
+                keys.into_iter()
+                    .map(|key| (key.clone(), canonical(&object[key])))
+                    .collect(),
+            )
+        }
+        Value::Array(items) => Value::Array(items.iter().map(canonical).collect()),
+        other => other.clone(),
+    }
+}
+
 fn snapshot_id(
     fields: &Map<String, Value>,
     generated_at: Option<&str>,
@@ -112,8 +129,9 @@ fn snapshot_id(
     hasher.update([0]);
     hasher.update(pipeline_version.unwrap_or_default().as_bytes());
     hasher.update([0]);
-    // Serialising a Value is deterministic for a given parsed document.
-    hasher.update(Value::Object(fields.clone()).to_string().as_bytes());
+    // Keys are sorted before hashing, so the id depends on the content and
+    // not on the order the analysis happened to be written in.
+    hasher.update(canonical(&Value::Object(fields.clone())).to_string().as_bytes());
     let digest = hasher.finalize();
     digest
         .iter()

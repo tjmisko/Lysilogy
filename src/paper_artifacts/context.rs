@@ -259,6 +259,40 @@ fn settle_suggestion(
     Some(suggestion)
 }
 
+/// What the context node is told about time: today's date and the paper's year.
+///
+/// The year comes from the identity the paper states, else the citation
+/// graph's record of the paper, else the PDF metadata, else it is unknown. A
+/// model cannot judge reception without knowing how long the paper has been
+/// out.
+#[must_use]
+pub fn dates(
+    draft: &Map<String, Value>,
+    dossier: &Dossier,
+    metadata_year: Option<u16>,
+    today: chrono::NaiveDate,
+) -> String {
+    let stated = draft
+        .get("identity")
+        .and_then(|identity| identity.get("year"))
+        .and_then(Value::as_i64)
+        .map(|year| (year, "as the paper states it"));
+    let graph = dossier
+        .subject
+        .as_ref()
+        .and_then(|subject| subject.year)
+        .map(|year| (i64::from(year), "from the citation graph"));
+    let metadata = metadata_year.map(|year| (i64::from(year), "from the PDF metadata"));
+    let year = stated.or(graph).or(metadata).map_or_else(
+        || "unknown".to_owned(),
+        |(year, source)| format!("{year} ({source})"),
+    );
+    format!(
+        "Today is {}. The paper's year: {year}.",
+        today.format("%Y-%m-%d")
+    )
+}
+
 /// What the context node is told about the core draft.
 ///
 /// Identity, type, question, thesis and position, the relations, and the
@@ -509,6 +543,25 @@ mod tests {
             "duplicate, untitled, three past the cap"
         );
         assert_eq!(draft["context"]["reception_note"], "Too recent to say.");
+    }
+
+    #[test]
+    fn should_give_the_date_and_the_best_known_year_of_the_paper() {
+        let today = chrono::NaiveDate::from_ymd_opt(2026, 11, 18).expect("date");
+        let stated = json!({"identity": {"year": 1990}});
+        let stated = stated.as_object().expect("object");
+        assert_eq!(
+            dates(stated, &dossier(), Some(2001), today),
+            "Today is 2026-11-18. The paper's year: 1990 (as the paper states it)."
+        );
+        let mut graph = dossier();
+        graph.subject = Some(DossierWork {
+            year: Some(1994),
+            ..DossierWork::default()
+        });
+        assert!(dates(&Map::new(), &graph, Some(2001), today).contains("1994 (from the citation graph)"));
+        assert!(dates(&Map::new(), &dossier(), Some(2001), today).contains("2001 (from the PDF metadata)"));
+        assert!(dates(&Map::new(), &dossier(), None, today).ends_with("year: unknown."));
     }
 
     #[test]
