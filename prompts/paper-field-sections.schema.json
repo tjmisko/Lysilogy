@@ -14,14 +14,17 @@
           "title",
           "kind",
           "family",
+          "outline_first",
+          "outline_last",
           "pages",
           "source_span",
-          "summary"
+          "summary",
+          "question"
         ],
         "properties": {
           "title": {
             "type": "string",
-            "description": "A short topic title, not a breadcrumb of the paper's own headings."
+            "description": "A short topic title that names the unit's idea or finding, not a breadcrumb of the paper's own headings."
           },
           "kind": {
             "type": "string",
@@ -52,6 +55,20 @@
               "caveat",
               "reference"
             ]
+          },
+          "outline_first": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Index of the first outline entry in the unit; null when no outline was given."
+          },
+          "outline_last": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Index of the last outline entry in the unit; null when no outline was given."
           },
           "pages": {
             "type": "object",
@@ -100,6 +117,10 @@
           "summary": {
             "type": "string",
             "description": "One or two sentences that synthesize the whole unit."
+          },
+          "question": {
+            "type": "string",
+            "description": "One line: the question this unit answers for the reader, which is why its parts belong together."
           }
         }
       },

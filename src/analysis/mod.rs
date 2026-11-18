@@ -17,9 +17,9 @@ use crate::{
     config::AnalysisConfig,
     domain::{
         AgentSession, AnalysisProvider, Claim, Clarification, ContextNote, ContextSource,
-        EvidenceStrength, ExtractedPaper, GlossaryEntry, KeyQuote, LearningRamp, PageSpan,
-        PaperAnalysis, PaperSection, PromptExperiment, PromptVariant, QualityWarning,
-        QuoteSignificance, SectionFamily, SectionKind, SectionSourceSpan,
+        EvidenceStrength, ExtractedPaper, GlossaryEntry, KeyQuote, LearningRamp, OutlineEntry,
+        OutlineRole, PageSpan, PaperAnalysis, PaperSection, PromptExperiment, PromptVariant,
+        QualityWarning, QuoteSignificance, SectionFamily, SectionKind, SectionSourceSpan,
     },
     error::Error,
     layout::verify_quote,
@@ -452,6 +452,9 @@ pub(crate) struct AnalysisDraft {
     pub assessment: Option<context::ContextAssessment>,
     #[serde(default)]
     pub prerequisites: Vec<String>,
+    /// The printed headings, admitted against the page text upstream.
+    #[serde(default)]
+    pub outline: Vec<OutlineEntryDraft>,
     pub sections: Vec<SectionDraft>,
     #[serde(default)]
     pub claims: Vec<Claim>,
@@ -508,6 +511,11 @@ pub(crate) struct SectionDraft {
     pub summary: String,
     pub digest: String,
     #[serde(default)]
+    pub question: Option<String>,
+    /// Indices into the draft outline of the headings this unit groups.
+    #[serde(default)]
+    pub outline_entries: Vec<usize>,
+    #[serde(default)]
     pub source_span: Option<SourceSpanDraft>,
     #[serde(default)]
     pub key_quotes: Vec<KeyQuote>,
@@ -517,6 +525,21 @@ pub(crate) struct SectionDraft {
     pub tile_width: u8,
     #[serde(default = "one")]
     pub tile_height: u8,
+}
+
+/// One printed heading before its anchor is resolved in the layout.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub(crate) struct OutlineEntryDraft {
+    #[serde(default)]
+    pub number: Option<String>,
+    pub title: String,
+    pub level: u8,
+    pub page: u32,
+    #[serde(default)]
+    pub role: OutlineRole,
+    /// The heading line as printed, used to locate it in the layout.
+    #[serde(default)]
+    pub anchor: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -550,10 +573,25 @@ pub(crate) fn draft_from_artifacts(artifacts: &serde_json::Value) -> Result<Anal
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(str::to_owned);
+    let outline = artifacts
+        .get("outline")
+        .and_then(serde_json::Value::as_array)
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(outline_entry_from_artifact)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
     let sections = artifacts
         .get("sections")
         .and_then(serde_json::Value::as_array)
-        .map(|items| items.iter().filter_map(section_from_artifact).collect())
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|item| section_from_artifact(item, outline.len()))
+                .collect()
+        })
         .unwrap_or_default();
     Ok(AnalysisDraft {
         thesis,
@@ -563,6 +601,7 @@ pub(crate) fn draft_from_artifacts(artifacts: &serde_json::Value) -> Result<Anal
         context_sources: Vec::new(),
         assessment: None,
         prerequisites: Vec::new(),
+        outline,
         sections,
         claims: Vec::new(),
         glossary: Vec::new(),
@@ -571,7 +610,58 @@ pub(crate) fn draft_from_artifacts(artifacts: &serde_json::Value) -> Result<Anal
     })
 }
 
-fn section_from_artifact(item: &serde_json::Value) -> Option<SectionDraft> {
+fn outline_entry_from_artifact(item: &serde_json::Value) -> Option<OutlineEntryDraft> {
+    let title = compact_whitespace(item.get("title")?.as_str()?);
+    if title.is_empty() {
+        return None;
+    }
+    let number = item
+        .get("number")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_owned);
+    let level = item
+        .get("level")
+        .and_then(serde_json::Value::as_u64)
+        .map_or(1, |level| u8::try_from(level.clamp(1, 6)).unwrap_or(1));
+    let page = u32::try_from(item.get("page")?.as_u64()?).ok()?;
+    let role = item
+        .get("role")
+        .and_then(|value| serde_json::from_value(value.clone()).ok())
+        .unwrap_or_default();
+    let anchor = item
+        .get("anchor")
+        .and_then(serde_json::Value::as_str)
+        .map(compact_whitespace)
+        .filter(|value| !value.is_empty());
+    Some(OutlineEntryDraft {
+        number,
+        title,
+        level,
+        page,
+        role,
+        anchor,
+    })
+}
+
+/// The outline entries a unit groups, when it names a valid range of an
+/// outline of `outline_len` entries.
+fn outline_range(item: &serde_json::Value, outline_len: usize) -> Vec<usize> {
+    let index = |key: &str| {
+        item.get(key)
+            .and_then(serde_json::Value::as_u64)
+            .and_then(|value| usize::try_from(value).ok())
+    };
+    match (index("outline_first"), index("outline_last")) {
+        (Some(first), Some(last)) if first <= last && last < outline_len => {
+            (first..=last).collect()
+        }
+        _ => Vec::new(),
+    }
+}
+
+fn section_from_artifact(item: &serde_json::Value, outline_len: usize) -> Option<SectionDraft> {
     let title = item.get("title")?.as_str()?.trim();
     if title.is_empty() {
         return None;
@@ -602,6 +692,11 @@ fn section_from_artifact(item: &serde_json::Value) -> Option<SectionDraft> {
             end_page: u32::try_from(span.get("end_page")?.as_u64()?).ok()?,
         })
     });
+    let question = item
+        .get("question")
+        .and_then(serde_json::Value::as_str)
+        .map(compact_whitespace)
+        .filter(|value| !value.is_empty());
     Some(SectionDraft {
         title: title.to_owned(),
         kind,
@@ -609,6 +704,8 @@ fn section_from_artifact(item: &serde_json::Value) -> Option<SectionDraft> {
         pages: PageSpan { start, end },
         digest: summary.clone(),
         summary,
+        question,
+        outline_entries: outline_range(item, outline_len),
         source_span,
         key_quotes: Vec::new(),
         related_terms: Vec::new(),
@@ -646,6 +743,7 @@ fn normalize_analysis(
     }
 
     let maximum_page = u32::try_from(paper.pages.len()).unwrap_or(u32::MAX).max(1);
+    let outline = normalize_outline(draft.outline, &paper.layout, maximum_page);
     let mut used_ids = std::collections::HashSet::new();
     let mut sections = draft
         .sections
@@ -685,6 +783,8 @@ fn normalize_analysis(
                 })
                 .take(4)
                 .collect();
+            let mut outline_entries = section.outline_entries;
+            outline_entries.retain(|index| *index < outline.len());
             Ok(PaperSection {
                 id,
                 title,
@@ -693,6 +793,11 @@ fn normalize_analysis(
                 pages,
                 summary: clean_required("section summary", &section.summary)?,
                 digest: clean_required("section digest", &section.digest)?,
+                question: section
+                    .question
+                    .map(|question| compact_whitespace(&question))
+                    .filter(|question| !question.is_empty()),
+                outline_entries,
                 source_span,
                 key_quotes,
                 related_terms: clean_list(section.related_terms, 12),
@@ -737,6 +842,7 @@ fn normalize_analysis(
         context_notes,
         context_sources,
         prerequisites: clean_list(draft.prerequisites, 12),
+        outline,
         sections,
         claims: draft.claims.into_iter().take(16).collect(),
         glossary: deduplicate_glossary(draft.glossary),
@@ -747,6 +853,49 @@ fn normalize_analysis(
     };
     validate_citations(&mut analysis, &paper.layout)?;
     Ok(analysis)
+}
+
+/// The outline as the reader stores it: page numbers clamped to the paper,
+/// and each heading located in the PDF text layer when its printed line can
+/// be found there. An entry that cannot be anchored is kept without an anchor,
+/// because it was already admitted against the page text upstream.
+fn normalize_outline(
+    entries: Vec<OutlineEntryDraft>,
+    layout: &crate::domain::DocumentLayout,
+    maximum_page: u32,
+) -> Vec<OutlineEntry> {
+    entries
+        .into_iter()
+        .filter_map(|entry| {
+            let title = compact_whitespace(&entry.title);
+            if title.is_empty() {
+                return None;
+            }
+            let page = entry.page.clamp(1, maximum_page);
+            let printed = entry.anchor.clone().unwrap_or_else(|| {
+                entry
+                    .number
+                    .as_ref()
+                    .map_or_else(|| title.clone(), |number| format!("{number} {title}"))
+            });
+            let anchor = match verify_quote(layout, &printed, page) {
+                (
+                    crate::domain::CitationStatus::Exact
+                    | crate::domain::CitationStatus::Normalized,
+                    anchor,
+                ) => anchor,
+                _ => None,
+            };
+            Some(OutlineEntry {
+                number: entry.number,
+                title,
+                level: entry.level.clamp(1, 6),
+                page,
+                role: entry.role,
+                anchor,
+            })
+        })
+        .collect()
 }
 
 fn normalize_context(
@@ -1158,6 +1307,8 @@ esac
             pages,
             summary: "Summary".to_owned(),
             digest: "Digest".to_owned(),
+            question: None,
+            outline_entries: Vec::new(),
             source_span: Some(SectionSourceSpan { start, end }),
             key_quotes: Vec::new(),
             related_terms: Vec::new(),
@@ -1217,6 +1368,7 @@ esac
             context_notes: Vec::new(),
             context_sources: Vec::new(),
             prerequisites: Vec::new(),
+            outline: Vec::new(),
             sections,
             claims: Vec::new(),
             glossary: Vec::new(),
@@ -1481,6 +1633,105 @@ esac
         assert_eq!(draft.sections[0].family, SectionFamily::Context);
         assert_eq!(draft.sections[0].pages.start, 1);
         assert!(draft.sections[0].source_span.is_some());
+    }
+
+    #[test]
+    fn maps_the_outline_and_grouped_units_into_the_reader_analysis() {
+        let artifacts = serde_json::json!({
+            "card": {"thesis": {"text": "Pruning keeps accuracy.", "evidence": [], "confidence": "high"}},
+            "outline": [
+                {"number": "1", "title": "Introduction", "level": 1, "page": 1, "role": "main", "anchor": "1 Introduction"},
+                {"number": "2", "title": "Pruning Method", "level": 1, "page": 1, "role": "main", "anchor": "2 Pruning Method"},
+                {"number": null, "title": "References", "level": 1, "page": 2, "role": "references", "anchor": "References"}
+            ],
+            "sections": [
+                {"title": "Why and how to prune", "kind": "methods", "family": "method",
+                 "outline_first": 0, "outline_last": 1, "summary": "Prune small weights first.",
+                 "question": "How is pruning done?", "pages": {"start": 1, "end": 1},
+                 "source_span": {"start_text": "1 Introduction", "start_page": 1,
+                                 "end_text": "weights first.", "end_page": 1}},
+                {"title": "Old map unit", "kind": "other", "family": "evidence",
+                 "outline_first": null, "outline_last": null, "summary": "s",
+                 "question": "", "pages": {"start": 2, "end": 2},
+                 "source_span": {"start_text": "x", "start_page": 2, "end_text": "y", "end_page": 2}},
+                {"title": "Out of range", "kind": "other", "family": "evidence",
+                 "outline_first": 1, "outline_last": 9, "summary": "s", "question": "q",
+                 "pages": {"start": 2, "end": 2},
+                 "source_span": {"start_text": "x", "start_page": 2, "end_text": "y", "end_page": 2}}
+            ]
+        });
+        let draft = draft_from_artifacts(&artifacts).expect("draft");
+        assert_eq!(draft.outline.len(), 3);
+        assert_eq!(draft.outline[2].role, OutlineRole::References);
+        assert_eq!(draft.sections[0].outline_entries, [0, 1]);
+        assert_eq!(
+            draft.sections[0].question.as_deref(),
+            Some("How is pruning done?")
+        );
+        assert!(draft.sections[1].outline_entries.is_empty());
+        assert!(draft.sections[1].question.is_none());
+        assert!(draft.sections[2].outline_entries.is_empty());
+
+        let words = [
+            "1",
+            "Introduction",
+            "Pruning",
+            "matters.",
+            "2",
+            "Pruning",
+            "Method",
+            "We",
+            "prune",
+            "small",
+            "weights",
+            "first.",
+        ];
+        let paper = ExtractedPaper {
+            metadata: PaperMetadata::default(),
+            pages: vec![
+                ExtractedPage {
+                    number: 1,
+                    text: words.join(" "),
+                },
+                ExtractedPage {
+                    number: 2,
+                    text: "References".to_owned(),
+                },
+            ],
+            layout: DocumentLayout {
+                schema_version: 1,
+                pages: vec![layout_page(1, &words), layout_page(2, &["References"])],
+            },
+        };
+        let mut draft = draft;
+        draft.sections.truncate(1);
+        let analysis =
+            normalize_analysis(draft, AnalysisProvider::OpenRouter, &paper).expect("analysis");
+        assert_eq!(analysis.outline.len(), 3);
+        assert_eq!(analysis.outline[0].number.as_deref(), Some("1"));
+        assert_eq!(
+            analysis.outline[1]
+                .anchor
+                .as_ref()
+                .map(|anchor| anchor.exact_text.as_str()),
+            Some("2 Pruning Method")
+        );
+        assert!(analysis.outline[0].anchor.is_some());
+        assert_eq!(analysis.sections[0].outline_entries, [0, 1]);
+        assert_eq!(
+            analysis.sections[0].question.as_deref(),
+            Some("How is pruning done?")
+        );
+        // Stored analyses written before the outline existed still load.
+        let mut old = serde_json::to_value(&analysis).expect("json");
+        old.as_object_mut().expect("object").remove("outline");
+        for section in old["sections"].as_array_mut().expect("sections") {
+            let fields = section.as_object_mut().expect("section");
+            fields.remove("outline_entries");
+            fields.remove("question");
+        }
+        let loaded: PaperAnalysis = serde_json::from_value(old).expect("old analysis");
+        assert!(loaded.outline.is_empty() && loaded.sections[0].outline_entries.is_empty());
     }
 
     #[test]

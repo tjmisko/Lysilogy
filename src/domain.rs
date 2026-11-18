@@ -291,6 +291,13 @@ pub struct PaperAnalysis {
     pub context_assessment: Option<crate::analysis::context::ContextAssessment>,
     #[serde(default)]
     pub prerequisites: Vec<String>,
+    /// The paper's own headings as printed, in reading order: the outline
+    /// view. Empty for a paper that prints no headings and for analyses made
+    /// before it was recorded.
+    #[serde(default)]
+    pub outline: Vec<OutlineEntry>,
+    /// The logical reading units. When the paper has a usable outline each
+    /// unit groups a contiguous range of `outline` entries.
     #[serde(default)]
     pub sections: Vec<PaperSection>,
     #[serde(default)]
@@ -338,6 +345,18 @@ pub enum QualityWarningKind {
     AbstractMissing,
     /// The title is empty, very short, or looks like an identifier or stamp.
     TitleImplausible,
+    /// No outline, although the text shows numbered headings.
+    OutlineMissing,
+    /// Far fewer outline entries than the numbered headings the text shows.
+    OutlineSparse,
+    /// The model's grouping of outline entries had gaps, overlaps or split
+    /// references and was repaired deterministically.
+    SectionsGroupingRepaired,
+    /// Logical units leave main-text outline entries uncovered.
+    SectionsGroupingInvalid,
+    /// Every logical unit is a single heading: a table of contents, not a
+    /// reading map.
+    SectionsMirrorOutline,
     /// No authors were returned.
     AuthorsMissing,
     /// A verification pass did not run because the paper budget ran out.
@@ -399,6 +418,42 @@ pub struct ContextSource {
     pub relationship: Option<String>,
 }
 
+/// One printed heading of the paper.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct OutlineEntry {
+    /// The printed number or letter, such as `2.1`, `IV.` or `A.`.
+    #[serde(default)]
+    pub number: Option<String>,
+    /// The heading text as printed, without its number.
+    pub title: String,
+    /// 1 for a top-level heading, 2 for a subsection, and so on.
+    pub level: u8,
+    /// The 1-based PDF page the heading is printed on.
+    pub page: u32,
+    #[serde(default)]
+    pub role: OutlineRole,
+    /// Where the heading is printed, resolved from the PDF text layer.
+    #[serde(default)]
+    pub anchor: Option<TextAnchor>,
+}
+
+/// Which part of the paper a heading belongs to.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OutlineRole {
+    /// Abstract, keywords and similar material before the main text.
+    FrontMatter,
+    #[default]
+    Main,
+    /// Acknowledgments, funding, author notes and declarations.
+    BackMatter,
+    References,
+    Appendix,
+    /// A role written by a newer version.
+    #[serde(other)]
+    Other,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PaperSection {
     pub id: String,
@@ -408,6 +463,14 @@ pub struct PaperSection {
     pub pages: PageSpan,
     pub summary: String,
     pub digest: String,
+    /// The question this unit answers for the reader: why its parts belong
+    /// together.
+    #[serde(default)]
+    pub question: Option<String>,
+    /// Indices into `PaperAnalysis::outline` of the printed headings this
+    /// unit groups, in order. Empty when the unit was made without an outline.
+    #[serde(default)]
+    pub outline_entries: Vec<usize>,
     #[serde(default)]
     pub source_span: Option<SectionSourceSpan>,
     #[serde(default)]

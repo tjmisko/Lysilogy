@@ -18,6 +18,25 @@
       "type": ["string", "null"],
       "description": "The abstract copied verbatim, paragraphs separated by a blank line. Null only when the paper prints no abstract."
     },
+    "outline": {
+      "type": "array",
+      "description": "Optional. The paper's printed headings in reading order, for the outline score. Each is the heading text (number allowed) or an object with its title, number and page.",
+      "items": {
+        "anyOf": [
+          {"type": "string"},
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["title"],
+            "properties": {
+              "number": {"type": ["string", "null"]},
+              "title": {"type": "string"},
+              "page": {"type": "integer"}
+            }
+          }
+        ]
+      }
+    },
     "sections": {
       "type": "array",
       "description": "A reading map: coherent topic units in increasing page order, non-overlapping, covering the main text.",

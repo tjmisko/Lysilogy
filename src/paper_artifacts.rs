@@ -11,12 +11,15 @@ pub mod config;
 pub mod core_fields;
 pub mod corrections;
 pub mod features;
+pub mod grouping;
 pub mod objects;
+pub mod outline;
 pub mod pipeline;
 pub mod plausibility;
 pub mod resources;
 pub mod run;
 pub mod schema;
+pub mod structure;
 pub mod title;
 pub mod verification;
 
@@ -44,7 +47,12 @@ pub const TYPE_SCHEMA: &str = include_str!("../prompts/paper-field-type.schema.j
 pub const ABSTRACT_SCHEMA: &str = include_str!("../prompts/paper-field-abstract.schema.json");
 pub const CARD_SCHEMA: &str = include_str!("../prompts/paper-field-card.schema.json");
 pub const QUESTION_SCHEMA: &str = include_str!("../prompts/paper-field-question.schema.json");
+pub const OUTLINE_SCHEMA: &str = include_str!("../prompts/paper-field-outline.schema.json");
 pub const SECTIONS_SCHEMA: &str = include_str!("../prompts/paper-field-sections.schema.json");
+/// The logical units as ranges of the outline, asked for when the paper has
+/// a usable outline; pages and spans are then derived, not asked.
+pub const SECTIONS_GROUPED_SCHEMA: &str =
+    include_str!("../prompts/paper-field-sections-grouped.schema.json");
 pub const REFERENCES_SCHEMA: &str = include_str!("../prompts/paper-field-references.schema.json");
 pub const CITATIONS_SCHEMA: &str = include_str!("../prompts/paper-field-citations.schema.json");
 pub const RELATIONS_SCHEMA: &str = include_str!("../prompts/paper-field-relations.schema.json");
@@ -109,7 +117,9 @@ mod tests {
             ("field-abstract", ABSTRACT_SCHEMA),
             ("field-card", CARD_SCHEMA),
             ("field-question", QUESTION_SCHEMA),
+            ("field-outline", OUTLINE_SCHEMA),
             ("field-sections", SECTIONS_SCHEMA),
+            ("field-sections-grouped", SECTIONS_GROUPED_SCHEMA),
             ("field-references", REFERENCES_SCHEMA),
             ("field-citations", CITATIONS_SCHEMA),
             ("field-relations", RELATIONS_SCHEMA),
@@ -134,6 +144,7 @@ mod tests {
             "card",
             "supercut",
             "question",
+            "outline",
             "claims",
             "method",
             "key_numbers",
@@ -157,6 +168,7 @@ mod tests {
         for (name, text) in [
             ("core", CORE_SCHEMA),
             ("field-sections", SECTIONS_SCHEMA),
+            ("field-sections-grouped", SECTIONS_GROUPED_SCHEMA),
             ("paper-artifacts", PAPER_ARTIFACTS_SCHEMA),
         ] {
             let schema: Value = serde_json::from_str(text).expect("schema");
@@ -172,6 +184,26 @@ mod tests {
         let core: Value = serde_json::from_str(CORE_SCHEMA).expect("schema");
         let field: Value = serde_json::from_str(SECTIONS_SCHEMA).expect("schema");
         assert_eq!(core["properties"]["sections"], field["properties"]["sections"]);
+    }
+
+    #[test]
+    fn should_store_a_grouped_unit_in_the_shape_of_a_page_span_unit() {
+        // A grouped answer plus the derived pages and source span must be a
+        // valid stored unit, so the self-check can validate patches to it.
+        let grouped: Value = serde_json::from_str(SECTIONS_GROUPED_SCHEMA).expect("schema");
+        let stored: Value = serde_json::from_str(SECTIONS_SCHEMA).expect("schema");
+        let keys = |schema: &Value| {
+            schema["properties"]["sections"]["items"]["properties"]
+                .as_object()
+                .map(|properties| properties.keys().cloned().collect::<Vec<_>>())
+                .unwrap_or_default()
+        };
+        let mut derived = keys(&grouped);
+        derived.extend(["pages".to_owned(), "source_span".to_owned()]);
+        derived.sort();
+        let mut stored_keys = keys(&stored);
+        stored_keys.sort();
+        assert_eq!(derived, stored_keys);
     }
 
     #[test]

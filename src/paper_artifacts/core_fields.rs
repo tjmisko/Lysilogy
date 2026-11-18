@@ -5,8 +5,8 @@
 //! prefix caching can serve the repeated prefix from its cache.
 
 use super::{
-    ABSTRACT_SCHEMA, CARD_SCHEMA, CITATIONS_SCHEMA, IDENTITY_SCHEMA, QUESTION_SCHEMA,
-    REFERENCES_SCHEMA, RELATIONS_SCHEMA, SECTIONS_SCHEMA, TYPE_SCHEMA,
+    ABSTRACT_SCHEMA, CARD_SCHEMA, CITATIONS_SCHEMA, IDENTITY_SCHEMA, OUTLINE_SCHEMA,
+    QUESTION_SCHEMA, REFERENCES_SCHEMA, RELATIONS_SCHEMA, SECTIONS_SCHEMA, TYPE_SCHEMA,
 };
 
 /// One core field and the call that fills it.
@@ -19,7 +19,8 @@ pub struct CoreField {
     pub page_limit: Option<usize>,
 }
 
-/// The core fields, in the order they run.
+/// The core fields, in the order they run. The outline comes before the
+/// sections because the logical units are grouped from it.
 pub const CORE_FIELDS: &[CoreField] = &[
     CoreField {
         name: "identity",
@@ -57,10 +58,17 @@ pub const CORE_FIELDS: &[CoreField] = &[
         page_limit: None,
     },
     CoreField {
+        name: "outline",
+        stage: "extract.outline",
+        schema: OUTLINE_SCHEMA,
+        instruction: "Return the `outline` field: the paper's printed headings.\n{{outline}}",
+        page_limit: None,
+    },
+    CoreField {
         name: "sections",
         stage: "extract.sections",
         schema: SECTIONS_SCHEMA,
-        instruction: "Return the `sections` field: the reading map.\n{{sections}}",
+        instruction: "Return the `sections` field: the logical reading units.\n{{sections}}",
         page_limit: None,
     },
     CoreField {

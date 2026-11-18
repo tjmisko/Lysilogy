@@ -184,6 +184,7 @@ mod tests {
             }],
             context_sources: vec![source("working"), source("broken"), source("unused")],
             prerequisites: Vec::new(),
+            outline: Vec::new(),
             sections: Vec::new(),
             claims: Vec::new(),
             glossary: Vec::new(),

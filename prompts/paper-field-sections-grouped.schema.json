@@ -1,0 +1,79 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sections"
+  ],
+  "properties": {
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "kind",
+          "family",
+          "outline_first",
+          "outline_last",
+          "summary",
+          "question"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short topic title that names the unit's idea or finding, not a breadcrumb of the paper's own headings."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "abstract",
+              "background",
+              "research_question",
+              "theory",
+              "methods",
+              "data",
+              "results",
+              "discussion",
+              "limitations",
+              "conclusion",
+              "references",
+              "appendix",
+              "other"
+            ]
+          },
+          "family": {
+            "type": "string",
+            "enum": [
+              "context",
+              "question",
+              "method",
+              "evidence",
+              "interpretation",
+              "caveat",
+              "reference"
+            ]
+          },
+          "outline_first": {
+            "type": "integer",
+            "description": "Index of the first outline entry in this unit."
+          },
+          "outline_last": {
+            "type": "integer",
+            "description": "Index of the last outline entry in this unit; equal to outline_first for a one-entry unit."
+          },
+          "summary": {
+            "type": "string",
+            "description": "One or two sentences that synthesize the whole unit."
+          },
+          "question": {
+            "type": "string",
+            "description": "One line: the question this unit answers for the reader, which is why its parts belong together."
+          }
+        }
+      },
+      "description": "Coherent reading units, usually 2-3 pages of content each, as contiguous ranges of the given outline entries in order, without gaps or overlaps. Never one unit per heading."
+    }
+  },
+  "description": "The paper's reading map as ranges of its outline."
+}

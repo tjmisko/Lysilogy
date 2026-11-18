@@ -20,8 +20,9 @@ use serde_json::Value;
 use super::{
     checkpoint::{self, CallInputs, Checkpoint},
     ABSTRACT_SCHEMA, ANALYSIS_SCHEMA, CARD_SCHEMA, CHECK_SCHEMA, CITATIONS_SCHEMA,
-    GLOSSARY_SCHEMA, IDENTITY_SCHEMA, OBJECTS_SCHEMA, QUESTION_SCHEMA, REFERENCES_SCHEMA,
-    RELATIONS_SCHEMA, REPAIR_SCHEMA, SECTIONS_SCHEMA, SUPERCUT_SCHEMA, TYPE_SCHEMA,
+    GLOSSARY_SCHEMA, IDENTITY_SCHEMA, OBJECTS_SCHEMA, OUTLINE_SCHEMA, QUESTION_SCHEMA,
+    REFERENCES_SCHEMA, RELATIONS_SCHEMA, REPAIR_SCHEMA, SECTIONS_GROUPED_SCHEMA, SECTIONS_SCHEMA,
+    SUPERCUT_SCHEMA, TYPE_SCHEMA,
     admission::{
         CheckCounts, LOCAL_REPAIR_SIMILARITY, QuoteSite, SiteKind, SourceText, Verdict,
         apply_removals, check, quote_sites,
@@ -34,10 +35,11 @@ use super::{
     corrections::{self, CheckResponse, Correction, CorrectionOutcome},
     features::Features,
     objects::{self, ChunkObjects, MergeStats},
+    outline,
     pipeline::{PipelineInputs, pipeline_version},
     plausibility,
     resources::{self, PageResources},
-    title,
+    structure, title,
     verification::{StageStatus, Verification},
 };
 use crate::{
@@ -54,12 +56,15 @@ use crate::{
 
 const FIELDS_PROMPT: &str = include_str!("../../prompts/paper-fields.md");
 const SECTIONS_POLICY: &str = include_str!("../../prompts/sectioning.md");
+const SECTIONS_FROM_OUTLINE: &str = include_str!("../../prompts/sectioning-outline.md");
+const SECTIONS_FROM_PAGES: &str = include_str!("../../prompts/sectioning-pages.md");
+const OUTLINE_PROMPT: &str = include_str!("../../prompts/outline.md");
 const OBJECTS_PROMPT: &str = include_str!("../../prompts/paper-objects.md");
 const CHECK_PROMPT: &str = include_str!("../../prompts/paper-artifacts-check.md");
 const REPAIR_PROMPT: &str = include_str!("../../prompts/paper-artifacts-repair.md");
 
 /// Bump when the record shape changes.
-const RECORD_VERSION: u16 = 6;
+const RECORD_VERSION: u16 = 7;
 
 /// Object chunks in flight at once.
 const CHUNK_CONCURRENCY: usize = 3;
@@ -747,6 +752,7 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
         chunks: object_chunks,
         merge: object_merge,
         retries: plausibility_retries,
+        warnings: structure_warnings,
     } = run_plan(&session, &resources, &plan, options.object_pages).await;
     let pass1_check = core.as_ref().map(|draft| check(&source, draft));
 
@@ -790,6 +796,12 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
         repair: repair_status,
     };
     let mut warnings = verification.warnings();
+    warnings.extend(structure_warnings);
+    if let Some(current) = draft.as_mut() {
+        // The self-check may only flag structure, but settle again so the
+        // stored outline and units are consistent whatever it changed.
+        warnings.extend(structure::settle_draft(current, &resources.paper.pages));
+    }
     if let Some(current) = &draft {
         warnings.extend(plausibility::check(
             current,
@@ -972,10 +984,12 @@ async fn self_check(
             ..SelfCheck::default()
         });
     };
-    let outcomes =
-        corrections::apply_with_schema(draft, &response.corrections, source, Some(schema));
+    // The outline and the grouping are settled deterministically; patches to
+    // them are recorded as flags.
+    let guarded = structure::guard_corrections(&response.corrections, draft);
+    let outcomes = corrections::apply_with_schema(draft, &guarded, source, Some(schema));
     Ok(SelfCheck {
-        corrections: response.corrections,
+        corrections: guarded,
         outcomes,
         counts: Some(check(source, draft)),
         status: StageStatus::Ran,
@@ -1027,6 +1041,7 @@ fn unit_schema(name: &str) -> Option<&'static str> {
         "abstract" => ABSTRACT_SCHEMA,
         "card" => CARD_SCHEMA,
         "question" => QUESTION_SCHEMA,
+        "outline" => OUTLINE_SCHEMA,
         "sections" => SECTIONS_SCHEMA,
         "references" => REFERENCES_SCHEMA,
         "citations" => CITATIONS_SCHEMA,
@@ -1039,7 +1054,15 @@ fn unit_schema(name: &str) -> Option<&'static str> {
     })
 }
 
-fn unit_instruction(name: &str, page_count: usize) -> String {
+/// How the logical units are asked for: as ranges of a usable outline, or
+/// as page spans when the paper has no usable outline.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum SectionsMode {
+    Outline,
+    Pages,
+}
+
+fn unit_instruction(name: &str, page_count: usize, mode: SectionsMode) -> String {
     let instruction = CORE_FIELDS
         .iter()
         .find(|field| field.name == name)
@@ -1057,11 +1080,14 @@ fn unit_instruction(name: &str, page_count: usize) -> String {
             },
             |field| field.instruction,
         );
-    instruction.replace("{{sections}}", &sections_guidance(page_count))
+    instruction
+        .replace("{{sections}}", &sections_guidance(page_count, mode))
+        .replace("{{outline}}", OUTLINE_PROMPT)
 }
 
-/// The union schema for the fields one call asks for.
-fn call_schema(call: &super::config::Call) -> Value {
+/// The union schema for the fields one call asks for. Logical units drawn
+/// from an outline are asked for as ranges only.
+fn call_schema(call: &super::config::Call, mode: SectionsMode) -> Value {
     let mut schema = serde_json::json!({
         "type": "object",
         "additionalProperties": false,
@@ -1069,7 +1095,11 @@ fn call_schema(call: &super::config::Call) -> Value {
         "properties": {}
     });
     for field in &call.fields {
-        if let Some(text) = unit_schema(field) {
+        let text = match (field.as_str(), mode) {
+            ("sections", SectionsMode::Outline) => Some(SECTIONS_GROUPED_SCHEMA),
+            _ => unit_schema(field),
+        };
+        if let Some(text) = text {
             merge_properties(&mut schema, text);
         }
     }
@@ -1108,7 +1138,10 @@ fn plan_fields(plan: &RunConfig) -> BTreeSet<String> {
 fn pipeline_texts(plan: &RunConfig, reasoning: ReasoningEffort) -> Vec<String> {
     let mut texts = vec![
         FIELDS_PROMPT.to_owned(),
-        sections_guidance(1),
+        sections_guidance(1, SectionsMode::Outline),
+        sections_guidance(1, SectionsMode::Pages),
+        OUTLINE_PROMPT.to_owned(),
+        SECTIONS_GROUPED_SCHEMA.to_owned(),
         title_hint("{title}"),
         format!("{:?}", plan.input),
         format!("{:?}", plan.models),
@@ -1121,7 +1154,7 @@ fn pipeline_texts(plan: &RunConfig, reasoning: ReasoningEffort) -> Vec<String> {
             texts.push(OBJECTS_PROMPT.to_owned());
         }
         for field in &call.fields {
-            texts.push(unit_instruction(field, 1));
+            texts.push(unit_instruction(field, 1, SectionsMode::Pages));
             texts.push(unit_schema(field).unwrap_or_default().to_owned());
         }
     }
@@ -1140,6 +1173,8 @@ struct PlanRun {
     chunks: Vec<ChunkRecord>,
     merge: Option<MergeStats>,
     retries: Vec<PlausibilityRetry>,
+    /// What settling the outline and the grouping repaired.
+    warnings: Vec<QualityWarning>,
 }
 
 /// Run the configured calls in dependency order, independent calls together.
@@ -1157,6 +1192,7 @@ async fn run_plan(
     let mut chunks = Vec::new();
     let mut merge = None;
     let mut retries = Vec::new();
+    let mut warnings = Vec::new();
     while completed.len() < plan.calls.len() {
         let ready: Vec<&Call> = plan
             .calls
@@ -1192,6 +1228,7 @@ async fn run_plan(
                     retries.push(retry);
                 }
                 completed.insert(result.name);
+                warnings.extend(result.warnings);
                 if let Some(value) = result.value {
                     merge_fields(&mut draft, &value);
                 }
@@ -1208,6 +1245,7 @@ async fn run_plan(
         chunks,
         merge,
         retries,
+        warnings,
     }
 }
 
@@ -1246,6 +1284,7 @@ async fn retry_if_degenerate(
     });
     if kept_retry {
         result.value = retry.value;
+        result.warnings = retry.warnings;
     }
     Some(PlausibilityRetry {
         call: call.name.clone(),
@@ -1279,6 +1318,8 @@ struct PlanCallResult {
     value: Option<Value>,
     chunks: Vec<ChunkRecord>,
     merge: Option<MergeStats>,
+    /// What settling this answer's outline or grouping repaired.
+    warnings: Vec<QualityWarning>,
 }
 
 impl PlanCallResult {
@@ -1288,6 +1329,7 @@ impl PlanCallResult {
             value: None,
             chunks: Vec::new(),
             merge: None,
+            warnings: Vec::new(),
         }
     }
 }
@@ -1336,16 +1378,31 @@ async fn plan_call(
             value: Some(serde_json::json!({"objects": inventory})),
             chunks,
             merge: Some(merge),
+            warnings: Vec::new(),
         };
     }
-    let schema = call_schema(call);
+    let pages = &resources.paper.pages;
+    // Logical units are grouped from the outline when an earlier call left
+    // a usable one in the draft.
+    let grouping_outline = call
+        .fields
+        .iter()
+        .any(|field| field == "sections")
+        .then(|| structure::usable_outline(draft.get("outline"), pages))
+        .flatten();
+    let mode = if grouping_outline.is_some() {
+        SectionsMode::Outline
+    } else {
+        SectionsMode::Pages
+    };
+    let schema = call_schema(call, mode);
     let Ok(schema) = serde_json::to_string(&schema) else {
         return PlanCallResult::failed(&call.name);
     };
     let instruction = call
         .fields
         .iter()
-        .map(|field| unit_instruction(field, resources.paper.pages.len()))
+        .map(|field| unit_instruction(field, pages.len(), mode))
         .collect::<Vec<_>>()
         .join("\n");
     let mut parts = vec![ContentPart::Text(FIELDS_PROMPT.to_owned())];
@@ -1368,7 +1425,13 @@ async fn plan_call(
             "The current draft for these fields is:\n{current}\nMerge and adjust this draft to the target range; do not start over."
         )));
     }
-    drop(draft);
+    if call.fields.iter().any(|field| field == "outline") {
+        let candidates = outline::candidates(pages, &resources.paper.layout);
+        parts.push(ContentPart::Text(outline::render_candidates(&candidates)));
+    }
+    if let Some(entries) = &grouping_outline {
+        parts.push(ContentPart::Text(outline::render_outline(entries)));
+    }
     parts.push(ContentPart::Text(instruction));
     if let Some(note) = retry_note {
         parts.push(ContentPart::Text(note.to_owned()));
@@ -1376,7 +1439,7 @@ async fn plan_call(
     let model = plan.model_for(call);
     let max_tokens = plan_max_tokens(call, resources.paper.pages.len());
     let stage = retry_note.map_or_else(|| call.name.clone(), |_| retry_stage(call));
-    let value = session
+    let mut value = session
         .call_with::<Value>(
             &stage,
             retry_note.map(|_| stage.as_str()),
@@ -1387,32 +1450,55 @@ async fn plan_call(
             call.effort.reasoning(),
         )
         .await;
+    let warnings = value
+        .as_mut()
+        .map(|value| structure::settle_fragment(value, &draft, pages))
+        .unwrap_or_default();
     PlanCallResult {
         name: call.name.clone(),
         value,
         chunks: Vec::new(),
         merge: None,
+        warnings,
     }
 }
 
-/// The reader's default pipeline: one combined core call plus any opted-in
+/// The reader's default pipeline: one combined core call, the outline call
+/// beside it, the logical-units call after the outline, and any opted-in
 /// features, over the raw page text the experiments used.
 #[must_use]
 pub fn default_pipeline(core_mode: CoreMode, features: Features) -> RunConfig {
+    let call = |name: &str, fields: Vec<String>, requires: Vec<String>| Call {
+        name: name.to_owned(),
+        fields,
+        effort: Effort::Low,
+        model: None,
+        max_tokens: None,
+        include_draft: false,
+        scope: None,
+        requires,
+    };
     let mut calls = match core_mode {
-        CoreMode::Combined => vec![Call {
-            name: "core".to_owned(),
-            fields: CORE_FIELDS
-                .iter()
-                .map(|field| field.name.to_owned())
-                .collect(),
-            effort: Effort::Low,
-            model: None,
-            max_tokens: None,
-            include_draft: false,
-            scope: None,
-            requires: Vec::new(),
-        }],
+        // One call for every field but the structure, and the outline call
+        // beside it; the logical units are grouped once the outline is in.
+        CoreMode::Combined => vec![
+            call(
+                "core",
+                CORE_FIELDS
+                    .iter()
+                    .map(|field| field.name)
+                    .filter(|name| !matches!(*name, "outline" | "sections"))
+                    .map(str::to_owned)
+                    .collect(),
+                Vec::new(),
+            ),
+            call("outline", vec!["outline".to_owned()], Vec::new()),
+            call(
+                "sections",
+                vec!["sections".to_owned()],
+                vec!["outline".to_owned()],
+            ),
+        ],
         CoreMode::Fanout => {
             let mut calls = Vec::new();
             let mut requires = Vec::new();
@@ -1607,13 +1693,18 @@ fn draft_subset(draft: &serde_json::Map<String, Value>, fields: &[String]) -> Op
     (!subset.is_empty()).then_some(Value::Object(subset))
 }
 
-/// The sectioning policy plus a page-count budget, for `{{sections}}`.
-fn sections_guidance(page_count: usize) -> String {
+/// The sectioning policy, how units are marked in this mode, and a
+/// page-count budget, for `{{sections}}`.
+fn sections_guidance(page_count: usize, mode: SectionsMode) -> String {
     let pages = page_count.max(1);
     let lower = pages.div_ceil(4);
     let upper = pages.div_ceil(2).max(lower);
+    let marking = match mode {
+        SectionsMode::Outline => SECTIONS_FROM_OUTLINE,
+        SectionsMode::Pages => SECTIONS_FROM_PAGES,
+    };
     format!(
-        "{SECTIONS_POLICY}\nThis PDF contains {pages} pages. A useful map is usually about {lower}\u{2013}{upper} substantive reading units, so each unit covers roughly 2\u{2013}3 pages of content. Prefer the smaller number: merge adjacent units that answer the same question before splitting a topic. References, appendices, and adjacent articles are not part of the main-text budget. This is a planning guide, not a quota or a reason to drop content."
+        "{SECTIONS_POLICY}\n{marking}\nThis PDF contains {pages} pages. A useful map is usually about {lower}\u{2013}{upper} substantive reading units, so each unit covers roughly 2\u{2013}3 pages of content. Prefer the smaller number: merge adjacent units that answer the same question before splitting a topic. References, appendices, and adjacent articles are not part of the main-text budget. This is a planning guide, not a quota or a reason to drop content."
     )
 }
 
@@ -2225,6 +2316,12 @@ mod tests {
     fn should_scope_the_abstract_call_in_a_fanout_pipeline() {
         let plan = default_pipeline(CoreMode::Fanout, Features::default());
         assert_eq!(plan.calls.len(), CORE_FIELDS.len());
+        let sections = plan
+            .calls
+            .iter()
+            .find(|call| call.name == "sections")
+            .expect("sections");
+        assert_eq!(sections.requires, vec!["outline"]);
         let abstract_call = plan
             .calls
             .iter()
@@ -2248,6 +2345,7 @@ mod tests {
                 "abstract",
                 "card",
                 "question",
+                "outline",
                 "sections",
                 "references",
                 "citations",
@@ -2284,10 +2382,14 @@ mod tests {
 
     #[test]
     fn should_state_a_page_budget_in_the_section_guidance() {
-        let guidance = sections_guidance(8);
-        assert!(guidance.contains("This PDF contains 8 pages"));
-        assert!(guidance.contains("2\u{2013}4 substantive reading units"));
-        assert!(guidance.starts_with(SECTIONS_POLICY));
+        for mode in [SectionsMode::Outline, SectionsMode::Pages] {
+            let guidance = sections_guidance(8, mode);
+            assert!(guidance.contains("This PDF contains 8 pages"));
+            assert!(guidance.contains("2\u{2013}4 substantive reading units"));
+            assert!(guidance.starts_with(SECTIONS_POLICY));
+        }
+        assert!(sections_guidance(8, SectionsMode::Outline).contains(SECTIONS_FROM_OUTLINE));
+        assert!(sections_guidance(8, SectionsMode::Pages).contains(SECTIONS_FROM_PAGES));
     }
 
     #[test]
@@ -2298,6 +2400,7 @@ mod tests {
             "abstract",
             "card",
             "question",
+            "outline",
             "sections",
             "references",
             "citations",
@@ -2364,7 +2467,7 @@ mod tests {
             scope: None,
             requires: Vec::new(),
         };
-        let schema = call_schema(&call);
+        let schema = call_schema(&call, SectionsMode::Pages);
         assert!(schema["properties"].get("references").is_some());
         assert!(schema["properties"].get("citations").is_some());
         assert!(schema["properties"].get("sections").is_none());
@@ -2640,8 +2743,9 @@ printf '%s' '{answer}' > "$output"
     }
 
     /// A stub plan harness for the whole pipeline: the self-check finds
-    /// nothing, a plausibility retry gets a full section map, and the first
-    /// core answer maps only page 1 of the two-page fixture.
+    /// nothing, the fixture prints no headings so the outline is empty, a
+    /// plausibility retry gets a full section map, and the first sections
+    /// answer maps only page 1 of the two-page fixture.
     #[cfg(unix)]
     fn pipeline_stub(directory: &Path) -> PathBuf {
         use std::os::unix::fs::PermissionsExt;
@@ -2658,8 +2762,10 @@ while [ "$#" -gt 0 ]; do
 done
 case "$prompt" in
   *"You are checking a draft record"*) printf '%s' '{{"corrections":[]}}' > "$output" ;;
-  *"looked incomplete"*) printf '%s' '{{{identity},"sections":[{{"title":"Setup","kind":"methods","pages":{{"start":1,"end":1}}}},{{"title":"Comparison","kind":"results","pages":{{"start":2,"end":2}}}}]}}' > "$output" ;;
-  *) printf '%s' '{{{identity},"sections":[{{"title":"Front matter","kind":"other","pages":{{"start":1,"end":1}}}}]}}' > "$output" ;;
+  *"Heading candidates"*) printf '%s' '{{"outline":[]}}' > "$output" ;;
+  *"looked incomplete"*) printf '%s' '{{"sections":[{{"title":"Setup","kind":"methods","pages":{{"start":1,"end":1}}}},{{"title":"Comparison","kind":"results","pages":{{"start":2,"end":2}}}}]}}' > "$output" ;;
+  *"logical reading units"*) printf '%s' '{{"sections":[{{"title":"Front matter","kind":"other","pages":{{"start":1,"end":1}}}}]}}' > "$output" ;;
+  *) printf '%s' '{{{identity}}}' > "$output" ;;
 esac
 "#
             ),
@@ -2716,7 +2822,7 @@ esac
         assert_eq!(record.record_version, RECORD_VERSION);
         assert_eq!(record.plausibility_retries.len(), 1);
         let retry = &record.plausibility_retries[0];
-        assert_eq!(retry.call, "core");
+        assert_eq!(retry.call, "sections");
         assert!(retry.kept_retry);
         assert_eq!(
             retry.warnings[0].kind,
@@ -2724,6 +2830,8 @@ esac
         );
         let artifacts = record.artifacts.as_ref().expect("artifacts");
         assert_eq!(artifacts["sections"].as_array().map(Vec::len), Some(2));
+        assert_eq!(artifacts["outline"], json!([]), "the fixture prints no headings");
+        assert!(artifacts["sections"][0]["outline_first"].is_null());
         assert_eq!(record.verification.self_check, StageStatus::Ran);
         assert_eq!(record.verification.admission, StageStatus::Ran);
         assert!(record.warnings.is_empty(), "{:#?}", record.warnings);
@@ -2813,11 +2921,283 @@ esac
         assert_eq!(result.status, StageStatus::SkippedBudget);
     }
 
+    /// A four-page numbered paper: abstract, five numbered sections with one
+    /// subsection, and references.
+    fn numbered_resources() -> PageResources {
+        let texts = [
+            "Sparse Models Under Noise\nAbstract\nWe show that pruning preserves accuracy.\n1 Introduction\nPruning is an old idea with many uses today.",
+            "2 Method\nWe prune the smallest weights in each layer first.\n2.1 Schedules\nThe schedule removes weights gradually during training.",
+            "3 Experiments\nWe train on three standard benchmarks for vision.\n4 Results\nPruning half the weights costs one point of accuracy.",
+            "5 Conclusion\nPruning is cheap and it works well in practice.\nReferences\n[1] A. Author. A paper on pruning. Journal of Pruning, 2019.",
+        ];
+        let mut resources = resources();
+        resources.paper.pages = texts
+            .iter()
+            .enumerate()
+            .map(|(index, text)| ExtractedPage {
+                number: u32::try_from(index + 1).expect("page"),
+                text: (*text).to_owned(),
+            })
+            .collect();
+        resources
+    }
+
+    /// The model's outline for `numbered_resources`, out of order, with one
+    /// invented heading and a wrong page.
+    const NUMBERED_OUTLINE: &str = r#"{"outline":[
+        {"number":null,"title":"Abstract","level":1,"page":1,"role":"front_matter"},
+        {"number":"2","title":"Method","level":1,"page":2,"role":"main"},
+        {"number":"1","title":"Introduction","level":1,"page":1,"role":"main"},
+        {"number":"2.1","title":"Schedules","level":2,"page":2,"role":"main"},
+        {"number":"3","title":"Experiments","level":1,"page":2,"role":"main"},
+        {"number":"4","title":"Results","level":1,"page":3,"role":"main"},
+        {"number":"6","title":"Future Work","level":1,"page":4,"role":"main"},
+        {"number":"5","title":"Conclusion","level":1,"page":4,"role":"main"},
+        {"number":null,"title":"References","level":1,"page":4,"role":"references"}]}"#;
+
+    /// A stub that answers the outline call and the logical-units call, and
+    /// logs every prompt it is sent.
+    #[cfg(unix)]
+    fn structure_stub(directory: &Path, outline: &str, sections: &str) -> (PathBuf, PathBuf) {
+        use std::os::unix::fs::PermissionsExt;
+        let script = directory.join("stub-codex");
+        let log = directory.join("prompts.log");
+        let compact = |text: &str| text.split_whitespace().collect::<Vec<_>>().join(" ");
+        std::fs::write(
+            &script,
+            format!(
+                r#"#!/bin/sh
+prompt=$(cat)
+printf '%s\n=====\n' "$prompt" >> "{log}"
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--output-last-message" ]; then shift; output="$1"; fi
+  shift
+done
+case "$prompt" in
+  *"Heading candidates"*) printf '%s' '{outline}' > "$output" ;;
+  *"logical reading units"*) printf '%s' '{sections}' > "$output" ;;
+  *) printf '{{}}' > "$output" ;;
+esac
+"#,
+                log = log.display(),
+                outline = compact(outline),
+                sections = compact(sections),
+            ),
+        )
+        .expect("stub script");
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700))
+            .expect("executable");
+        (script, log)
+    }
+
+    #[cfg(unix)]
+    fn structure_plan() -> RunConfig {
+        RunConfig::parse(
+            r#"{"calls":[
+                {"name":"outline","fields":["outline"]},
+                {"name":"sections","fields":["sections"],"requires":["outline"]}
+            ]}"#,
+        )
+        .expect("plan")
+    }
+
+    #[cfg(unix)]
+    fn stub_session<'a>(cli: &'a LocalCliAnalyzer, directory: &Path) -> Session<'a> {
+        Session::new(
+            Backend::Plan {
+                analyzer: cli,
+                provider: AnalysisProvider::Codex,
+                directory: directory.to_path_buf(),
+            },
+            openrouter::DEFAULT_MODEL,
+            1.0,
+            ReasoningEffort::Low,
+            Vec::new(),
+        )
+    }
+
+    fn ranges(draft: &Value) -> Vec<(u64, u64)> {
+        draft["sections"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .map(|unit| {
+                (
+                    unit["outline_first"].as_u64().unwrap_or(99),
+                    unit["outline_last"].as_u64().unwrap_or(99),
+                )
+            })
+            .collect()
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_group_logical_units_from_the_admitted_outline_of_a_numbered_paper() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let sections = r#"{"sections":[
+            {"title":"Pruning keeps accuracy","kind":"background","family":"context","outline_first":1,"outline_last":1,
+             "summary":"Why pruning matters.","question":"Why prune?"},
+            {"title":"Gradual magnitude pruning","kind":"methods","family":"method","outline_first":2,"outline_last":3,
+             "summary":"Smallest weights go first, on a schedule.","question":"How are weights removed?"},
+            {"title":"Half the weights cost one point","kind":"results","family":"evidence","outline_first":4,"outline_last":6,
+             "summary":"Benchmarks show a one-point loss.","question":"What does pruning cost?"},
+            {"title":"References","kind":"references","family":"reference","outline_first":7,"outline_last":7,
+             "summary":"The bibliography.","question":"What is cited?"}]}"#;
+        let (script, log) = structure_stub(directory.path(), NUMBERED_OUTLINE, sections);
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let session = stub_session(&cli, directory.path());
+        let resources = numbered_resources();
+        let run = run_plan(&session, &resources, &structure_plan(), 6).await;
+        let draft = run.draft.expect("draft");
+
+        let anchors = draft["outline"]
+            .as_array()
+            .expect("outline")
+            .iter()
+            .map(|entry| entry["anchor"].as_str().unwrap_or_default().to_owned())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            anchors,
+            [
+                "Abstract",
+                "1 Introduction",
+                "2 Method",
+                "2.1 Schedules",
+                "3 Experiments",
+                "4 Results",
+                "5 Conclusion",
+                "References"
+            ],
+            "ordered, the invented heading dropped, the wrong page corrected"
+        );
+        assert_eq!(draft["outline"][4]["page"], 3);
+        assert_eq!(ranges(&draft), [(1, 1), (2, 3), (4, 6), (7, 7)]);
+        assert_eq!(draft["sections"][1]["pages"], json!({"start": 2, "end": 2}));
+        assert_eq!(draft["sections"][2]["pages"], json!({"start": 3, "end": 4}));
+        assert_eq!(
+            draft["sections"][2]["source_span"]["start_text"],
+            "3 Experiments"
+        );
+        assert!(run.warnings.is_empty(), "{:#?}", run.warnings);
+        let fields = plan_fields(&structure_plan());
+        let warnings = plausibility::check(&draft, &fields, &resources.paper.pages);
+        assert!(warnings.is_empty(), "{warnings:#?}");
+
+        let prompts = std::fs::read_to_string(log).expect("log");
+        assert!(prompts.contains("- page 1: \"1 Introduction\" [numbered]"), "{prompts}");
+        assert!(prompts.contains("[1] page 1: 1 Introduction"));
+        assert!(prompts.contains("[3] page 2:   2.1 Schedules"));
+        assert!(prompts.contains(SECTIONS_FROM_OUTLINE.trim()));
+        assert!(!prompts.contains(SECTIONS_FROM_PAGES.trim()));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_keep_page_span_units_for_a_paper_without_headings() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let sections = r#"{"sections":[{"title":"Pruning keeps accuracy","kind":"results","family":"evidence",
+            "outline_first":null,"outline_last":null,"pages":{"start":1,"end":2},
+            "source_span":{"start_text":"We show that pruning preserves accuracy.","start_page":1,
+                           "end_text":"Pruning half the weights costs one point.","end_page":2},
+            "summary":"One point of accuracy for half the weights.","question":"Does pruning hurt?"}]}"#;
+        let (script, log) = structure_stub(directory.path(), r#"{"outline":[]}"#, sections);
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let session = stub_session(&cli, directory.path());
+        let resources = resources();
+        let run = run_plan(&session, &resources, &structure_plan(), 6).await;
+        let draft = run.draft.expect("draft");
+        assert_eq!(draft["outline"], json!([]));
+        assert_eq!(draft["sections"][0]["pages"], json!({"start": 1, "end": 2}));
+        assert!(draft["sections"][0]["outline_first"].is_null());
+        assert!(run.warnings.is_empty());
+        let fields = plan_fields(&structure_plan());
+        assert!(plausibility::check(&draft, &fields, &resources.paper.pages).is_empty());
+        let prompts = std::fs::read_to_string(log).expect("log");
+        assert!(prompts.contains("none were found"));
+        assert!(prompts.contains(SECTIONS_FROM_PAGES.trim()));
+        assert!(!prompts.contains(SECTIONS_FROM_OUTLINE.trim()));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_repair_a_grouping_with_a_gap_and_an_overlap() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        // Entry 3 (2.1 Schedules) is in both of the first two units, entry 6
+        // (5 Conclusion) is in none, and the references unit runs past the end.
+        let sections = r#"{"sections":[
+            {"title":"Results","kind":"results","family":"evidence","outline_first":3,"outline_last":5,
+             "summary":"s","question":"q"},
+            {"title":"Setup","kind":"methods","family":"method","outline_first":1,"outline_last":3,
+             "summary":"s","question":"q"},
+            {"title":"Bibliography","kind":"references","family":"reference","outline_first":7,"outline_last":12,
+             "summary":"s","question":"q"}]}"#;
+        let (script, _) = structure_stub(directory.path(), NUMBERED_OUTLINE, sections);
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let session = stub_session(&cli, directory.path());
+        let run = run_plan(&session, &numbered_resources(), &structure_plan(), 6).await;
+        let draft = run.draft.expect("draft");
+        assert_eq!(ranges(&draft), [(1, 3), (4, 6)]);
+        assert_eq!(draft["sections"][0]["title"], "Setup");
+        assert_eq!(run.warnings.len(), 1);
+        let message = &run.warnings[0].message;
+        assert_eq!(
+            run.warnings[0].kind,
+            crate::domain::QualityWarningKind::SectionsGroupingRepaired
+        );
+        assert!(message.contains("Bibliography"), "{message}");
+        assert!(message.contains("Clipped \"Results\""), "{message}");
+        assert!(message.contains("\"5 Conclusion\""), "{message}");
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_record_self_check_patches_to_the_grouping_as_flags() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let evidence = r#"[{"quote":"We show that pruning preserves accuracy.","page":1}]"#;
+        let answer = format!(
+            r#"{{"corrections":[
+                {{"path":"/sections/0/pages","action":"replace","value_json":"{{\"start\":1,\"end\":1}}","reason":"r","evidence":{evidence}}},
+                {{"path":"/sections/0/title","action":"replace","value_json":"\"Pruning preserves accuracy\"","reason":"r","evidence":{evidence}}}
+            ]}}"#
+        )
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+        let (script, _) = counting_stub(directory.path(), &answer);
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let session = stub_session(&cli, directory.path());
+        let resources = resources();
+        let source = SourceText::new(&resources.paper.pages);
+        let text = text_parts(&resources);
+        let schema = plan_schema(&structure_plan());
+        let view = CheckView {
+            text: &text,
+            source: &source,
+            hide_objects: false,
+            schema: &schema,
+            model: openrouter::DEFAULT_MODEL,
+        };
+        let mut draft = json!({"outline": [], "sections": [{
+            "title": "Results", "kind": "results", "family": "evidence",
+            "outline_first": 0, "outline_last": 1, "pages": {"start": 1, "end": 2},
+            "source_span": {"start_text": "a", "start_page": 1, "end_text": "b", "end_page": 2},
+            "summary": "s", "question": "q"}]});
+        let result = self_check(&mut draft, &view, &session).await.expect("check");
+        assert_eq!(result.status, StageStatus::Ran);
+        assert_eq!(result.corrections[0].action, corrections::Action::Flag);
+        assert_eq!(draft["sections"][0]["pages"], json!({"start": 1, "end": 2}));
+        assert_eq!(draft["sections"][0]["title"], "Pruning preserves accuracy");
+    }
+
     #[test]
     fn should_hash_every_prompt_and_schema_a_plan_uses() {
         let core = pipeline_texts(&core_pipeline(Features::default()), ReasoningEffort::Low);
         assert!(core.iter().any(|text| text == FIELDS_PROMPT));
         assert!(core.iter().any(|text| text == SECTIONS_SCHEMA));
+        assert!(core.iter().any(|text| text == SECTIONS_GROUPED_SCHEMA));
+        assert!(core.iter().any(|text| text == OUTLINE_SCHEMA));
+        assert!(core.iter().any(|text| text == OUTLINE_PROMPT));
+        assert!(core.iter().any(|text| text.contains(SECTIONS_FROM_OUTLINE)));
         assert!(core.iter().any(|text| text == CHECK_PROMPT));
         assert!(core.iter().any(|text| text.starts_with(SECTIONS_POLICY)));
         assert!(!core.iter().any(|text| text == OBJECTS_PROMPT));
@@ -2832,16 +3212,23 @@ esac
     #[test]
     fn should_build_the_core_pipeline_and_its_optional_features() {
         let core = core_pipeline(Features::default());
-        assert_eq!(core.calls.len(), 1);
-        assert_eq!(core.calls[0].name, "core");
-        assert!(core.calls[0].fields.iter().any(|field| field == "sections"));
-        assert_eq!(core.calls[0].effort, Effort::Low);
-        assert!(core.calls[0].requires.is_empty());
+        let names = core
+            .calls
+            .iter()
+            .map(|call| call.name.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(names, ["core", "outline", "sections"]);
+        assert!(!core.calls[0].fields.iter().any(|field| field == "sections"));
+        assert!(!core.calls[0].fields.iter().any(|field| field == "outline"));
+        assert_eq!(core.calls[0].fields.len(), CORE_FIELDS.len() - 2);
+        assert!(core.calls.iter().all(|call| call.effort == Effort::Low));
+        assert!(core.calls[0].requires.is_empty() && core.calls[1].requires.is_empty());
+        assert_eq!(core.calls[2].requires, vec!["outline"]);
 
         let all = core_pipeline(Features::all());
-        assert_eq!(all.calls.len(), 5);
-        for call in &all.calls[1..] {
-            assert_eq!(call.requires, vec!["core"]);
+        assert_eq!(all.calls.len(), 7);
+        for call in &all.calls[3..] {
+            assert_eq!(call.requires, vec!["core", "outline", "sections"]);
         }
         for name in ["objects", "supercut", "analysis", "glossary"] {
             assert!(all.calls.iter().any(|call| call.name == name), "{name}");

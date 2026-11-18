@@ -9,6 +9,9 @@ Look for, in this order of importance:
 3. Missing, duplicated, or invented references.
 4. Quotes that are not verbatim, or are on a different page than stated.
 5. Claims, numbers, relations, or sections that the paper does not support.
+6. Reading units whose title or summary is generic or misleading: a title such as "Results" that could belong to any paper, or a summary that does not say what the unit establishes.
+
+The `outline` lists the paper's printed headings and has already been matched against the page text, and when units carry `outline_first` and `outline_last` their pages and source spans were derived from those headings. Do not patch the outline or a unit's range, pages or span; if a heading is missing or wrong, or a grouping splits one idea or lumps two together, `flag` it with evidence and say what you would change. You may still `replace` a unit's `title`, `summary`, `question`, `kind` or `family`.
 
 How to answer:
 

@@ -1,6 +1,6 @@
 # Handoff: core pipeline and the unified analysis backend
 
-Status: 2026-10-21. Progress and open questions from folding the extraction
+Status: 2026-10-21, updated 2026-11-18. Progress and open questions from folding the extraction
 spike into the integration line and moving every model reader onto one
 analysis pipeline.
 
@@ -84,6 +84,60 @@ analysis pipeline.
   and plan setting) is on the record and on the stored analysis, so a human
   review can be tied to what produced the output.
 - None of this has been run against a live model yet.
+
+## Two segmentations added 2026-11-18
+
+The single model-made reading map is now two related structures, both in
+the record and both on the stored `PaperAnalysis`.
+
+- **Outline** (`artifacts.outline`, `PaperAnalysis.outline`): the paper's
+  own headings as printed, with number, title, level, page, role
+  (`front_matter`, `main`, `back_matter`, `references`, `appendix`) and the
+  printed line as an anchor. `paper_artifacts::outline` finds heading
+  candidates deterministically (numbering such as `2`, `2.1`, `IV.`, `A.`;
+  familiar heading words; short all-caps lines; lines in larger type than
+  the body; running heads removed) and offers them to the `outline` call,
+  whose job is only to confirm, reject, correct and add, and to fill levels
+  and roles. Every returned heading is admitted by matching its printed
+  line on its page or a neighbour; unmatched headings are dropped, numbered
+  levels follow the numbering. An empty outline is a valid result.
+- **Logical units** (`artifacts.sections`, still `PaperAnalysis.sections`
+  so the Overview keeps working): when the outline is usable (at least two
+  main-text headings and about one per six pages of main text) the
+  `sections` call is asked only for contiguous ranges of outline entries
+  (`outline_first`, `outline_last`) plus a title, a synthesis and the
+  question the unit answers (`paper-field-sections-grouped.schema.json`).
+  `paper_artifacts::grouping` orders the ranges, clips overlaps, absorbs
+  skipped main-text headings into a neighbour, keeps references and
+  appendices to at most one unit each and out of main-text units, and
+  derives pages and source spans from the outline. Each repair becomes a
+  `sections_grouping_repaired` warning. Without a usable outline the call
+  falls back to the old page-span units, with null outline indices. Each
+  stored section records `outline_entries` and `question`.
+- **Pipeline**: the default combined plan is now `core` (every other core
+  field) and `outline` in parallel, then `sections` after `outline`. That is
+  three paper-length prompts instead of one; prefix caching on the pinned
+  provider should absorb most of the repeat, but the cost has not been
+  measured.
+- **Self-check**: patches to the outline, or to a grouped unit's range,
+  pages or span, are recorded as flags (`structure::guard_corrections`);
+  titles, summaries and questions stay editable. The draft is settled again
+  after the self-check.
+- **Plausibility**: `outline_missing` and `outline_sparse` (against the
+  numbered heading lines in the text) trigger the one retry like the
+  section and reference gates; `sections_grouping_invalid` and
+  `sections_mirror_outline` (one unit per heading) are reported only.
+- **Benchmark**: `score_sections_oracle` reads a unit's pages from its
+  outline range when a record lacks them, and `score_outline` scores
+  heading recall and precision against an optional `outline` list in an
+  oracle. No oracle has an outline yet.
+- **Prompts**: `prompts/outline.md`, a rewritten `prompts/sectioning.md`
+  (the reader, what a good unit is, weak versus strong titles) with
+  `sectioning-outline.md` and `sectioning-pages.md` for the two modes.
+- Records are version 7. Plan-harness calls now write one schema file per
+  schema, because concurrent calls shared one file.
+- Tested with stub plan harnesses only. Nothing here has run against a live
+  model, and the candidate heuristics have not been measured on real PDFs.
 
 ## Merge state
 

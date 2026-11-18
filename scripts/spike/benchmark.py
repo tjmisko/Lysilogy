@@ -154,6 +154,29 @@ def interval_iou(left, right):
     return intersection / union if union else 0.0
 
 
+def section_pages(section, outline):
+    """A unit's (start, end) pages: its own, or derived from its outline range.
+
+    Logical units grouped from the outline carry derived pages already; this
+    only matters for a record that kept the range but not the pages. The end
+    is the page of the next heading, or the unit's last heading when it is
+    the final one.
+    """
+    if not isinstance(section, dict):
+        return None
+    pages = section.get("pages")
+    if isinstance(pages, dict) and pages.get("start") and pages.get("end"):
+        return (pages["start"], pages["end"])
+    first, last = section.get("outline_first"), section.get("outline_last")
+    if not isinstance(first, int) or not isinstance(last, int) or not 0 <= first <= last < len(outline):
+        return None
+    start = outline[first].get("page")
+    following = outline[last + 1].get("page") if last + 1 < len(outline) else outline[last].get("page")
+    if not start or not following:
+        return None
+    return (start, max(start, following))
+
+
 def score_sections_oracle(artifacts, oracle):
     """Align predicted units to the audited spans: count, IoU, exact boundaries."""
     truth = []
@@ -163,11 +186,12 @@ def score_sections_oracle(artifacts, oracle):
             truth.append((pages["start"], pages["end"]))
     if not truth:
         return {}
+    outline = (artifacts or {}).get("outline") or []
     predicted = []
     for section in (artifacts or {}).get("sections") or []:
-        pages = section.get("pages") if isinstance(section, dict) else None
-        if isinstance(pages, dict) and pages.get("start") and pages.get("end"):
-            predicted.append((pages["start"], pages["end"]))
+        span = section_pages(section, outline)
+        if span:
+            predicted.append(span)
     best = [max((interval_iou(unit, guess) for guess in predicted), default=0.0) for unit in truth]
     return {
         "truth_units": len(truth),
@@ -175,6 +199,56 @@ def score_sections_oracle(artifacts, oracle):
         "unit_count_error": len(predicted) - len(truth),
         "unit_iou": round(statistics.mean(best), 4),
         "boundary_exact": round(sum(1 for unit in truth if unit in predicted) / len(truth), 4),
+    }
+
+
+def heading_key(entry):
+    """A printed heading compared by its folded title, number ignored."""
+    if isinstance(entry, str):
+        title = entry
+    elif isinstance(entry, dict):
+        title = entry.get("title") or ""
+    else:
+        return ""
+    # An oracle written as "2.1 Data" still matches a title "Data".
+    title = re.sub(r"^\s*(?:\d+(?:\.\d+)*\.?|[IVXL]+\.|[A-Z]\.(?:\d+(?:\.\d+)*)?)\s+", "", title)
+    return compact(title)
+
+
+def score_outline(artifacts, oracle):
+    """Heading recall and precision against an oracle list of printed headings.
+
+    The oracle's `outline` is a list of headings, each a string or an object
+    with `title` (and optionally `number` and `page`). Headings match by folded
+    title as a multiset; page agreement is reported among matches. Returns {}
+    when the oracle has no outline, so papers without one are not scored.
+    """
+    truth = (oracle or {}).get("outline")
+    if truth is None:
+        return {}
+    predicted = (artifacts or {}).get("outline") or []
+    remaining = Counter(heading_key(entry) for entry in predicted if heading_key(entry))
+    pages = {}
+    for entry in predicted:
+        if isinstance(entry, dict) and heading_key(entry):
+            pages.setdefault(heading_key(entry), []).append(entry.get("page"))
+    matched = page_exact = page_known = 0
+    for entry in truth:
+        key = heading_key(entry)
+        if key and remaining[key] > 0:
+            remaining[key] -= 1
+            matched += 1
+            truth_page = entry.get("page") if isinstance(entry, dict) else None
+            if truth_page:
+                page_known += 1
+                page_exact += int(truth_page in pages.get(key, []))
+    return {
+        "truth": len(truth),
+        "predicted": len(predicted),
+        "matched": matched,
+        "recall": round(matched / len(truth), 4) if truth else (1.0 if not predicted else 0.0),
+        "precision": round(matched / len(predicted), 4) if predicted else (1.0 if not truth else 0.0),
+        "page_exact": round(page_exact / page_known, 4) if page_known else None,
     }
 
 
@@ -342,10 +416,11 @@ def score_paper(paper, record, oracle, inventory, entries, result_file=None):
         "identity_exact": exact,
         "identity_matchable": matchable,
         "sections_oracle": score_sections_oracle(final, oracle),
+        "outline": score_outline(final, oracle),
         "objects": {"pass1": score_objects(pass1, inventory), "final": score_objects(final, inventory)},
         "references": reference_match((final or {}).get("references") or [], entries),
         "sections": score_sections(final, record.get("pages")),
-        "counts": {key: len((final or {}).get(key) or []) for key in ("sections", "supercut", "claims", "key_numbers", "citations", "relations", "notation", "glossary")},
+        "counts": {key: len((final or {}).get(key) or []) for key in ("outline", "sections", "supercut", "claims", "key_numbers", "citations", "relations", "notation", "glossary")},
         "type": ((final or {}).get("type") or {}).get("value"),
         "read_signal": (((final or {}).get("card") or {}).get("read_signal") or {}).get("judgment"),
         "features": record.get("features", ""),
@@ -583,6 +658,18 @@ def aggregate(rows):
         "mean_boundary_exact": mean(item["boundary_exact"] for item in aligned),
         "truth_units": sum(item["truth_units"] for item in aligned),
         "predicted_units": sum(item["predicted_units"] for item in aligned),
+    }
+    outlines = [row["outline"] for row in scored if row.get("outline")]
+    outline_truth = sum(item["truth"] for item in outlines)
+    outline_predicted = sum(item["predicted"] for item in outlines)
+    outline_matched = sum(item["matched"] for item in outlines)
+    summary["outline"] = {
+        "papers": len(outlines),
+        "truth": outline_truth,
+        "predicted": outline_predicted,
+        "matched": outline_matched,
+        "recall": round(outline_matched / outline_truth, 4) if outline_truth else None,
+        "precision": round(outline_matched / outline_predicted, 4) if outline_predicted else None,
     }
     summary["graph_counts"] = {
         "citations": sum((row.get("counts") or {}).get("citations", 0) for row in scored),

@@ -152,6 +152,47 @@ export type KeyQuote = {
   validation?: CitationStatus;
 };
 
+/** Which part of the paper a printed heading belongs to. */
+export type OutlineRole = "front_matter" | "main" | "back_matter" | "references" | "appendix" | "other";
+
+/** One printed heading of the paper, as the outline view shows it. */
+export type OutlineEntry = {
+  /** The printed number or letter, such as "2.1", "IV." or "A.". */
+  number?: string | null;
+  /** The heading text as printed, without its number. */
+  title: string;
+  /** 1 for a top-level heading, 2 for a subsection, and so on. */
+  level: number;
+  page: number;
+  role?: OutlineRole;
+  anchor?: TextAnchor | null;
+};
+
+export type QualityWarningKind =
+  | "sections_missing"
+  | "sections_sparse"
+  | "sections_low_coverage"
+  | "references_missing"
+  | "abstract_missing"
+  | "title_implausible"
+  | "authors_missing"
+  | "outline_missing"
+  | "outline_sparse"
+  | "sections_grouping_repaired"
+  | "sections_grouping_invalid"
+  | "sections_mirror_outline"
+  | "verification_skipped"
+  | "verification_failed"
+  | "other";
+
+/** One deterministic sanity check the model output failed. */
+export type QualityWarning = {
+  kind: QualityWarningKind;
+  field: string;
+  message: string;
+};
+
+/** A logical reading unit; when the paper has an outline it groups a run of outline entries. */
 export type PaperSection = {
   id: string;
   title: string;
@@ -160,6 +201,10 @@ export type PaperSection = {
   pages: PageSpan;
   summary: string;
   digest: string;
+  /** The question this unit answers for the reader. */
+  question?: string | null;
+  /** Indices into `PaperAnalysis.outline` of the headings this unit groups. */
+  outline_entries?: number[];
   source_span?: { start: TextAnchor; end: TextAnchor } | null;
   key_quotes: KeyQuote[];
   related_terms: string[];
@@ -226,11 +271,16 @@ export type PaperAnalysis = {
     assessed_at: string;
   } | null;
   prerequisites: string[];
+  /** The paper's printed headings in reading order; empty when it prints none. */
+  outline?: OutlineEntry[];
+  /** The logical reading units. */
   sections: PaperSection[];
   claims: Claim[];
   glossary: GlossaryEntry[];
   caveats: string[];
   reading_path: string[];
+  pipeline_version?: string | null;
+  quality_warnings?: QualityWarning[];
 };
 
 export type PaperView = {

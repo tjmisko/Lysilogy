@@ -3,17 +3,30 @@
 //! A run can "succeed" with a degenerate answer: a 16-page paper mapped as a
 //! single "Front matter" section, a 48-page paper with no references. These
 //! checks compare the record with what the page text itself shows and return
-//! plain-language warnings. They never change the record. The section and
-//! reference checks also mark an answer worth asking for once more, because
-//! those failures are usually a stochastic bad answer rather than a property
-//! of the paper.
+//! plain-language warnings. They never change the record. The outline,
+//! section and reference checks also mark an answer worth asking for once
+//! more, because those failures are usually a stochastic bad answer rather
+//! than a property of the paper. The grouping checks look at how logical
+//! units use the outline and are reported only.
 
 use std::collections::BTreeSet;
 
 use serde_json::Value;
 
-use super::title::looks_like_identifier;
-use crate::domain::{ExtractedPage, QualityWarning, QualityWarningKind};
+use super::{grouping, outline, title::looks_like_identifier};
+use crate::domain::{DocumentLayout, ExtractedPage, QualityWarning, QualityWarningKind};
+
+/// An empty outline is suspect when the text shows this many numbered
+/// heading lines.
+const MIN_NUMBERED_HEADINGS: usize = 3;
+
+/// An outline is sparse when it has under half of the numbered heading lines
+/// and the text shows at least this many.
+const MIN_NUMBERED_FOR_SPARSE: usize = 6;
+
+/// A grouping of at least this many units, each one heading, is a table of
+/// contents rather than a reading map.
+const MIN_UNITS_FOR_MIRROR: usize = 4;
 
 /// A section map covering less than this share of the main text is suspect.
 const MIN_SECTION_COVERAGE: f64 = 0.6;
@@ -54,6 +67,9 @@ pub fn check(
         warnings.extend(abstract_warnings(artifacts, pages));
     }
     warnings.extend(degenerate(artifacts, fields, pages));
+    if fields.contains("sections") {
+        warnings.extend(grouping_warnings(artifacts, pages));
+    }
     warnings
 }
 
@@ -66,6 +82,9 @@ pub fn degenerate(
     pages: &[ExtractedPage],
 ) -> Vec<QualityWarning> {
     let mut warnings = Vec::new();
+    if fields.contains("outline") {
+        warnings.extend(outline_warnings(artifacts, pages));
+    }
     if fields.contains("sections") {
         warnings.extend(section_warnings(artifacts, pages));
     }
@@ -214,6 +233,112 @@ fn section_warnings(artifacts: &Value, pages: &[ExtractedPage]) -> Vec<QualityWa
                 "The section map covers {} of {body} pages of main text ({:.0}%).",
                 covered.len(),
                 coverage * 100.0
+            ),
+        ));
+    }
+    warnings
+}
+
+/// An outline that misses the numbered headings the text plainly shows.
+fn outline_warnings(artifacts: &Value, pages: &[ExtractedPage]) -> Vec<QualityWarning> {
+    let Some(entries) = artifacts.get("outline").and_then(Value::as_array) else {
+        return Vec::new();
+    };
+    let numbered = outline::candidates(pages, &DocumentLayout::default())
+        .into_iter()
+        .filter(|candidate| candidate.number.is_some())
+        .collect::<Vec<_>>();
+    let examples = numbered
+        .iter()
+        .take(3)
+        .map(|candidate| format!("\"{}\" on page {}", candidate.text, candidate.page))
+        .collect::<Vec<_>>()
+        .join(", ");
+    if entries.is_empty() && numbered.len() >= MIN_NUMBERED_HEADINGS {
+        return vec![warning(
+            QualityWarningKind::OutlineMissing,
+            "outline",
+            format!(
+                "The outline is empty, but the text shows {} numbered heading lines, such as {examples}.",
+                numbered.len()
+            ),
+        )];
+    }
+    if numbered.len() >= MIN_NUMBERED_FOR_SPARSE && entries.len() * 2 < numbered.len() {
+        return vec![warning(
+            QualityWarningKind::OutlineSparse,
+            "outline",
+            format!(
+                "The outline has {} entries, but the text shows {} numbered heading lines, such as {examples}.",
+                entries.len(),
+                numbered.len()
+            ),
+        )];
+    }
+    Vec::new()
+}
+
+/// How grouped logical units use the outline: every main-text heading in a
+/// unit, and not merely one unit per heading.
+fn grouping_warnings(artifacts: &Value, pages: &[ExtractedPage]) -> Vec<QualityWarning> {
+    let units = artifacts
+        .get("sections")
+        .and_then(Value::as_array)
+        .map(Vec::as_slice)
+        .unwrap_or_default();
+    let Some(outline_value) = artifacts.get("outline") else {
+        return Vec::new();
+    };
+    if !grouping::is_grouped(units) {
+        return Vec::new();
+    }
+    let entries = outline::entries(outline_value, pages);
+    let ranges = units
+        .iter()
+        .filter_map(|unit| {
+            let first = unit.get("outline_first")?.as_u64()?;
+            let last = unit.get("outline_last")?.as_u64()?;
+            Some((usize::try_from(first).ok()?, usize::try_from(last).ok()?))
+        })
+        .collect::<Vec<_>>();
+    let mut warnings = Vec::new();
+    let uncovered = entries
+        .iter()
+        .enumerate()
+        .filter(|(index, entry)| {
+            entry.is_main()
+                && !ranges
+                    .iter()
+                    .any(|(first, last)| (first..=last).contains(&index))
+        })
+        .map(|(_, entry)| format!("\"{}\"", entry.anchor))
+        .collect::<Vec<_>>();
+    if !uncovered.is_empty() {
+        warnings.push(warning(
+            QualityWarningKind::SectionsGroupingInvalid,
+            "sections",
+            format!(
+                "{} main-text heading(s) belong to no reading unit: {}.",
+                uncovered.len(),
+                uncovered.join(", ")
+            ),
+        ));
+    }
+    let main_units = ranges
+        .iter()
+        .filter(|(first, _)| entries.get(*first).is_some_and(outline::Entry::is_main))
+        .collect::<Vec<_>>();
+    let lower = outline::body_pages(&entries, pages.len()).div_ceil(4);
+    if main_units.len() >= MIN_UNITS_FOR_MIRROR
+        && main_units.len() > lower
+        && main_units.iter().all(|(first, last)| first == last)
+    {
+        warnings.push(warning(
+            QualityWarningKind::SectionsMirrorOutline,
+            "sections",
+            format!(
+                "Each of the {} reading units is a single printed heading, so the map repeats the outline instead of grouping it.",
+                main_units.len()
             ),
         ));
     }
@@ -477,5 +602,83 @@ mod tests {
         let record = json!({"supercut": []});
         let fields = BTreeSet::from(["supercut".to_owned()]);
         assert!(check(&record, &fields, &sixteen_pages_with_references()).is_empty());
+    }
+
+    fn numbered_pages() -> Vec<ExtractedPage> {
+        pages(&[
+            "A Title\n1 Introduction\nWe study things in this paper.",
+            "2 Model\nA model of things.\n2.1 Assumptions\nThey are standard.",
+            "3 Data\nForty years of data.\n4 Results\nLarge effects.",
+            "5 Robustness\nStill large.\n6 Conclusion\nWe are done.",
+            "References\n[1] A. Author. A work.",
+        ])
+    }
+
+    fn numbered_outline() -> Value {
+        json!([
+            {"number": "1", "title": "Introduction", "level": 1, "page": 1, "role": "main"},
+            {"number": "2", "title": "Model", "level": 1, "page": 2, "role": "main"},
+            {"number": "2.1", "title": "Assumptions", "level": 2, "page": 2, "role": "main"},
+            {"number": "3", "title": "Data", "level": 1, "page": 3, "role": "main"},
+            {"number": "4", "title": "Results", "level": 1, "page": 3, "role": "main"},
+            {"number": "5", "title": "Robustness", "level": 1, "page": 4, "role": "main"},
+            {"number": "6", "title": "Conclusion", "level": 1, "page": 4, "role": "main"},
+            {"number": null, "title": "References", "level": 1, "page": 5, "role": "references"}
+        ])
+    }
+
+    #[test]
+    fn should_flag_an_empty_or_sparse_outline_when_the_text_shows_numbered_headings() {
+        let pages = numbered_pages();
+        let fields = BTreeSet::from(["outline".to_owned()]);
+        let empty = degenerate(&json!({"outline": []}), &fields, &pages);
+        assert_eq!(empty.len(), 1);
+        assert_eq!(empty[0].kind, QualityWarningKind::OutlineMissing);
+        assert!(
+            empty[0].message.contains("\"1 Introduction\" on page 1"),
+            "{}",
+            empty[0].message
+        );
+        let sparse = degenerate(
+            &json!({"outline": [numbered_outline()[0].clone(), numbered_outline()[1].clone()]}),
+            &fields,
+            &pages,
+        );
+        assert_eq!(sparse[0].kind, QualityWarningKind::OutlineSparse);
+        assert!(degenerate(&json!({"outline": numbered_outline()}), &fields, &pages).is_empty());
+        // A letter without headings may have an empty outline.
+        let letter = self::pages(&["Dear editor,\nWe write to comment on a paper."]);
+        assert!(degenerate(&json!({"outline": []}), &fields, &letter).is_empty());
+    }
+
+    #[test]
+    fn should_flag_uncovered_headings_and_a_grouping_that_repeats_the_outline() {
+        let pages = numbered_pages();
+        let fields = BTreeSet::from(["sections".to_owned()]);
+        let unit = |first: u64, last: u64, start: u64, end: u64| {
+            json!({"title": "T", "kind": "other", "outline_first": first, "outline_last": last,
+                   "pages": {"start": start, "end": end}})
+        };
+        let gap = json!({"outline": numbered_outline(), "sections": [unit(0, 2, 1, 2), unit(5, 6, 4, 4)]});
+        let warnings = grouping_warnings(&gap, &pages);
+        assert_eq!(warnings.len(), 1, "{warnings:#?}");
+        assert_eq!(
+            warnings[0].kind,
+            QualityWarningKind::SectionsGroupingInvalid
+        );
+        assert!(warnings[0].message.contains("\"3 Data\", \"4 Results\""));
+        let mirror = json!({"outline": numbered_outline(), "sections": [
+            unit(0, 0, 1, 1), unit(1, 1, 2, 2), unit(2, 2, 2, 2), unit(3, 3, 3, 3),
+            unit(4, 4, 3, 3), unit(5, 5, 4, 4), unit(6, 6, 4, 4)
+        ]});
+        let warnings = check(&mirror, &fields, &pages);
+        assert!(
+            warnings
+                .iter()
+                .any(|warning| warning.kind == QualityWarningKind::SectionsMirrorOutline),
+            "{warnings:#?}"
+        );
+        let good = json!({"outline": numbered_outline(), "sections": [unit(0, 2, 1, 2), unit(3, 6, 3, 4)]});
+        assert!(grouping_warnings(&good, &pages).is_empty());
     }
 }

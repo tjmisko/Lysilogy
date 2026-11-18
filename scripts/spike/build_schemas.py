@@ -71,16 +71,49 @@ card_core = obj(
                  targets=arr(position_item, "Work it contrasts with or critiques."),
                  replications=arr(position_item, "Work it replicates or that replicates it.")))
 question = obj(text=s("The research question or hypothesis."), evidence=evidence_list, confidence=confidence)
+outline_roles = ["front_matter", "main", "back_matter", "references", "appendix"]
+outline = arr(obj(
+    number=s("The heading's printed number or letter exactly as printed, e.g. '2', '2.1', 'IV.', 'A.'; null when the heading is unnumbered.", null=True),
+    title=s("The heading text exactly as printed, without its number."),
+    level=i("1 for a top-level heading, 2 for a subsection, 3 below that."),
+    page=i("The 1-based PDF page the heading is printed on."),
+    role=enum(outline_roles, "front_matter: abstract, keywords and similar before the main text; main: the paper's argument; back_matter: acknowledgments, funding, author notes, declarations; references: the bibliography; appendix: appendices and supplementary material.")),
+    "The paper's own headings as printed, in reading order. Empty when the paper prints no headings.")
+
+# The stored logical unit. A unit grouped from the outline names its range of
+# outline entries and has its pages and source span derived by the
+# application; a unit made without an outline has null outline indices and
+# gives its own pages and span.
+unit_title = s("A short topic title that names the unit's idea or finding, not a breadcrumb of the paper's own headings.")
+unit_summary = s("One or two sentences that synthesize the whole unit.")
+unit_question = s("One line: the question this unit answers for the reader, which is why its parts belong together.")
+unit_pages = obj(start=i("First 1-based PDF page."), end=i("Last 1-based PDF page."))
+unit_span = obj(start_text=s("A short verbatim phrase from where the unit begins."), start_page=i(),
+                end_text=s("A short verbatim phrase from where the unit ends."), end_page=i())
 sections = arr(obj(
-    title=s("A short topic title, not a breadcrumb of the paper's own headings."),
+    title=unit_title,
     kind=enum(section_kinds),
     family=enum(section_families),
-    pages=obj(start=i("First 1-based PDF page."), end=i("Last 1-based PDF page.")),
-    source_span=obj(start_text=s("A short verbatim phrase from where the unit begins."), start_page=i(),
-                    end_text=s("A short verbatim phrase from where the unit ends."), end_page=i()),
-    summary=s("One or two sentences that synthesize the whole unit.")),
+    outline_first=i("Index of the first outline entry in the unit; null when no outline was given.", null=True),
+    outline_last=i("Index of the last outline entry in the unit; null when no outline was given.", null=True),
+    pages=unit_pages,
+    source_span=unit_span,
+    summary=unit_summary,
+    question=unit_question),
     "Coherent topic-based reading units, usually 2-3 pages and generally 1-5 pages of content. "
     "Keep related headings, variants, and examples together. Increasing PDF order, non-overlapping spans. Never a list of the paper's own headings.")
+# What the model is asked for when the paper has a usable outline: ranges of
+# outline entries only. Pages and spans are derived from the outline.
+sections_grouped = arr(obj(
+    title=unit_title,
+    kind=enum(section_kinds),
+    family=enum(section_families),
+    outline_first=i("Index of the first outline entry in this unit."),
+    outline_last=i("Index of the last outline entry in this unit; equal to outline_first for a one-entry unit."),
+    summary=unit_summary,
+    question=unit_question),
+    "Coherent reading units, usually 2-3 pages of content each, as contiguous ranges of the given outline entries "
+    "in order, without gaps or overlaps. Never one unit per heading.")
 references = arr(obj(key=s("The in-text marker, e.g. '12' or 'Smith et al., 2020'."),
                    title=s(null=True), authors=arr(s()), year=i(null=True), venue=s(null=True), doi=s(null=True),
                    page=i()), "Every bibliography entry, in order.")
@@ -122,6 +155,7 @@ CORE = {
     "abstract": abstract,
     "card": card_core,
     "question": question,
+    "outline": outline,
     "sections": sections,
     "references": references,
     "citations": citations,
@@ -162,7 +196,7 @@ repair = obj(
                     quote=s("The exact text from the page, for replace_quote.", null=True),
                     page=i(null=True))))
 
-core_schema = obj("The fields every extraction needs: identity, abstract, context, sections, references, citations and relations.", **CORE)
+core_schema = obj("The fields every extraction needs: identity, abstract, context, outline, sections, references, citations and relations.", **CORE)
 analysis_schema = obj("The paper's claims, method, key numbers, limitations, open questions, headline results and read signal.",
                       **FEATURES["analysis"])
 glossary_schema = obj("The symbols and terms a newcomer would need.", **FEATURES["glossary"])
@@ -185,7 +219,9 @@ field_schemas = {
     "abstract": obj("The paper's abstract.", abstract=abstract),
     "card": obj("The paper's thesis and position.", card=card_core),
     "question": obj("The paper's research question.", question=question),
+    "outline": obj("The paper's printed outline.", outline=outline),
     "sections": obj("The paper's reading map.", sections=sections),
+    "sections-grouped": obj("The paper's reading map as ranges of its outline.", sections=sections_grouped),
     "references": obj("The paper's bibliography entries.", references=references),
     "citations": obj("The paper's in-text citations.", citations=citations),
     "relations": obj("The paper's relations to cited works.", relations=relations),

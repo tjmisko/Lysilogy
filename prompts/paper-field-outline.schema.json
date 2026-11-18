@@ -1,0 +1,57 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "outline"
+  ],
+  "properties": {
+    "outline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "number",
+          "title",
+          "level",
+          "page",
+          "role"
+        ],
+        "properties": {
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The heading's printed number or letter exactly as printed, e.g. '2', '2.1', 'IV.', 'A.'; null when the heading is unnumbered."
+          },
+          "title": {
+            "type": "string",
+            "description": "The heading text exactly as printed, without its number."
+          },
+          "level": {
+            "type": "integer",
+            "description": "1 for a top-level heading, 2 for a subsection, 3 below that."
+          },
+          "page": {
+            "type": "integer",
+            "description": "The 1-based PDF page the heading is printed on."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "front_matter",
+              "main",
+              "back_matter",
+              "references",
+              "appendix"
+            ],
+            "description": "front_matter: abstract, keywords and similar before the main text; main: the paper's argument; back_matter: acknowledgments, funding, author notes, declarations; references: the bibliography; appendix: appendices and supplementary material."
+          }
+        }
+      },
+      "description": "The paper's own headings as printed, in reading order. Empty when the paper prints no headings."
+    }
+  },
+  "description": "The paper's printed outline."
+}

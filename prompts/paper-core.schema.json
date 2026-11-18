@@ -7,6 +7,7 @@
     "abstract",
     "card",
     "question",
+    "outline",
     "sections",
     "references",
     "citations",
@@ -515,6 +516,53 @@
         }
       }
     },
+    "outline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "number",
+          "title",
+          "level",
+          "page",
+          "role"
+        ],
+        "properties": {
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The heading's printed number or letter exactly as printed, e.g. '2', '2.1', 'IV.', 'A.'; null when the heading is unnumbered."
+          },
+          "title": {
+            "type": "string",
+            "description": "The heading text exactly as printed, without its number."
+          },
+          "level": {
+            "type": "integer",
+            "description": "1 for a top-level heading, 2 for a subsection, 3 below that."
+          },
+          "page": {
+            "type": "integer",
+            "description": "The 1-based PDF page the heading is printed on."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "front_matter",
+              "main",
+              "back_matter",
+              "references",
+              "appendix"
+            ],
+            "description": "front_matter: abstract, keywords and similar before the main text; main: the paper's argument; back_matter: acknowledgments, funding, author notes, declarations; references: the bibliography; appendix: appendices and supplementary material."
+          }
+        }
+      },
+      "description": "The paper's own headings as printed, in reading order. Empty when the paper prints no headings."
+    },
     "sections": {
       "type": "array",
       "items": {
@@ -524,14 +572,17 @@
           "title",
           "kind",
           "family",
+          "outline_first",
+          "outline_last",
           "pages",
           "source_span",
-          "summary"
+          "summary",
+          "question"
         ],
         "properties": {
           "title": {
             "type": "string",
-            "description": "A short topic title, not a breadcrumb of the paper's own headings."
+            "description": "A short topic title that names the unit's idea or finding, not a breadcrumb of the paper's own headings."
           },
           "kind": {
             "type": "string",
@@ -562,6 +613,20 @@
               "caveat",
               "reference"
             ]
+          },
+          "outline_first": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Index of the first outline entry in the unit; null when no outline was given."
+          },
+          "outline_last": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Index of the last outline entry in the unit; null when no outline was given."
           },
           "pages": {
             "type": "object",
@@ -610,6 +675,10 @@
           "summary": {
             "type": "string",
             "description": "One or two sentences that synthesize the whole unit."
+          },
+          "question": {
+            "type": "string",
+            "description": "One line: the question this unit answers for the reader, which is why its parts belong together."
           }
         }
       },
@@ -749,5 +818,5 @@
       }
     }
   },
-  "description": "The fields every extraction needs: identity, abstract, context, sections, references, citations and relations."
+  "description": "The fields every extraction needs: identity, abstract, context, outline, sections, references, citations and relations."
 }

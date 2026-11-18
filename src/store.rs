@@ -875,6 +875,7 @@ mod tests {
                 verified_at,
             }],
             prerequisites: Vec::new(),
+            outline: Vec::new(),
             sections: Vec::new(),
             claims: Vec::new(),
             glossary: Vec::new(),
