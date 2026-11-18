@@ -1142,3 +1142,6 @@ impl ExtractedPaper {
         text
     }
 }
+
+#[cfg(test)]
+mod fixture_tests;

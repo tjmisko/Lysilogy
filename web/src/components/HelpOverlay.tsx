@@ -50,6 +50,7 @@ const GROUPS = [
       ["P", "Toggle paged / continuous PDF reading"],
       ["R", "Rotate continuous scrolling: vertical / horizontal"],
       ["+ / −", "Show one fewer / one more page column in Overview"],
+      ["O", "Overview: switch between logical units and the printed outline"],
       ["I", "Toggle dark ink / true colour for every rendered PDF page"],
     ],
   },

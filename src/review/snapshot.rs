@@ -6,24 +6,22 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 
-/// Top-level analysis keys copied into a snapshot. Matching by prefix keeps
-/// fields the reader model adds later (an `outline`, `logical_sections`, a
-/// `context` object with read-alongside papers) without naming them here;
-/// the glossary, claims and quotes outside sections are left out because the
-/// review does not grade them.
+/// Top-level analysis keys copied into a snapshot, matched by prefix:
+/// `abstract` covers `abstract_extraction` and `abstract_agreement`,
+/// `context` covers the context node's `context` and the older
+/// `context_notes`/`context_sources`, and `section` covers the logical units
+/// (`sections`), whose `outline_entries` index into `outline`. The pipeline's
+/// `quality_warnings` are pinned so a grade can be read next to them. The
+/// glossary and claims are left out because the review does not grade them.
 const REVIEWED_PREFIXES: &[&str] = &[
     "thesis",
     "author_abstract",
     "abstract",
     "outsider_brief",
     "context",
-    "read_alongside",
-    "neighbo",
-    "surrounding",
     "outline",
-    "logical",
     "section",
-    "reading_unit",
+    "quality_warnings",
 ];
 
 /// What a review graded: the reviewed fields as they were, plus the

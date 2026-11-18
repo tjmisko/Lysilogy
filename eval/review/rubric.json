@@ -20,7 +20,7 @@
       "id": "abstract",
       "label": "Abstract",
       "question": "Is the text shown as the authors' abstract exactly the authors' abstract?",
-      "reads": ["author_abstract", "abstract_extraction"],
+      "reads": ["author_abstract", "abstract_extraction", "abstract_agreement", "quality_warnings"],
       "guidance": "Compare with the PDF's first page, or with the oracle abstract when the manifest names one. Whitespace, hyphenation at line ends and ligatures do not count as errors; dropped or added sentences do.",
       "dimensions": [
         {
@@ -49,7 +49,7 @@
       "id": "thesis",
       "label": "Thesis line",
       "question": "Does the one-line thesis state what this paper contributes, in words a smart outsider understands?",
-      "reads": ["thesis"],
+      "reads": ["thesis", "quality_warnings"],
       "guidance": "A quick check: thirty seconds.",
       "dimensions": [
         {
@@ -70,7 +70,7 @@
       "label": "Why it matters",
       "priority": 1,
       "question": "After reading the context on the first view, do you know why this paper matters: what came before, what it changed, and what to read alongside it?",
-      "reads": ["outsider_brief", "context_notes", "context_sources", "context", "read_alongside"],
+      "reads": ["context", "outsider_brief", "context_notes", "context_sources", "quality_warnings"],
       "guidance": "This is the highest-value component. Judge it against the neighbours listed in the manifest and your own knowledge. A single false claim about the field is a hard reject, however good the rest is.",
       "hard_reject": {
         "id": "false_claim",
@@ -150,7 +150,7 @@
       "id": "outline",
       "label": "Outline",
       "question": "Does the outline list the paper's sections as printed, with the right levels and pages?",
-      "reads": ["outline"],
+      "reads": ["outline", "quality_warnings"],
       "guidance": "Count against the printed headings in the PDF. Front matter, references and appendices count when the paper prints them as headings.",
       "dimensions": [
         {
@@ -188,7 +188,7 @@
       "id": "logical",
       "label": "Reading units",
       "question": "Does the logical segmentation group the paper into coherent units that a reader can take one at a time?",
-      "reads": ["logical_sections", "sections"],
+      "reads": ["sections", "outline", "quality_warnings"],
       "guidance": "A good unit answers one question (what is the problem, how is it measured, what is the main result, does it survive robustness checks). It may merge several printed sections or split a long one.",
       "dimensions": [
         {

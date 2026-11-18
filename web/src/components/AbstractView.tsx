@@ -1,9 +1,20 @@
-import type { ContextNote, ContextSource, PaperAnalysis } from "../types";
+import {
+  CONTEXT_PARTS,
+  basisCounts,
+  basisLabel,
+  downgradeText,
+  paperContext,
+  pipelineLabel,
+  readerWarnings,
+} from "../lib/readerOutput";
+import type { ContextClaim, ContextNote, ContextSource, PaperAnalysis, PaperContext } from "../types";
+import { ReadAlongsideList } from "./ReadAlongsideList";
 
 type AbstractViewProps = {
   analysis: PaperAnalysis;
   abstractPage: number | null;
   onOpenPage: (page: number) => void;
+  onOpenPaper: (paperId: string) => void;
   onContinue: () => void;
   onRefresh?: (component: "abstract" | "context") => void;
   refreshing?: "abstract" | "context" | "structure" | null;
@@ -47,14 +58,98 @@ function validContext(analysis: PaperAnalysis): {
   };
 }
 
+function ClaimList({ claims, context, onOpenPage, onOpenPaper }: {
+  claims: ContextClaim[];
+  context: PaperContext;
+  onOpenPage: (page: number) => void;
+  onOpenPaper: (paperId: string) => void;
+}) {
+  const works = new Map(context.read_alongside.filter((item) => item.work_id != null)
+    .map((item) => [item.work_id as string, item] as const));
+  return <ul className="context-claim-list">{claims.map((claim, index) => {
+    const label = basisLabel(claim.basis);
+    const downgrade = downgradeText(claim);
+    const cited = claim.basis === "dossier" ? claim.work_ids.map((id) => works.get(id)).filter((item) => item !== undefined) : [];
+    return <li className="context-claim" data-basis={claim.basis} key={`${claim.text}-${index}`}>
+      <span className={`context-basis basis-${claim.basis}`} title={label.long}>{label.short}</span>
+      <p>{claim.text}</p>
+      {claim.basis === "paper" && claim.evidence.map((quote, quoteIndex) => (
+        <blockquote className="context-claim-quote" key={quoteIndex}>
+          “{quote.quote}”{" "}
+          <button type="button" className="context-claim-page" onClick={() => onOpenPage(quote.page)}
+            aria-label={`Open PDF page ${quote.page}`}>p. {quote.page} ↗</button>
+        </blockquote>
+      ))}
+      {cited.length > 0 && <p className="context-claim-works">Graph record:{" "}
+        {cited.map((work, workIndex) => <span key={work.work_id}>
+          {workIndex > 0 && "; "}
+          {work.local_paper_id != null
+            ? <button type="button" className="context-claim-work" onClick={() => onOpenPaper(work.local_paper_id as string)}>{work.title}</button>
+            : <cite>{work.title}</cite>}
+          {work.year != null && ` (${work.year})`}
+        </span>)}
+      </p>}
+      {downgrade !== null && <p className="context-claim-downgrade">Shown as background: {downgrade}</p>}
+    </li>;
+  })}</ul>;
+}
+
+function PipelineChecks({ analysis }: { analysis: PaperAnalysis }) {
+  const warnings = readerWarnings(analysis);
+  const pipeline = pipelineLabel(analysis.pipeline_version);
+  const f1 = analysis.abstract_agreement?.token_f1;
+  if (warnings.length === 0 && pipeline === null && f1 == null) return null;
+  return <details className="pipeline-checks">
+    <summary>
+      {warnings.length === 0 ? "Pipeline checks passed" : `${warnings.length} pipeline ${warnings.length === 1 ? "check" : "checks"} flagged`}
+      {pipeline !== null && <span className="pipeline-version" title={analysis.pipeline_version ?? undefined}> · {pipeline}</span>}
+    </summary>
+    {warnings.length > 0 && <ul>{warnings.map((warning, index) => (
+      <li key={index} data-warning-kind={warning.kind}><code>{warning.field}</code> {warning.message}</li>
+    ))}</ul>}
+    {f1 != null && <p>The model’s abstract and the deterministic extraction agree at token F1 {f1.toFixed(2)}.</p>}
+  </details>;
+}
+
+function ContextNodeView({ context, onOpenPage, onOpenPaper }: {
+  context: PaperContext;
+  onOpenPage: (page: number) => void;
+  onOpenPaper: (paperId: string) => void;
+}) {
+  const counts = basisCounts(context);
+  return <>
+    <section className="reading-context is-node" aria-label="Research history and subsequent influence">
+      {CONTEXT_PARTS.map(({ part, eyebrow, heading }) => {
+        const claims = context[part];
+        return <article className="reading-context-card" key={part} data-context-kind={part}>
+          <span className="eyebrow">{eyebrow}</span>
+          <h2>{heading}</h2>
+          {claims.length > 0
+            ? <ClaimList claims={claims} context={context} onOpenPage={onOpenPage} onOpenPaper={onOpenPaper} />
+            : <p className="context-empty">Nothing was written for this part.</p>}
+        </article>;
+      })}
+    </section>
+    {context.reception_note != null && context.reception_note.trim() !== "" && (
+      <p className="context-reception-note"><strong>Not known:</strong> {context.reception_note}</p>
+    )}
+    <p className="context-provenance">
+      {counts.paper} from the paper · {counts.dossier} from the citation graph · {counts.background} unverified background
+    </p>
+    <ReadAlongsideList items={context.read_alongside} onOpenPaper={onOpenPaper} />
+  </>;
+}
+
 export function AbstractView({
   analysis,
   abstractPage,
   onOpenPage,
+  onOpenPaper,
   onContinue,
   onRefresh,
   refreshing = null,
 }: AbstractViewProps) {
+  const node = paperContext(analysis);
   const context = validContext(analysis);
   const sourceNumbers = new Map(
     context.sources.map((source, index) => [source.id, index + 1] as const),
@@ -83,6 +178,14 @@ export function AbstractView({
         <p>{analysis.thesis}</p>
       </article>
 
+      {node !== null && node.lead.length > 0 && (
+        <article className="why-it-matters" aria-labelledby="why-it-matters-heading">
+          <span className="eyebrow">Surrounding context</span>
+          <h2 id="why-it-matters-heading">Why it matters</h2>
+          <ClaimList claims={node.lead} context={node} onOpenPage={onOpenPage} onOpenPaper={onOpenPaper} />
+        </article>
+      )}
+
       <article className="authored-abstract">
         <header>
           <div>
@@ -109,7 +212,8 @@ export function AbstractView({
         )}
       </article>
 
-      <section className="reading-context" aria-label="Research history and subsequent influence">
+      {node !== null ? <ContextNodeView context={node} onOpenPage={onOpenPage} onOpenPaper={onOpenPaper} />
+        : <section className="reading-context" aria-label="Research history and subsequent influence">
         {(["before", "after"] as const).map((kind) => {
           const notes = context.notes.filter((note) => note.kind === kind);
           return <article className="reading-context-card" key={kind} data-context-kind={kind}>
@@ -122,7 +226,7 @@ export function AbstractView({
             </p>}
           </article>;
         })}
-      </section>
+      </section>}
       {legacyNotes.length > 0 && <article className="reading-context-card legacy-context">
         <span className="eyebrow">Earlier context</span>
         {renderNotes(legacyNotes)}
@@ -178,6 +282,8 @@ export function AbstractView({
           </p>
         </section>
       )}
+
+      <PipelineChecks analysis={analysis} />
 
       <footer className="view-continuation">
         <div>

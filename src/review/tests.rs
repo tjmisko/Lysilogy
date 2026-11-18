@@ -19,10 +19,10 @@ fn analysis(generated_at: &str, version: Option<&str>) -> Value {
         "thesis": "Import competition from China lowered US local employment.",
         "outsider_brief": "",
         "author_abstract": "We analyze the effect of rising Chinese import competition.",
-        "sections": [{"id": "s1", "title": "The China shock", "summary": "Motivation."}],
-        "outline": [{"title": "I. Introduction", "level": 1, "page": 1}],
-        "logical_sections": [{"title": "Why trade shocks are local", "covers": ["I", "II"]}],
-        "context": {"read_alongside": [{"title": "Topalova 2010"}]},
+        "sections": [{"id": "s1", "title": "The China shock", "summary": "Motivation.", "outline_entries": [0]}],
+        "outline": [{"number": "I.", "title": "Introduction", "level": 1, "page": 1}],
+        "context": {"read_alongside": [{"title": "Topalova 2010", "why": "Design predecessor"}]},
+        "quality_warnings": [{"kind": "outline_sparse", "field": "outline", "message": "Few headings."}],
         "glossary": [{"term": "commuting zone"}],
         "claims": [{"text": "not reviewed"}]
     });
@@ -126,8 +126,8 @@ fn should_pin_reviewed_fields_and_leave_out_the_rest() {
         "author_abstract",
         "sections",
         "outline",
-        "logical_sections",
         "context",
+        "quality_warnings",
     ] {
         assert!(snapshot.field(key).is_some(), "{key} should be pinned");
     }
@@ -153,7 +153,7 @@ fn should_change_snapshot_id_only_when_reviewed_output_changes() {
     let rerun = analysis("2026-11-02T00:00:00Z", None);
     assert_ne!(same, snapshot_from_analysis(&rerun).snapshot_id);
     let mut regrouped = base;
-    regrouped["logical_sections"] = json!([]);
+    regrouped["sections"][0]["outline_entries"] = json!([]);
     assert_ne!(same, snapshot_from_analysis(&regrouped).snapshot_id);
     let versioned = analysis("2026-11-01T00:00:00Z", Some("core-v3"));
     assert_ne!(same, snapshot_from_analysis(&versioned).snapshot_id);
@@ -434,8 +434,8 @@ fn should_export_issues_with_the_output_they_flag() -> Result<()> {
     let exported = export(&rubric, json!({}), vec![review], Utc::now());
     assert_eq!(exported.issues.len(), 1);
     let output = &exported.issues[0].reviewed_output;
-    assert!(output.contains_key("logical_sections"));
     assert!(output.contains_key("sections"));
+    assert!(output.contains_key("outline"));
     assert!(!output.contains_key("thesis"));
     assert_eq!(exported.issues[0].pipeline_version, "core-v4");
     assert_eq!(exported.summary.reviews, 1);
@@ -508,4 +508,30 @@ async fn should_report_progress_across_the_evaluation_set() -> Result<()> {
         .ok_or_else(|| Error::Task("autor2013".to_owned()))?;
     assert!(!autor.reviewed && autor.reviewed_earlier);
     Ok(())
+}
+
+#[test]
+fn should_pin_every_graded_field_of_the_shared_reader_fixture() {
+    let analysis: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/reader/analysis-current.json"
+    ))
+    .expect("fixture is JSON");
+    let snapshot = snapshot_from_analysis(&analysis);
+    let rubric = Rubric::bundled().expect("bundled rubric");
+    for component in &rubric.components {
+        for key in &component.reads {
+            if analysis.get(key).is_some_and(|value| !value.is_null()) {
+                assert!(
+                    snapshot.field(key).is_some(),
+                    "{} reads {key}, which the snapshot must pin",
+                    component.id
+                );
+            }
+        }
+    }
+    assert!(snapshot.field("glossary").is_none());
+    assert_eq!(
+        snapshot.pipeline_version.as_deref(),
+        analysis["pipeline_version"].as_str()
+    );
 }

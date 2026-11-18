@@ -37,7 +37,10 @@ import {
   type Rubric,
   type RubricComponent,
   type RubricDimension,
+  type ReviewedFields,
 } from "../lib/review";
+import { basisLabel, downgradeText, outlineLabel, relationLabel, roleLabel } from "../lib/readerOutput";
+import type { ContextBasis, ContextClaim } from "../types";
 
 type ReviewPanelProps = {
   paperId: string | null;
@@ -70,12 +73,52 @@ function NotProduced() {
   return <p className="review-not-produced">Not produced</p>;
 }
 
-function ComponentOutput({ component, fields, manifestPaper }: { component: RubricComponent; fields: Record<string, unknown>; manifestPaper: ManifestPaper | null }) {
-  switch (component.id) {
+function BasisTag({ basis }: { basis: ContextBasis }) {
+  const label = basisLabel(basis);
+  return <span className={`review-basis basis-${basis}`} title={label.long}>{label.short}</span>;
+}
+
+function ClaimsBlock({ title, claims }: { title: string; claims: ContextClaim[] }) {
+  return <>
+    <h4>{title}</h4>
+    {claims.length === 0 ? <NotProduced /> : <ul className="review-claims">{claims.map((claim, index) => {
+      const downgrade = downgradeText(claim);
+      return <li key={index} data-basis={claim.basis}>
+        <BasisTag basis={claim.basis} /> <span className="review-prose">{claim.text}</span>
+        {claim.evidence.map((quote, quoteIndex) => <blockquote key={quoteIndex} className="review-quote">“{quote.quote}” <span className="review-muted">p. {quote.page}</span></blockquote>)}
+        {claim.basis !== "paper" && claim.work_ids.length > 0 && <div className="review-muted">Works: {claim.work_ids.join(", ")}</div>}
+        {downgrade !== null && <div className="review-muted">Downgraded to background: {downgrade}</div>}
+      </li>;
+    })}</ul>}
+  </>;
+}
+
+/** Pipeline warnings about the fields a component grades, shown above its output. */
+const WARNING_FIELDS: Record<string, string[]> = {
+  abstract: ["abstract", "author_abstract"],
+  thesis: ["thesis", "card"],
+  context: ["context"],
+  outline: ["outline"],
+  logical: ["sections"],
+};
+
+function ComponentWarnings({ componentId, fields }: { componentId: string; fields: ReviewedFields }) {
+  const prefixes = WARNING_FIELDS[componentId] ?? [];
+  const warnings = (fields.quality_warnings ?? []).filter((warning) => prefixes.some((prefix) => warning.field.startsWith(prefix)));
+  if (warnings.length === 0) return null;
+  return <ul className="review-warnings" aria-label="Pipeline warnings">{warnings.map((warning, index) => (
+    <li key={index}><code>{warning.kind}</code> {warning.message}</li>
+  ))}</ul>;
+}
+
+function ComponentOutput({ component, fields, manifestPaper }: { component: RubricComponent; fields: ReviewedFields; manifestPaper: ManifestPaper | null }) {
+  const body = (() => { switch (component.id) {
     case "abstract": {
       const text = readAbstract(fields);
+      const f1 = fields.abstract_agreement?.token_f1;
       return <>
         {text === null ? <NotProduced /> : <p className="review-prose">{text}</p>}
+        {f1 != null && <p className="review-hint">Agreement with the deterministic extraction: token F1 {f1.toFixed(2)}</p>}
         {manifestPaper?.oracle != null && <p className="review-hint">Reference abstract: <code>{manifestPaper.oracle}</code></p>}
       </>;
     }
@@ -85,24 +128,42 @@ function ComponentOutput({ component, fields, manifestPaper }: { component: Rubr
     }
     case "context": {
       const context = readContext(fields);
+      const node = context.node;
       return <>
-        {context.paragraphs.length === 0 ? <NotProduced /> : context.paragraphs.map((paragraph, index) => (
-          <p className="review-prose" key={index}>{paragraph.label !== null && <strong>{paragraph.label}: </strong>}{paragraph.text}</p>
-        ))}
-        <h4>Read alongside</h4>
-        {context.readAlongside.length === 0 ? <NotProduced /> : <ul className="review-list">
-          {context.readAlongside.map((item, index) => <li key={index}>
-            {item.link === null ? <strong>{item.title}</strong> : <a href={item.link} target="_blank" rel="noreferrer"><strong>{item.title}</strong></a>}
-            {item.byline !== null && <span className="review-muted"> — {item.byline}</span>}
-            {item.why !== null && <div>{item.why}</div>}
-          </li>)}
-        </ul>}
-        {context.sources.length > 0 && <>
-          <h4>Sources cited</h4>
-          <ul className="review-list">{context.sources.map((source, index) => <li key={index}>
-            {source.url === null ? source.title : <a href={source.url} target="_blank" rel="noreferrer">{source.title}</a>}
-            {source.supports !== null && <div className="review-muted">{source.supports}</div>}
-          </li>)}</ul>
+        {node === null ? <>
+          <p className="review-hint">The context node did not run for this analysis; showing the earlier brief and notes.</p>
+          {context.brief === null && context.legacyNotes.length === 0 ? <NotProduced /> : <>
+            {context.brief !== null && <p className="review-prose">{context.brief}</p>}
+            {context.legacyNotes.map((note, index) => <p className="review-prose" key={index}>
+              {note.kind !== undefined && note.kind !== "legacy" && <strong>{note.kind === "before" ? "Before" : "After"}: </strong>}{note.text}
+            </p>)}
+          </>}
+          {context.sources.length > 0 && <>
+            <h4>Sources cited</h4>
+            <ul className="review-list">{context.sources.map((source) => <li key={source.id}>
+              <a href={source.url} target="_blank" rel="noreferrer">{source.title}</a>
+              <div className="review-muted">{source.supports}</div>
+            </li>)}</ul>
+          </>}
+        </> : <>
+          <ClaimsBlock title="Why it matters" claims={node.lead} />
+          <ClaimsBlock title="Before" claims={node.before} />
+          <ClaimsBlock title="What it changed" claims={node.contribution} />
+          <ClaimsBlock title="After" claims={node.after} />
+          {node.reception_note != null && <p className="review-hint">Not known: {node.reception_note}</p>}
+          <p className="review-hint">
+            {node.counts.paper_claims} paper · {node.counts.dossier_claims} graph · {node.counts.background_claims} background claims;
+            {" "}{node.counts.downgraded_quote_not_found + node.counts.downgraded_unknown_work} downgraded; dossier of {node.counts.dossier_works} works
+          </p>
+          <h4>Read alongside</h4>
+          {node.read_alongside.length === 0 ? <NotProduced /> : <ul className="review-list">
+            {node.read_alongside.map((item, index) => <li key={index}>
+              <BasisTag basis={item.basis} /> <strong>{item.title}</strong>
+              <span className="review-muted"> — {relationLabel(item.relation)}{item.authors == null ? "" : `, ${item.authors}`}{item.year == null ? "" : `, ${item.year}`}
+                {item.local_paper_id != null ? " · in library" : item.work_id != null ? " · in graph" : ""}</span>
+              <div>{item.why}</div>
+            </li>)}
+          </ul>}
         </>}
         {manifestPaper !== null && manifestPaper.neighbours.length > 0 && <details className="review-expected">
           <summary>Evaluation-set neighbours ({manifestPaper.neighbours.length}) — what you might expect</summary>
@@ -115,10 +176,11 @@ function ComponentOutput({ component, fields, manifestPaper }: { component: Rubr
       </>;
     }
     case "outline": {
-      const entries = readOutline(fields);
-      return entries.length === 0 ? <NotProduced /> : <ol className="review-outline">
-        {entries.map((entry, index) => <li key={index} style={{ paddingLeft: `${(Math.max(1, entry.level) - 1) * 18}px` }}>
-          <span>{entry.title}</span>{entry.pages !== null && <span className="review-muted"> {entry.pages}</span>}
+      const rows = readOutline(fields);
+      return rows.length === 0 ? <NotProduced /> : <ol className="review-outline">
+        {rows.map((row) => <li key={row.index} data-role={row.entry.role ?? "main"} style={{ paddingLeft: `${row.depth * 18}px` }}>
+          <span>{outlineLabel(row.entry)}</span>
+          <span className="review-muted"> p. {row.entry.page}{(row.entry.role ?? "main") !== "main" ? ` · ${roleLabel(row.entry.role)}` : ""}</span>
         </li>)}
       </ol>;
     }
@@ -126,17 +188,22 @@ function ComponentOutput({ component, fields, manifestPaper }: { component: Rubr
       const logical = readLogical(fields);
       if (logical.units.length === 0) return <NotProduced />;
       return <>
-        {logical.source === "sections" && <p className="review-hint">No separate logical segmentation was produced; showing the reader’s current sections.</p>}
-        <ol className="review-units">{logical.units.map((unit, index) => <li key={index}>
-          <div><strong>{unit.title}</strong>{unit.pages !== null && <span className="review-muted"> {unit.pages}</span>}</div>
-          {unit.covers.length > 0 && <div className="review-muted">Covers: {unit.covers.join(" · ")}</div>}
-          {unit.summary !== null && <p>{unit.summary}</p>}
+        {!logical.grouped && <p className="review-hint">These units were cut by page span, without a usable printed outline.</p>}
+        <ol className="review-units">{logical.units.map(({ section, range, covers }) => <li key={section.id} data-family={section.family}>
+          <div><strong>{section.title}</strong><span className="review-muted"> {section.pages.start === section.pages.end ? `p. ${section.pages.start}` : `pp. ${section.pages.start}–${section.pages.end}`} · {section.kind}</span></div>
+          {range !== null && <div className="review-muted">Groups {range}: {covers.join(" · ")}</div>}
+          {section.question != null && section.question !== "" && <div className="review-question">{section.question}</div>}
+          {section.summary !== "" && <p>{section.summary}</p>}
         </li>)}</ol>
       </>;
     }
     default:
       return null;
-  }
+  } })();
+  return <>
+    <ComponentWarnings componentId={component.id} fields={fields} />
+    {body}
+  </>;
 }
 
 function anchorsFor(dimension: RubricDimension, rubric: Rubric): Record<string, string> {

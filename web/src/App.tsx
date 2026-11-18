@@ -47,6 +47,17 @@ type TextMode = "markdown" | "pdf";
 
 const VIEW_ORDER: ViewMode[] = ["abstract", "overview", "glossary", "text", "sources"];
 const VIEW_STORAGE_KEY = "lysilogy.reader-view";
+const OVERVIEW_MODE_STORAGE_KEY = "lysilogy.overview-mode";
+
+type OverviewMode = "units" | "outline";
+
+function initialOverviewMode(): OverviewMode {
+  try {
+    return window.localStorage.getItem(OVERVIEW_MODE_STORAGE_KEY) === "outline" ? "outline" : "units";
+  } catch {
+    return "units";
+  }
+}
 
 const PROCESSING_STATES = new Set(["queued", "extracting", "analyzing"]);
 
@@ -92,6 +103,8 @@ export function App() {
   const [pageSnapshots, setPageSnapshots] = useState<PageSnapshot[]>([]);
   const focusRestore = useRef<{ scroll: number } | null>(null);
   const [activeSection, setActiveSection] = useState(0);
+  const [preferredOverviewMode, setOverviewMode] = useState<OverviewMode>(initialOverviewMode);
+  const [activeOutline, setActiveOutline] = useState(0);
   const [refreshingComponent, setRefreshingComponent] = useState<"abstract" | "context" | "structure" | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
   const [preferredView, setView] = useState<ViewMode>(initialView);
@@ -160,6 +173,14 @@ export function App() {
       // The reader remains usable when storage is unavailable.
     }
   }, [preferredView]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(OVERVIEW_MODE_STORAGE_KEY, preferredOverviewMode);
+    } catch {
+      // A per-viewer convenience only.
+    }
+  }, [preferredOverviewMode]);
 
   const refreshLibrary = useCallback(async (): Promise<LibraryResponse> => {
     const next = await api.library();
@@ -311,6 +332,7 @@ export function App() {
       appliedPaperRequest.current = ++paperRequest.current;
       focusRestore.current = null;
       setActiveSection(0);
+      setActiveOutline(0);
       setPanel(null);
       setSwitcherOpen(false);
       setCommandOpen(false);
@@ -425,6 +447,13 @@ export function App() {
 
   const sections = useMemo(() => paperView?.analysis?.sections ?? [], [paperView?.analysis]);
   const selectedSection = sections[activeSection] ?? null;
+  const outline = useMemo(() => paperView?.analysis?.outline ?? [], [paperView?.analysis]);
+  // A paper without printed headings always shows its logical units.
+  const overviewMode: OverviewMode = outline.length > 0 ? preferredOverviewMode : "units";
+  const outlineUnit = useCallback((index: number): number | null => {
+    const unit = sections.findIndex((section) => (section.outline_entries ?? []).includes(index));
+    return unit < 0 ? null : unit;
+  }, [sections]);
 
   const openSection = useCallback((section?: PaperSection, index?: number): void => {
     const target = section ?? sections[activeSection];
@@ -475,6 +504,17 @@ export function App() {
     setTextMode("pdf");
     setView("text");
   }, []);
+
+  const openOutlineEntry = useCallback((index: number): void => {
+    setActiveOutline(index);
+    const unit = outlineUnit(index);
+    const target = unit === null ? undefined : sections[unit];
+    if (unit !== null && target !== undefined) openSection(target, unit);
+    else {
+      const entry = outline[index];
+      if (entry !== undefined) openPage(entry.page);
+    }
+  }, [openPage, openSection, outline, outlineUnit, sections]);
 
   const openGlossary = useCallback((): void => {
     setPanel(null);
@@ -688,15 +728,28 @@ export function App() {
   useGlobalKeys({
     enabled:
       !home && panel === null && sourceQuestion === null && view !== "glossary" && view !== "sources" && !importOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && !reviewOpen && toolsTab === null,
-    activeIndex: activeSection,
-    itemCount: sections.length,
+    activeIndex: overviewMode === "outline" && view === "overview" ? activeOutline : activeSection,
+    itemCount: overviewMode === "outline" && view === "overview" ? outline.length : sections.length,
     view,
     textMode,
-    onMove: setActiveSection,
+    overviewMode: view === "overview" ? overviewMode : "units",
+    onMove: overviewMode === "outline" && view === "overview" ? setActiveOutline : setActiveSection,
     onOpen: () => {
-      if (selectedSection !== null) openSection(selectedSection, activeSection);
+      if (overviewMode === "outline" && view === "overview") openOutlineEntry(activeOutline);
+      else if (selectedSection !== null) openSection(selectedSection, activeSection);
     },
-    onDigest: () => selectedSection !== null && openSection(selectedSection, activeSection),
+    onDigest: () => {
+      if (overviewMode === "outline" && view === "overview") openOutlineEntry(activeOutline);
+      else if (selectedSection !== null) openSection(selectedSection, activeSection);
+    },
+    onToggleOverviewMode: () => {
+      if (outline.length === 0) {
+        setNotice("This paper prints no headings, so there is no outline to show.");
+        return;
+      }
+      setMarkMode(false);
+      setOverviewMode((mode) => mode === "outline" ? "units" : "outline");
+    },
     onGloss: () => paperView?.analysis != null && openGlossary(),
     onHelp: () => setPanel("help"),
     onLiterature: () => { if (selectedId !== null) { setPanel(null); setView("sources"); } },
@@ -734,7 +787,7 @@ export function App() {
     onInvert: () => setDarkInk((value) => !value),
     onToggleAiHighlights: () => setShowAiHighlights((value) => !value),
     onToggleUserHighlights: () => setShowUserHighlights((value) => !value),
-    onToggleMarkMode: () => setMarkMode((value) => !value),
+    onToggleMarkMode: () => { if (overviewMode === "units") setMarkMode((value) => !value); },
     onZoom: (delta) => setPdfZoom((value) => Math.max(0.5, Math.min(2.5, value + delta))),
     onScroll: scrollMarkdown,
     onScrollTo: scrollMarkdownTo,
@@ -1156,6 +1209,7 @@ export function App() {
                   onRefresh={refreshComponent}
                   refreshing={refreshingComponent}
                   onOpenPage={openPage}
+                  onOpenPaper={(id) => selectPaper(id)}
                   onContinue={() => setView("overview")}
                 />
               ) : view === "overview" && analysis !== null ? (
@@ -1163,6 +1217,11 @@ export function App() {
                   analysis={analysis}
                   activeIndex={activeSection}
                   onOpen={openSection}
+                  mode={overviewMode}
+                  onMode={(mode) => { setMarkMode(false); setOverviewMode(mode); }}
+                  activeOutline={activeOutline}
+                  onOpenOutline={openOutlineEntry}
+                  onOpenPage={openPage}
                   sourceUrl={api.source(selectedId)}
                   paperTitle={currentPaper.metadata.title}
                   paperMap={paperMap}

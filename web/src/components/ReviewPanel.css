@@ -491,3 +491,49 @@ blockquote.review-prose {
     grid-template-columns: 1fr;
   }
 }
+
+/* Source classes on context claims, matching the Abstract view's markers. */
+.review-basis {
+  display: inline-block;
+  padding: 1px 5px;
+  border: 1px solid var(--line-bright);
+  border-radius: 3px;
+  color: var(--ink-faint);
+  font: 650 9px ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+.review-basis.basis-paper { border-color: var(--evidence); color: var(--evidence); }
+.review-basis.basis-dossier { border-color: var(--interpretation); color: var(--interpretation); }
+.review-basis.basis-background { border-style: dashed; }
+.review-claims {
+  display: grid;
+  gap: 8px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.review-quote {
+  margin: 4px 0 0 10px;
+  padding-left: 8px;
+  border-left: 2px solid var(--evidence);
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.review-question {
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.review-units > li[data-family] {
+  border-left: 3px solid var(--family, var(--line-bright));
+  padding-left: 8px;
+}
+.review-warnings {
+  margin: 0 0 8px;
+  padding: 6px 8px 6px 22px;
+  border: 1px solid color-mix(in srgb, var(--caveat) 50%, var(--line));
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+.review-warnings code { color: var(--caveat); }

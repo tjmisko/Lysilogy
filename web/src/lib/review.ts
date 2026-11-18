@@ -1,5 +1,9 @@
-// Types and pure logic for the review panel. Kept free of runtime imports so
-// node's test runner can load it directly (see scripts/review.test.mjs).
+// Types and pure logic for the review panel. Its only runtime import is the
+// equally pure readerOutput.ts, so node's test runner can load it directly
+// (see scripts/review.test.mjs).
+
+import type { ContextNote, ContextSource, PaperAnalysis, PaperContext, PaperSection } from "../types";
+import { groupedHeadings, groupedRangeLabel, outlineLabel, outlineRows, paperContext, type OutlineRow } from "./readerOutput.ts";
 
 export type DimensionKind = "score" | "pass_fail" | "choice" | "count";
 
@@ -89,7 +93,7 @@ export type ReviewSnapshot = {
   generated_at: string | null;
   pipeline_version: string | null;
   provider: string | null;
-  fields: Record<string, unknown>;
+  fields: ReviewedFields;
 };
 
 export type ReviewDraft = {
@@ -142,223 +146,97 @@ export type ProgressRow = {
 export const GENERAL_COMPONENT = "general";
 
 // ---------------------------------------------------------------------------
-// Reading the reviewed output defensively. The reader model is still gaining
-// fields, so each reader accepts several plausible shapes and reports
-// "not produced" (null or an empty list) when it finds nothing.
+// Reading the reviewed output. A snapshot copies the graded fields of the
+// stored analysis verbatim (src/review/snapshot.rs), so they have the reader
+// model's types; fields an older analysis lacks are simply absent.
 
-type Loose = Record<string, unknown>;
+/** The analysis fields a review snapshot carries. */
+export type ReviewedFields = Partial<Pick<PaperAnalysis,
+  | "thesis"
+  | "author_abstract"
+  | "abstract_extraction"
+  | "abstract_agreement"
+  | "outsider_brief"
+  | "context"
+  | "context_notes"
+  | "context_sources"
+  | "outline"
+  | "sections"
+  | "quality_warnings"
+>>;
 
-function isRecord(value: unknown): value is Loose {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function text(value: unknown): string | null {
+function text(value: string | null | undefined): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
 
-function firstText(record: Loose, keys: string[]): string | null {
-  for (const key of keys) {
-    const found = text(record[key]);
-    if (found !== null) return found;
-  }
-  return null;
-}
-
-function firstList(record: Loose, keys: string[]): unknown[] | null {
-  for (const key of keys) {
-    const value = record[key];
-    if (Array.isArray(value) && value.length > 0) return value as unknown[];
-  }
-  return null;
-}
-
-function listOf(value: unknown): unknown[] {
-  return Array.isArray(value) ? (value as unknown[]) : [];
-}
-
-function numberOf(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-function authorsOf(value: unknown): string | null {
-  if (typeof value === "string") return text(value);
-  if (Array.isArray(value)) {
-    const names = value.map((name) => (typeof name === "string" ? name : isRecord(name) ? firstText(name, ["name", "display_name"]) : null))
-      .filter((name): name is string => name !== null);
-    if (names.length === 0) return null;
-    return names.length > 2 ? `${names[0]} et al.` : names.join(" & ");
-  }
-  return null;
-}
-
-function pagesOf(record: Loose): string | null {
-  const pages = isRecord(record.pages) ? record.pages : record;
-  const start = numberOf(pages.start) ?? numberOf(record.start_page) ?? numberOf(record.page);
-  const end = numberOf(pages.end) ?? numberOf(record.end_page);
-  if (start === null) return null;
-  return end === null || end === start ? `p. ${start}` : `pp. ${start}–${end}`;
-}
-
 export type ContextOutput = {
-  paragraphs: { label: string | null; text: string }[];
-  readAlongside: { title: string; byline: string | null; why: string | null; link: string | null }[];
-  sources: { title: string; supports: string | null; url: string | null }[];
+  /** The one-line brief kept for older readers; the lead's first claim on new analyses. */
+  brief: string | null;
+  /** The context node's output, when it produced anything. */
+  node: PaperContext | null;
+  /** Web-researched notes from the earlier design, with their checked sources. */
+  legacyNotes: ContextNote[];
+  sources: ContextSource[];
 };
 
-const CONTEXT_TEXT_KEYS: Array<[string, string | null]> = [
-  ["why_it_matters", "Why it matters"],
-  ["summary", null],
-  ["overview", null],
-  ["text", null],
-  ["significance", "Significance"],
-  ["before", "Before"],
-  ["after", "After"],
-  ["what_changed", "What changed"],
-  ["reception", "Reception"],
-];
-
-function contextItem(value: unknown): ContextOutput["readAlongside"][number] | null {
-  if (typeof value === "string") return text(value) === null ? null : { title: value.trim(), byline: null, why: null, link: null };
-  if (!isRecord(value)) return null;
-  const title = firstText(value, ["title", "name", "work", "citation"]);
-  if (title === null) return null;
-  const year = numberOf(value.year);
-  const authors = authorsOf(value.authors);
-  const byline = [authors, year === null ? null : String(year)].filter((part) => part !== null).join(", ");
-  const doi = text(value.doi);
-  const arxiv = text(value.arxiv);
+export function readContext(fields: ReviewedFields): ContextOutput {
+  const node = paperContext(fields);
   return {
-    title,
-    byline: byline.length > 0 ? byline : null,
-    why: firstText(value, ["why", "reason", "relationship", "relation", "note", "summary"]),
-    link: text(value.url) ?? (doi === null ? null : `https://doi.org/${doi}`) ?? (arxiv === null ? null : `https://arxiv.org/abs/${arxiv}`),
+    brief: text(fields.outsider_brief),
+    node,
+    // Notes the node wrote duplicate `node`; only show the older, sourced ones.
+    legacyNotes: (fields.context_notes ?? []).filter((note) => note.basis == null && text(note.text) !== null),
+    sources: fields.context_sources ?? [],
   };
 }
 
-export function readContext(fields: Record<string, unknown>): ContextOutput {
-  const paragraphs: ContextOutput["paragraphs"] = [];
-  const brief = text(fields.outsider_brief);
-  if (brief !== null) paragraphs.push({ label: null, text: brief });
-  const context = fields.context;
-  if (typeof context === "string" && text(context) !== null) paragraphs.push({ label: null, text: context.trim() });
-  const nested = isRecord(context) ? context : {};
-  for (const [key, label] of CONTEXT_TEXT_KEYS) {
-    const found = text(nested[key]);
-    if (found !== null) paragraphs.push({ label, text: found });
-  }
-  const notes = [...listOf(fields.context_notes), ...listOf(nested.notes)];
-  for (const note of notes) {
-    if (typeof note === "string" && text(note) !== null) paragraphs.push({ label: null, text: note.trim() });
-    else if (isRecord(note)) {
-      const body = firstText(note, ["text", "claim", "summary"]);
-      const kind = text(note.kind);
-      if (body !== null) paragraphs.push({ label: kind === null || kind === "legacy" ? null : kind.charAt(0).toUpperCase() + kind.slice(1), text: body });
-    }
-  }
-  const alongside = firstList(fields, ["read_alongside", "neighbours", "neighbors", "surrounding_papers"])
-    ?? firstList(nested, ["read_alongside", "neighbours", "neighbors", "papers", "related"]) ?? [];
-  const sourceList = firstList(fields, ["context_sources"]) ?? firstList(nested, ["sources"]) ?? [];
-  return {
-    paragraphs,
-    readAlongside: alongside.map(contextItem).filter((item) => item !== null),
-    sources: sourceList.filter(isRecord).map((source) => ({
-      title: firstText(source, ["title", "name"]) ?? "Untitled source",
-      supports: firstText(source, ["supports", "relationship", "why"]),
-      url: text(source.url),
-    })),
-  };
+export function readOutline(fields: ReviewedFields): OutlineRow[] {
+  return outlineRows(fields.outline ?? [], fields.sections ?? []);
 }
 
-export type OutlineEntry = { title: string; level: number; pages: string | null };
+export type LogicalUnit = {
+  section: PaperSection;
+  /** "§ 2–3.1": the printed headings it groups; null for a page-span unit. */
+  range: string | null;
+  /** The grouped headings, labelled with their numbers. */
+  covers: string[];
+};
 
-/** Prefixes a heading with its printed number unless the title already starts with it. */
-function numbered(number: string | null, title: string): string {
-  if (number === null) return title;
-  const rest = title.slice(number.length);
-  const alreadyNumbered = title.startsWith(number) && (rest === "" || /^[.\s:)]/u.test(rest));
-  return alreadyNumbered ? title : `${number} ${title}`;
+export type LogicalOutput = {
+  /** True when the units group outline entries; false for page-span units made without an outline. */
+  grouped: boolean;
+  units: LogicalUnit[];
+};
+
+export function readLogical(fields: ReviewedFields): LogicalOutput {
+  const outline = fields.outline ?? [];
+  const units = (fields.sections ?? []).map((section) => ({
+    section,
+    range: groupedRangeLabel(section, outline),
+    covers: groupedHeadings(section, outline).map(outlineLabel),
+  }));
+  return { grouped: units.some((unit) => unit.covers.length > 0), units };
 }
 
-export function readOutline(fields: Record<string, unknown>): OutlineEntry[] {
-  const outline = fields.outline;
-  const list = Array.isArray(outline) ? outline
-    : isRecord(outline) ? firstList(outline, ["sections", "entries", "headings", "items"]) ?? []
-    : firstList(fields, ["outline_sections", "printed_sections", "printed_outline"]) ?? [];
-  const entries: OutlineEntry[] = [];
-  const visit = (items: unknown[], depth: number): void => {
-    for (const item of items) {
-      if (typeof item === "string") {
-        if (text(item) !== null) entries.push({ title: item.trim(), level: depth, pages: null });
-        continue;
-      }
-      if (!isRecord(item)) continue;
-      const title = firstText(item, ["title", "heading", "text", "name"]);
-      const number = firstText(item, ["number", "label"]);
-      if (title !== null) {
-        entries.push({
-          title: numbered(number, title),
-          level: numberOf(item.level) ?? numberOf(item.depth) ?? depth,
-          pages: pagesOf(item),
-        });
-      }
-      const children = firstList(item, ["children", "subsections", "sections"]);
-      if (children !== null) visit(children, depth + 1);
-    }
-  };
-  visit(list, 1);
-  return entries;
-}
-
-export type LogicalUnit = { title: string; summary: string | null; pages: string | null; covers: string[] };
-
-export type LogicalOutput = { source: string | null; units: LogicalUnit[] };
-
-const LOGICAL_KEYS = ["logical_sections", "section_groups", "reading_units", "logical_segmentation", "logical"];
-
-export function readLogical(fields: Record<string, unknown>): LogicalOutput {
-  let source: string | null = null;
-  let list: unknown[] = [];
-  for (const key of [...LOGICAL_KEYS, "sections"]) {
-    const value = fields[key];
-    const found = Array.isArray(value) ? value : isRecord(value) ? firstList(value, ["units", "sections", "groups"]) : null;
-    if (found !== null && found.length > 0) {
-      source = key;
-      list = found;
-      break;
-    }
-  }
-  const units = list.filter(isRecord).map((unit) => {
-    const covers = firstList(unit, ["covers", "members", "printed_sections", "outline_sections", "includes"]) ?? [];
-    return {
-      title: firstText(unit, ["title", "heading", "name"]) ?? "Untitled unit",
-      summary: firstText(unit, ["summary", "digest", "question", "description"]),
-      pages: pagesOf(unit),
-      covers: covers.map((entry) => (typeof entry === "string" ? entry : isRecord(entry) ? firstText(entry, ["title", "heading", "id"]) : null))
-        .filter((entry): entry is string => entry !== null),
-    };
-  });
-  return { source, units };
-}
-
-export function readAbstract(fields: Record<string, unknown>): string | null {
+export function readAbstract(fields: ReviewedFields): string | null {
   return text(fields.author_abstract);
 }
 
-export function readThesis(fields: Record<string, unknown>): string | null {
+export function readThesis(fields: ReviewedFields): string | null {
   return text(fields.thesis);
 }
 
 /** Whether the reader produced anything for a rubric component. */
-export function isProduced(componentId: string, fields: Record<string, unknown>): boolean {
+export function isProduced(componentId: string, fields: ReviewedFields): boolean {
   switch (componentId) {
     case "abstract": return readAbstract(fields) !== null;
     case "thesis": return readThesis(fields) !== null;
     case "context": {
       const context = readContext(fields);
-      return context.paragraphs.length > 0 || context.readAlongside.length > 0;
+      return context.node !== null || context.legacyNotes.length > 0;
     }
-    case "outline": return readOutline(fields).length > 0;
-    case "logical": return readLogical(fields).units.length > 0;
+    case "outline": return (fields.outline?.length ?? 0) > 0;
+    case "logical": return (fields.sections?.length ?? 0) > 0;
     default: return false;
   }
 }

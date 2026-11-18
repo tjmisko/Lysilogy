@@ -10,48 +10,44 @@ const rubric = JSON.parse(readFileSync(new URL('../../eval/review/rubric.json', 
 const component = (id) => rubric.components.find((entry) => entry.id === id);
 const row = (componentId, dimensionId) => ({ componentId, dimension: component(componentId).dimensions.find((d) => d.id === dimensionId) });
 
-test('reads today\'s context fields and the richer shapes the backend may add', () => {
-  const legacy = readContext({
-    outsider_brief: 'Before this paper, local labor markets were assumed to adjust quickly.',
-    context_notes: [{ kind: 'after', text: 'Later work found persistent effects.', source_ids: ['s1'] }],
-    context_sources: [{ id: 's1', title: 'The China Shock', url: 'https://example.org', supports: 'persistence' }],
-  });
-  assert.equal(legacy.paragraphs.length, 2);
-  assert.equal(legacy.paragraphs[1].label, 'After');
-  assert.equal(legacy.sources[0].supports, 'persistence');
-  assert.equal(legacy.readAlongside.length, 0);
+const fixture = (name) => JSON.parse(readFileSync(new URL(`../../tests/fixtures/reader/${name}`, import.meta.url), 'utf8'));
+const current = fixture('analysis-current.json');
+const legacy = fixture('analysis-legacy.json');
 
-  const rich = readContext({ context: {
-    why_it_matters: 'It moved trade economics from national to local adjustment.',
-    read_alongside: [{ title: 'Topalova 2010', authors: ['Petia Topalova'], year: 2010, why: 'Design predecessor', doi: '10.1257/app.2.4.1' }, 'Pierce and Schott 2016'],
-  } });
-  assert.equal(rich.paragraphs[0].label, 'Why it matters');
-  assert.deepEqual(rich.readAlongside[0], { title: 'Topalova 2010', byline: 'Petia Topalova, 2010', why: 'Design predecessor', link: 'https://doi.org/10.1257/app.2.4.1' });
-  assert.equal(rich.readAlongside[1].title, 'Pierce and Schott 2016');
+test('reads the context node with its source classes from a snapshot', () => {
+  const context = readContext(current);
+  assert.equal(context.node.lead.length, 2);
+  assert.deepEqual(context.node.lead.map((claim) => claim.basis), ['background', 'paper']);
+  assert.equal(context.node.read_alongside[1].work_id, 'W200');
+  assert.equal(context.legacyNotes.length, 1, 'notes the node wrote are not repeated as legacy notes');
+  assert.equal(isProduced('context', current), true);
+
+  const old = readContext(legacy);
+  assert.equal(old.node, null);
+  assert.equal(old.brief, legacy.outsider_brief);
+  assert.equal(old.legacyNotes.length, 1);
   assert.equal(isProduced('context', {}), false);
-  assert.equal(isProduced('context', { outsider_brief: '  ' }), false);
+  assert.equal(isProduced('context', { outsider_brief: '  ', context: { lead: [], before: [], contribution: [], after: [], read_alongside: [], reception_note: null, counts: {} } }), false);
 });
 
-test('reads nested and flat outlines with levels and pages', () => {
-  const nested = readOutline({ outline: [{ number: 'I', title: 'Introduction', page: 1, children: [{ title: 'Data', pages: { start: 3, end: 4 } }] }] });
-  assert.deepEqual(nested, [
-    { title: 'I Introduction', level: 1, pages: 'p. 1' },
-    { title: 'Data', level: 2, pages: 'pp. 3–4' },
-  ]);
-  assert.deepEqual(readOutline({ outline: { entries: ['Abstract'] } }), [{ title: 'Abstract', level: 1, pages: null }]);
-  assert.deepEqual(readOutline({ sections: [{ title: 'Not an outline' }] }), []);
+test('reads the printed outline with depth and owning unit', () => {
+  const rows = readOutline(current);
+  assert.equal(rows.length, 13);
+  assert.deepEqual(rows.slice(1, 4).map((row) => [row.entry.number, row.depth, row.unit]), [['1', 0, 0], ['2', 0, 0], ['2.1', 1, 0]]);
+  assert.equal(rows[0].unit, null, 'the front-matter abstract heading belongs to no unit');
+  assert.deepEqual(readOutline(legacy), []);
+  assert.equal(isProduced('outline', legacy), false);
 });
 
-test('prefers a logical segmentation and falls back to sections', () => {
-  const logical = readLogical({
-    logical_sections: [{ title: 'Why shocks are local', summary: 'Motivation.', covers: ['I', { title: 'II. Theory' }], pages: { start: 1, end: 8 } }],
-    sections: [{ title: 'Ignored' }],
-  });
-  assert.equal(logical.source, 'logical_sections');
-  assert.deepEqual(logical.units[0], { title: 'Why shocks are local', summary: 'Motivation.', pages: 'pp. 1–8', covers: ['I', 'II. Theory'] });
-  const fallback = readLogical({ sections: [{ title: 'Front matter', digest: 'Everything.' }] });
-  assert.equal(fallback.source, 'sections');
-  assert.equal(fallback.units[0].summary, 'Everything.');
+test('reads logical units with the headings they group, and page-span units without', () => {
+  const logical = readLogical(current);
+  assert.equal(logical.grouped, true);
+  assert.equal(logical.units[0].range, '§ 1–2.1');
+  assert.deepEqual(logical.units[0].covers, ['1 Introduction', '2 Background', '2.1 The harbour reopening']);
+  assert.equal(logical.units[3].range, '§ 6 Conclusion');
+  const old = readLogical(legacy);
+  assert.equal(old.grouped, false);
+  assert.equal(old.units[0].range, null);
   assert.equal(readLogical({}).units.length, 0);
 });
 

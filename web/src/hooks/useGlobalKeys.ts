@@ -7,6 +7,8 @@ type GlobalKeyOptions = {
   itemCount: number;
   view: "abstract" | "overview" | "glossary" | "text" | "sources";
   textMode: "markdown" | "pdf";
+  /** Which segmentation the Overview shows; the outline is a plain list moved with j/k. */
+  overviewMode?: "units" | "outline";
   onMove: (index: number) => void;
   onOpen: () => void;
   onDigest: () => void;
@@ -27,6 +29,7 @@ type GlobalKeyOptions = {
   onToggleAiHighlights: () => void;
   onToggleUserHighlights: () => void;
   onToggleMarkMode: () => void;
+  onToggleOverviewMode?: () => void;
   onZoom: (delta: number) => void;
   onScroll: (delta: number) => void;
   onScrollTo: (edge: "start" | "end") => void;
@@ -82,6 +85,13 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
       }
 
       const move = (direction: Direction) => {
+        if (current.overviewMode === "outline") {
+          // The outline is a single column: up and down step through it, left and right do nothing.
+          if (direction === "left" || direction === "right") return;
+          const step = direction === "down" ? 1 : -1;
+          current.onMove(Math.max(0, Math.min(current.itemCount - 1, current.activeIndex + step)));
+          return;
+        }
         const next = moveInSectionMap(current.activeIndex, direction);
         if (next !== null) current.onMove(next);
       };
@@ -213,6 +223,12 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
           if (current.view === "overview") {
             event.preventDefault();
             current.onToggleUserHighlights();
+          }
+          break;
+        case "O":
+          if (current.view === "overview" && current.onToggleOverviewMode !== undefined) {
+            event.preventDefault();
+            current.onToggleOverviewMode();
           }
           break;
         case "v":
