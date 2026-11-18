@@ -520,6 +520,15 @@ enum Command {
         #[arg(long)]
         arm_b: PathBuf,
     },
+    /// Summarise human reviews of reader output by pipeline version, or export them.
+    Review {
+        /// Write every review, the summary and the flagged issues to this JSON file.
+        #[arg(long)]
+        export: Option<PathBuf>,
+        /// Print the summary as JSON.
+        #[arg(long)]
+        json: bool,
+    },
     /// Persist a blind evaluator's absolute scorecards and comparative judgment.
     ExperimentJudge {
         /// Paper ID or unambiguous title fragment.
@@ -901,6 +910,14 @@ async fn run(cli: Cli) -> Result<()> {
             experiment_campaign(&state, &queries, &experiment, provider, repeat, concurrency).await
         }
         Command::ExperimentReport { output } => experiment_report_command(&state, output).await,
+        Command::Review { export, json } => {
+            let store = lysilogy::store::ArtifactStore::new(&cli.data);
+            print!(
+                "{}",
+                Box::pin(lysilogy::review::run_cli(&store, export.as_deref(), json)).await?
+            );
+            Ok(())
+        }
         Command::ExperimentPrepare {
             queries,
             experiment,

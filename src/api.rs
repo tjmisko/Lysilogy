@@ -18,6 +18,7 @@ mod notes;
 mod provenance;
 mod ramps;
 mod reader_tools;
+mod review;
 mod source_index;
 mod vimrc;
 
@@ -2045,6 +2046,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .merge(source_index::routes())
         .merge(notes::routes())
         .merge(vimrc::routes())
+        .merge(review::routes())
         .route("/api/health", get(health))
         .route("/api/library", get(library))
         .route("/api/library/scan", post(scan_library))
