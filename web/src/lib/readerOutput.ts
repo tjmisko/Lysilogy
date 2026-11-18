@@ -45,6 +45,8 @@ const RELATION_LABELS: Partial<Record<NeighbourRelation, string>> & { other: str
   successor: "Came after",
   critique: "Critique",
   replication: "Replication",
+  survey: "Survey",
+  parallel: "Parallel work",
   other: "Related",
 };
 

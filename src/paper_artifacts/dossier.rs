@@ -17,6 +17,8 @@ use std::fmt::Write as _;
 
 use serde::{Deserialize, Serialize};
 
+use crate::domain::{ContextDossier, DossierStatus, DossierWorkSummary};
+
 /// The most cited works the dossier lists.
 pub const REFERENCE_LIMIT: usize = 25;
 
@@ -37,6 +39,9 @@ pub struct Dossier {
     pub references: Vec<DossierWork>,
     /// Later works that cite the paper, most prominent first.
     pub citing: Vec<DossierWork>,
+    /// Whether the dossier could be assembled; an empty dossier means
+    /// something different when the graph was down.
+    pub status: DossierStatus,
 }
 
 /// One neighbouring work as the graph records it.
@@ -63,6 +68,37 @@ pub struct DossierWork {
 }
 
 impl Dossier {
+    /// An empty dossier, with why it is empty.
+    #[must_use]
+    pub fn empty(status: DossierStatus) -> Self {
+        Self {
+            status,
+            ..Self::default()
+        }
+    }
+
+    /// The compact form stored on the context.
+    #[must_use]
+    pub fn summary(&self) -> ContextDossier {
+        let summarize = |work: &DossierWork, citing: bool| DossierWorkSummary {
+            id: work.id.clone(),
+            title: work.title.clone(),
+            year: work.year,
+            first_author: work.authors.first().cloned(),
+            citing,
+            local_paper_id: work.local_paper_id.clone(),
+        };
+        ContextDossier {
+            status: self.status,
+            works: self
+                .references
+                .iter()
+                .map(|work| summarize(work, false))
+                .chain(self.citing.iter().map(|work| summarize(work, true)))
+                .collect(),
+        }
+    }
+
     /// No neighbouring work at all; the subject alone does not count.
     #[must_use]
     pub const fn is_empty(&self) -> bool {
@@ -140,9 +176,14 @@ pub fn render(dossier: &Dossier) -> String {
         );
     }
     if dossier.is_empty() {
-        text.push_str(
-            "\nThe dossier is empty: this paper is not linked to any cited or citing work in the graph yet.\n",
-        );
+        text.push_str(match dossier.status {
+            DossierStatus::Error | DossierStatus::NoGraph => {
+                "\nThe dossier is empty because the citation graph could not be read for this run. That says nothing about the paper; rely on the paper and your own knowledge.\n"
+            }
+            _ => {
+                "\nThe dossier is empty: this paper is not linked to any cited or citing work in the graph yet.\n"
+            }
+        });
         return text;
     }
     for (heading, works) in [
@@ -258,6 +299,18 @@ mod tests {
     }
 
     #[test]
+    fn should_say_why_an_empty_dossier_is_empty() {
+        let unlinked = render(&Dossier::empty(DossierStatus::NotLinked));
+        assert!(unlinked.contains("not linked"), "{unlinked}");
+        let failed = render(&Dossier::empty(DossierStatus::Error));
+        assert!(failed.contains("could not be read"), "{failed}");
+        assert_eq!(
+            Dossier::empty(DossierStatus::Error).summary().status,
+            DossierStatus::Error
+        );
+    }
+
+    #[test]
     fn should_render_each_record_with_its_id_counts_and_summary() {
         let dossier = Dossier {
             subject: Some(DossierWork {
@@ -275,6 +328,7 @@ mod tests {
                 ..DossierWork::default()
             }],
             citing: Vec::new(),
+            status: DossierStatus::Ok,
         };
         let text = render(&dossier);
         assert!(text.contains("This paper in the graph: cited 4000 times worldwide"));

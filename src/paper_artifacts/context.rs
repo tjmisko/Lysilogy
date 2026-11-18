@@ -35,6 +35,12 @@ pub const CLAIM_LISTS: [&str; 4] = ["lead", "before", "contribution", "after"];
 /// The most reading suggestions kept.
 pub const READ_ALONGSIDE_LIMIT: usize = 6;
 
+/// Why a `paper` claim was moved to background.
+const QUOTE_NOT_FOUND: &str = "quote_not_found";
+
+/// Why a `dossier` claim was moved to background.
+const UNKNOWN_WORK: &str = "unknown_work";
+
 /// The most bibliography entries the core brief carries.
 const BRIEF_REFERENCE_LIMIT: usize = 150;
 
@@ -52,10 +58,13 @@ pub fn settle(draft: &mut Value, dossier: &Dossier) -> Option<ContextCounts> {
             .and_then(Value::as_array_mut)
             .map(std::mem::take)
             .unwrap_or_default();
-        let settled = claims
-            .into_iter()
-            .filter_map(|claim| settle_claim(claim, dossier, &mut counts))
-            .collect::<Vec<_>>();
+        let mut settled = Vec::with_capacity(claims.len());
+        for claim in claims {
+            match settle_claim(claim, dossier, &mut counts) {
+                Some(claim) => settled.push(claim),
+                None => counts.dropped_empty_claims += 1,
+            }
+        }
         context.insert(list.to_owned(), Value::Array(settled));
     }
     let suggestions = context
@@ -104,6 +113,10 @@ pub fn settle(draft: &mut Value, dossier: &Dossier) -> Option<ContextCounts> {
         "counts".to_owned(),
         serde_json::to_value(&counts).unwrap_or(Value::Null),
     );
+    context.insert(
+        "dossier".to_owned(),
+        serde_json::to_value(dossier.summary()).unwrap_or(Value::Null),
+    );
     Some(counts)
 }
 
@@ -137,19 +150,24 @@ fn settle_claim(mut claim: Value, dossier: &Dossier, counts: &mut ContextCounts)
         .collect::<Vec<_>>();
     counts.unknown_work_ids += requested_ids.len() - known_ids.len();
     fields.insert("work_ids".to_owned(), json!(known_ids));
+    // A claim settled before keeps its mark, so settling twice changes
+    // nothing and counts the same.
+    let earlier = fields
+        .get("downgraded")
+        .and_then(Value::as_str)
+        .map(str::to_owned);
     let (basis, downgrade) = match requested.as_str() {
         "paper" if quotes > 0 => ("paper", None),
-        "paper" => {
-            counts.downgraded_quote_not_found += 1;
-            ("background", Some("quote_not_found"))
-        }
+        "paper" => ("background", Some(QUOTE_NOT_FOUND.to_owned())),
         "dossier" if !known_ids.is_empty() => ("dossier", None),
-        "dossier" => {
-            counts.downgraded_unknown_work += 1;
-            ("background", Some("unknown_work"))
-        }
-        _ => ("background", None),
+        "dossier" => ("background", Some(UNKNOWN_WORK.to_owned())),
+        _ => ("background", earlier),
     };
+    match downgrade.as_deref() {
+        Some(QUOTE_NOT_FOUND) => counts.downgraded_quote_not_found += 1,
+        Some(UNKNOWN_WORK) => counts.downgraded_unknown_work += 1,
+        _ => {}
+    }
     match basis {
         "paper" => counts.paper_claims += 1,
         "dossier" => counts.dossier_claims += 1,
@@ -158,7 +176,7 @@ fn settle_claim(mut claim: Value, dossier: &Dossier, counts: &mut ContextCounts)
     fields.insert("basis".to_owned(), Value::String(basis.to_owned()));
     match downgrade {
         Some(reason) => {
-            fields.insert("downgraded".to_owned(), Value::String(reason.to_owned()));
+            fields.insert("downgraded".to_owned(), Value::String(reason));
         }
         None => {
             fields.remove("downgraded");
@@ -386,6 +404,7 @@ mod tests {
                 year: Some(2017),
                 ..DossierWork::default()
             }],
+            status: crate::domain::DossierStatus::Ok,
         }
     }
 
@@ -429,6 +448,29 @@ mod tests {
         assert_eq!(counts.unknown_work_ids, 2);
         assert_eq!(counts.dossier_works, 2);
         assert_eq!(context["counts"]["unknown_work_ids"], 2);
+        assert_eq!(counts.dropped_empty_claims, 1);
+        assert_eq!(context["dossier"]["status"], "ok");
+        assert_eq!(context["dossier"]["works"][0]["id"], "w1");
+        assert_eq!(context["dossier"]["works"][0]["first_author"], "A. Smith");
+        assert_eq!(context["dossier"]["works"][1]["citing"], true);
+    }
+
+    #[test]
+    fn should_settle_an_already_settled_context_to_the_same_result() {
+        let mut draft = json!({"context": {
+            "lead": [claim("paper", 0, &[])],
+            "before": [claim("dossier", 0, &["w404"])],
+            "contribution": [], "after": [], "read_alongside": [], "reception_note": null
+        }});
+        let first = settle(&mut draft, &dossier()).expect("context");
+        let once = draft.clone();
+        let second = settle(&mut draft, &dossier()).expect("context");
+        for list in CLAIM_LISTS {
+            assert_eq!(draft["context"][list], once["context"][list], "{list}");
+        }
+        assert_eq!(first.background_claims, second.background_claims);
+        assert_eq!(second.downgraded_quote_not_found, 1);
+        assert_eq!(second.downgraded_unknown_work, 1);
     }
 
     #[test]

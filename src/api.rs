@@ -698,21 +698,7 @@ impl AppState {
                         .await;
                     forwarder.stop().await;
                     let refreshed = refreshed?;
-                    match component {
-                        AnalysisComponent::Structure => {
-                            analysis.outline.clone_from(&refreshed.analysis.outline);
-                            analysis.sections.clone_from(&refreshed.analysis.sections);
-                            analysis.generated_at = refreshed.analysis.generated_at;
-                        }
-                        AnalysisComponent::Abstract => {
-                            analysis
-                                .author_abstract
-                                .clone_from(&refreshed.analysis.author_abstract);
-                            analysis.abstract_extraction = refreshed.analysis.abstract_extraction;
-                            analysis.abstract_agreement = refreshed.analysis.abstract_agreement;
-                        }
-                        AnalysisComponent::Context => unreachable!(),
-                    }
+                    crate::analysis::apply_component(analysis, component, refreshed);
                 }
                 AnalysisComponent::Context => {
                     let analysis = analysis.as_mut().ok_or_else(|| {

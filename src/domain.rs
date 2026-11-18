@@ -109,7 +109,7 @@ pub enum ProcessingStage {
     Persistence,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AnalysisComponent {
     Abstract,
@@ -326,6 +326,29 @@ pub struct PaperAnalysis {
     /// extraction. `None` on analyses made before it was recorded.
     #[serde(default)]
     pub abstract_agreement: Option<crate::abstracts::AbstractAgreement>,
+    /// The pipeline version that last wrote each refreshable component
+    /// (`abstract`, `context`, `structure`), so a grade can be tied to the
+    /// pipeline that produced the part it grades. A component missing here
+    /// was written with the whole analysis under `pipeline_version`.
+    #[serde(default)]
+    pub component_versions: std::collections::BTreeMap<AnalysisComponent, String>,
+}
+
+impl PaperAnalysis {
+    /// Record that `version` last wrote `component`, and make it the
+    /// analysis's current pipeline version.
+    pub fn record_component_version(&mut self, component: AnalysisComponent, version: String) {
+        self.component_versions.insert(component, version.clone());
+        self.pipeline_version = Some(version);
+    }
+
+    /// Whether any stored warning means the analysis is not a clean success.
+    #[must_use]
+    pub fn degraded(&self) -> bool {
+        self.quality_warnings
+            .iter()
+            .any(|warning| warning.kind.degrades())
+    }
 }
 
 /// One deterministic sanity check the model output failed.
@@ -357,6 +380,9 @@ pub enum QualityWarningKind {
     OutlineMissing,
     /// Far fewer outline entries than the numbered headings the text shows.
     OutlineSparse,
+    /// Headings the model returned were not found in the page text and were
+    /// dropped by admission.
+    OutlineEntriesDropped,
     /// The model's grouping of outline entries had gaps, overlaps or split
     /// references and was repaired deterministically.
     SectionsGroupingRepaired,
@@ -376,6 +402,13 @@ pub enum QualityWarningKind {
     /// Context claims whose quote or dossier record did not check out were
     /// shown as unverified background instead.
     ContextClaimsDowngraded,
+    /// The context node ran but left no context in the record.
+    ContextMissing,
+    /// A model call of the plan failed, so the fields it fills are missing
+    /// or come from an earlier answer.
+    CallFailed,
+    /// The paper budget kept a model call of the plan from starting.
+    CallSkipped,
     /// A kind written by a newer version.
     #[serde(other)]
     Other,
@@ -383,10 +416,16 @@ pub enum QualityWarningKind {
 
 impl QualityWarningKind {
     /// Whether the warning means the result should not be shown as a clean
-    /// success: verification did not complete.
+    /// success: a verification pass or a model call did not complete.
     #[must_use]
     pub const fn degrades(self) -> bool {
-        matches!(self, Self::VerificationSkipped | Self::VerificationFailed)
+        matches!(
+            self,
+            Self::VerificationSkipped
+                | Self::VerificationFailed
+                | Self::CallFailed
+                | Self::CallSkipped
+        )
     }
 }
 
@@ -478,6 +517,10 @@ pub enum NeighbourRelation {
     Successor,
     Critique,
     Replication,
+    /// An overview or textbook treatment of the question.
+    Survey,
+    /// Independent work on the same question at about the same time.
+    Parallel,
     #[default]
     #[serde(other)]
     Other,
@@ -524,6 +567,8 @@ pub struct ContextCounts {
     pub unknown_work_ids: usize,
     /// Reading suggestions dropped beyond the cap or without a title.
     pub dropped_read_alongside: usize,
+    /// Claims dropped because their text was empty.
+    pub dropped_empty_claims: usize,
 }
 
 /// Why the paper matters: the first view's account of where it sits in its
@@ -540,6 +585,52 @@ pub struct PaperContext {
     /// What the model said it does not know about the reception.
     pub reception_note: Option<String>,
     pub counts: ContextCounts,
+    /// The neighbour dossier the context node read, in compact form, so a
+    /// reviewer can check a dossier claim against what the model was given.
+    /// `None` on contexts written before it was stored.
+    pub dossier: Option<ContextDossier>,
+}
+
+/// Whether the neighbour dossier could be assembled.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DossierStatus {
+    /// It was assembled from the citation graph; it may still be short.
+    #[default]
+    Ok,
+    /// The paper is not linked to a work in the citation graph.
+    NotLinked,
+    /// No citation graph is configured.
+    NoGraph,
+    /// Assembling it failed, so the model was given an empty dossier.
+    Error,
+    /// A status written by a newer version.
+    #[serde(other)]
+    Other,
+}
+
+/// The dossier the context node read: whether it could be assembled, and
+/// each work it listed.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ContextDossier {
+    pub status: DossierStatus,
+    pub works: Vec<DossierWorkSummary>,
+}
+
+/// One dossier work, as much as a reviewer needs to recognise it.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct DossierWorkSummary {
+    /// The citation-graph Work id that claims cite.
+    pub id: String,
+    pub title: Option<String>,
+    pub year: Option<i32>,
+    pub first_author: Option<String>,
+    /// `true` for a later work that cites the paper, `false` for one it cites.
+    pub citing: bool,
+    /// The library paper that holds this work, when Lysilogy has it.
+    pub local_paper_id: Option<String>,
 }
 
 impl PaperContext {

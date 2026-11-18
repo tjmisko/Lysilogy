@@ -13,6 +13,7 @@ use sha2::{Digest, Sha256};
 /// (`sections`), whose `outline_entries` index into `outline`. The pipeline's
 /// `quality_warnings` are pinned so a grade can be read next to them. The
 /// glossary and claims are left out because the review does not grade them.
+/// `component_versions` records which pipeline last refreshed each part.
 const REVIEWED_PREFIXES: &[&str] = &[
     "thesis",
     "author_abstract",
@@ -22,6 +23,7 @@ const REVIEWED_PREFIXES: &[&str] = &[
     "outline",
     "section",
     "quality_warnings",
+    "component_versions",
 ];
 
 /// What a review graded: the reviewed fields as they were, plus the

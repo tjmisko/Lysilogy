@@ -102,6 +102,34 @@ const WARNING_FIELDS: Record<string, string[]> = {
   logical: ["sections"],
 };
 
+/**
+ * Warnings that belong to no single component, such as a skipped self-check
+ * (`self_check`, `admission`, `repair`) or an implausible title (`identity`).
+ * They affect everything below them, so they are shown once, above the components.
+ */
+function GeneralWarnings({ fields }: { fields: ReviewedFields }) {
+  const prefixes = Object.values(WARNING_FIELDS).flat();
+  const warnings = (fields.quality_warnings ?? []).filter((warning) => !prefixes.some((prefix) => warning.field.startsWith(prefix)));
+  if (warnings.length === 0) return null;
+  return <section className="review-general-warnings" aria-label="Pipeline warnings for the whole analysis">
+    <h3>Pipeline warnings for the whole analysis</h3>
+    <ul className="review-warnings">{warnings.map((warning, index) => (
+      <li key={index}><code>{warning.field}</code> <code>{warning.kind}</code> {warning.message}</li>
+    ))}</ul>
+  </section>;
+}
+
+/** The dossier the context node read, in words. */
+function dossierStatusText(status: string | undefined): string {
+  switch (status) {
+    case "ok": return "assembled from the citation graph";
+    case "not_linked": return "empty: the paper is not linked to the citation graph";
+    case "no_graph": return "empty: no citation graph is configured";
+    case "error": return "empty: the citation graph could not be read";
+    default: return "status unknown";
+  }
+}
+
 function ComponentWarnings({ componentId, fields }: { componentId: string; fields: ReviewedFields }) {
   const prefixes = WARNING_FIELDS[componentId] ?? [];
   const warnings = (fields.quality_warnings ?? []).filter((warning) => prefixes.some((prefix) => warning.field.startsWith(prefix)));
@@ -154,7 +182,15 @@ function ComponentOutput({ component, fields, manifestPaper }: { component: Rubr
           <p className="review-hint">
             {node.counts.paper_claims} paper · {node.counts.dossier_claims} graph · {node.counts.background_claims} background claims;
             {" "}{node.counts.downgraded_quote_not_found + node.counts.downgraded_unknown_work} downgraded; dossier of {node.counts.dossier_works} works
+            {node.dossier != null && <>, {dossierStatusText(node.dossier.status)}</>}
           </p>
+          {node.dossier != null && node.dossier.works.length > 0 && <details className="review-expected">
+            <summary>The dossier the model was given ({node.dossier.works.length} works)</summary>
+            <ul className="review-list">{node.dossier.works.map((work) => <li key={work.id}>
+              <code>{work.id}</code> <strong>{work.title ?? "(untitled)"}</strong>
+              <span className="review-muted"> — {work.citing ? "cites this paper" : "cited by this paper"}{work.first_author == null ? "" : `, ${work.first_author}`}{work.year == null ? "" : `, ${work.year}`}</span>
+            </li>)}</ul>
+          </details>}
           <h4>Read alongside</h4>
           {node.read_alongside.length === 0 ? <NotProduced /> : <ul className="review-list">
             {node.read_alongside.map((item, index) => <li key={index}>
@@ -486,6 +522,7 @@ export function ReviewPanel({ paperId, onClose, onOpenPaper }: ReviewPanelProps)
           : fields === null ? <p className="review-empty">Analyze this paper first; the review grades the reader’s output.</p>
           : <div className="review-body">
             <p className="review-purpose">{rubric.purpose} <span className="review-muted">About {rubric.time_budget_minutes} minutes. Keys: <kbd>j</kbd>/<kbd>k</kbd> move, <kbd>0</kbd>–<kbd>4</kbd> score, <kbd>y</kbd>/<kbd>n</kbd> pass or fail, <kbd>1</kbd>–<kbd>9</kbd> choose, <kbd>+</kbd>/<kbd>−</kbd> count, <kbd>x</kbd> not produced, <kbd>r</kbd> hard reject, <kbd>i</kbd> flag an issue, <kbd>e</kbd> notes, <kbd>[</kbd>/<kbd>]</kbd> component.</span></p>
+            <GeneralWarnings fields={fields} />
             {rubric.components.map((component) => {
               const grade = gradeOf(draft, component.id);
               const produced = isProduced(component.id, fields);

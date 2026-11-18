@@ -20,7 +20,7 @@ use lysilogy_db::{DbError, prominence::StoredProminence};
 
 use crate::{
     AppState,
-    domain::PaperId,
+    domain::{DossierStatus, PaperId},
     graph::GraphState,
     paper_artifacts::dossier::{Dossier, DossierWork},
 };
@@ -30,13 +30,13 @@ impl AppState {
     /// graph, the paper is not linked to a Work, or a query fails.
     pub async fn neighbour_dossier(&self, id: &PaperId) -> Dossier {
         let Some(graph) = &self.graph else {
-            return Dossier::default();
+            return Dossier::empty(DossierStatus::NoGraph);
         };
         match self.graph_dossier(graph, id).await {
             Ok(dossier) => dossier,
             Err(error) => {
                 tracing::warn!(paper_id = %id, %error, "could not assemble the neighbour dossier");
-                Dossier::default()
+                Dossier::empty(DossierStatus::Error)
             }
         }
     }
@@ -49,7 +49,7 @@ impl AppState {
             .get(id)
             .map(|entry| entry.overview.relative_path.clone())
         else {
-            return Ok(Dossier::default());
+            return Ok(Dossier::empty(DossierStatus::NotLinked));
         };
         let workspace = graph.documents.ensure_default_workspace().await?;
         let Some(document) = graph
@@ -57,10 +57,10 @@ impl AppState {
             .find_by_path(workspace, &relative_path)
             .await?
         else {
-            return Ok(Dossier::default());
+            return Ok(Dossier::empty(DossierStatus::NotLinked));
         };
         let Some(link) = graph.documents.work_link(document.id).await? else {
-            return Ok(Dossier::default());
+            return Ok(Dossier::empty(DossierStatus::NotLinked));
         };
         let center = graph.works.resolve_redirect(link.work_id).await?;
         let references = graph.citations.outgoing(center).await?;
@@ -91,6 +91,7 @@ impl AppState {
             subject,
             references: side(&references),
             citing: side(&citing),
+            status: DossierStatus::Ok,
         }
         .ranked();
         self.add_held_summaries(graph, &mut dossier).await?;

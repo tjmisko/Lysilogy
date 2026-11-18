@@ -163,6 +163,7 @@ export type ReviewedFields = Partial<Pick<PaperAnalysis,
   | "outline"
   | "sections"
   | "quality_warnings"
+  | "component_versions"
 >>;
 
 function text(value: string | null | undefined): string | null {

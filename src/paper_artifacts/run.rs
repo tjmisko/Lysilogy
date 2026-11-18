@@ -41,7 +41,8 @@ use super::{
     pipeline::{PipelineInputs, pipeline_version},
     plausibility,
     resources::{self, PageResources},
-    structure, title,
+    structure::{self, OutlineAdmission},
+    title,
     verification::{StageStatus, Verification},
 };
 use crate::{
@@ -68,7 +69,7 @@ const REPAIR_PROMPT: &str = include_str!("../../prompts/paper-artifacts-repair.m
 const CONTEXT_PROMPT: &str = include_str!("../../prompts/context.md");
 
 /// Bump when the record shape changes.
-const RECORD_VERSION: u16 = 8;
+const RECORD_VERSION: u16 = 9;
 
 /// Object chunks in flight at once.
 const CHUNK_CONCURRENCY: usize = 3;
@@ -303,6 +304,9 @@ pub struct ExtractRecord {
     /// The model's abstract against the deterministic extraction; `None`
     /// when the plan does not ask for the abstract.
     pub abstract_agreement: Option<AbstractAgreement>,
+    /// What admitting the outline answer kept and dropped; `None` when the
+    /// plan has no outline call or it returned nothing.
+    pub outline_admission: Option<OutlineAdmission>,
 }
 
 impl ExtractRecord {
@@ -779,6 +783,7 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
         merge: object_merge,
         retries: plausibility_retries,
         warnings: structure_warnings,
+        outline_admission,
     } = run_plan_from(
         &session,
         &resources,
@@ -881,6 +886,7 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
     }
 
     let session = session.into_state();
+    warnings.extend(call_warnings(&plan, &session.failures, &session.skipped));
     let reasoning_trace = write_reasoning_traces(&options.output, &session.reasoning).await?;
     let totals = Totals {
         calls: session.calls.len(),
@@ -934,9 +940,50 @@ pub async fn extract_with(options: &ExtractOptions, backend: Backend<'_>) -> Res
         warnings,
         context: context_counts,
         abstract_agreement,
+        outline_admission,
     };
     write_record(&options.output, &record).await?;
     Ok(record)
+}
+
+/// One warning per field that a failed or budget-skipped plan call was
+/// meant to fill, so a record with a missing outline or context does not
+/// read as clean. Verification stages report through [`Verification`], and a
+/// failed plausibility retry leaves the first answer standing, so neither is
+/// counted here.
+fn call_warnings(plan: &RunConfig, failures: &[Failure], skipped: &[String]) -> Vec<QualityWarning> {
+    let mut warnings = Vec::new();
+    for call in &plan.calls {
+        let objects = !object_kinds(call).is_empty();
+        let owns = |stage: &str| {
+            stage == call.name || (objects && stage == "extract.objects")
+        };
+        let failure = failures.iter().find(|failure| owns(&failure.stage));
+        let (kind, why) = if let Some(failure) = failure {
+            (
+                QualityWarningKind::CallFailed,
+                format!("failed ({})", failure.error),
+            )
+        } else if skipped.iter().any(|stage| owns(stage)) {
+            (
+                QualityWarningKind::CallSkipped,
+                "was not run because the paper budget was spent".to_owned(),
+            )
+        } else {
+            continue;
+        };
+        for field in &call.fields {
+            warnings.push(QualityWarning {
+                kind,
+                field: field.clone(),
+                message: format!(
+                    "The `{}` model call {why}, so `{field}` is missing or incomplete.",
+                    call.name
+                ),
+            });
+        }
+    }
+    warnings
 }
 
 /// A warning when settling the context moved claims to the background class.
@@ -1266,6 +1313,8 @@ struct PlanRun {
     retries: Vec<PlausibilityRetry>,
     /// What settling the outline and the grouping repaired.
     warnings: Vec<QualityWarning>,
+    /// What admitting the kept outline answer dropped.
+    outline_admission: Option<OutlineAdmission>,
 }
 
 /// Run the plan from an empty draft.
@@ -1297,6 +1346,7 @@ async fn run_plan_from(
     let mut merge = None;
     let mut retries = Vec::new();
     let mut warnings = Vec::new();
+    let mut outline_admission = None;
     while completed.len() < plan.calls.len() {
         let ready: Vec<&Call> = plan
             .calls
@@ -1333,6 +1383,9 @@ async fn run_plan_from(
                 }
                 completed.insert(result.name);
                 warnings.extend(result.warnings);
+                if result.outline.is_some() {
+                    outline_admission = result.outline;
+                }
                 if let Some(value) = result.value {
                     merge_fields(&mut draft, &value);
                 }
@@ -1350,6 +1403,7 @@ async fn run_plan_from(
         merge,
         retries,
         warnings,
+        outline_admission,
     }
 }
 
@@ -1389,6 +1443,7 @@ async fn retry_if_degenerate(
     if kept_retry {
         result.value = retry.value;
         result.warnings = retry.warnings;
+        result.outline = retry.outline;
     }
     Some(PlausibilityRetry {
         call: call.name.clone(),
@@ -1424,6 +1479,8 @@ struct PlanCallResult {
     merge: Option<MergeStats>,
     /// What settling this answer's outline or grouping repaired.
     warnings: Vec<QualityWarning>,
+    /// What admitting this answer's outline dropped, when it had one.
+    outline: Option<OutlineAdmission>,
 }
 
 impl PlanCallResult {
@@ -1434,6 +1491,7 @@ impl PlanCallResult {
             chunks: Vec::new(),
             merge: None,
             warnings: Vec::new(),
+            outline: None,
         }
     }
 }
@@ -1483,6 +1541,7 @@ async fn plan_call(
             chunks,
             merge: Some(merge),
             warnings: Vec::new(),
+            outline: None,
         };
     }
     let pages = &resources.paper.pages;
@@ -1560,7 +1619,7 @@ async fn plan_call(
             call.effort.reasoning(),
         )
         .await;
-    let warnings = value
+    let settled = value
         .as_mut()
         .map(|value| structure::settle_fragment(value, &draft, pages))
         .unwrap_or_default();
@@ -1569,7 +1628,8 @@ async fn plan_call(
         value,
         chunks: Vec::new(),
         merge: None,
-        warnings,
+        warnings: settled.warnings,
+        outline: settled.outline,
     }
 }
 
@@ -3247,7 +3307,18 @@ esac
             draft["sections"][2]["source_span"]["start_text"],
             "3 Experiments"
         );
-        assert!(run.warnings.is_empty(), "{:#?}", run.warnings);
+        let dropped = run
+            .warnings
+            .iter()
+            .map(|warning| (warning.kind, warning.message.contains("\"Future Work\"")))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            dropped,
+            [(QualityWarningKind::OutlineEntriesDropped, true)],
+            "the invented heading is reported, not dropped silently"
+        );
+        let admission = run.outline_admission.as_ref().expect("outline admission");
+        assert_eq!((admission.returned, admission.kept), (9, 8));
         let fields = plan_fields(&structure_plan());
         let warnings = plausibility::check(&draft, &fields, &resources.paper.pages);
         assert!(warnings.is_empty(), "{warnings:#?}");
@@ -3310,10 +3381,15 @@ esac
         let draft = run.draft.expect("draft");
         assert_eq!(ranges(&draft), [(1, 3), (4, 6)]);
         assert_eq!(draft["sections"][0]["title"], "Setup");
-        assert_eq!(run.warnings.len(), 1);
-        let message = &run.warnings[0].message;
+        let repairs = run
+            .warnings
+            .iter()
+            .filter(|warning| warning.kind != QualityWarningKind::OutlineEntriesDropped)
+            .collect::<Vec<_>>();
+        assert_eq!(repairs.len(), 1);
+        let message = &repairs[0].message;
         assert_eq!(
-            run.warnings[0].kind,
+            repairs[0].kind,
             crate::domain::QualityWarningKind::SectionsGroupingRepaired
         );
         assert!(message.contains("Bibliography"), "{message}");
@@ -3428,6 +3504,7 @@ esac
                 ..dossier::DossierWork::default()
             }],
             citing: Vec::new(),
+            status: crate::domain::DossierStatus::Ok,
         }
     }
 
@@ -3581,6 +3658,77 @@ esac
         assert_eq!(artifacts["context"]["before"][0]["basis"], "dossier");
         assert_eq!(record.verification.self_check, StageStatus::Disabled);
         assert!(record.abstract_agreement.is_none());
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_fail_a_context_refresh_whose_context_call_failed() {
+        use std::os::unix::fs::PermissionsExt;
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let script = directory.path().join("stub-codex");
+        std::fs::write(
+            &script,
+            r#"#!/bin/sh
+prompt=$(cat)
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--output-last-message" ]; then shift; output="$1"; fi
+  shift
+done
+printf '%s' 'not json' > "$output"
+"#,
+        )
+        .expect("stub script");
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700))
+            .expect("executable");
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let mut options = pipeline_options(directory.path(), 1, 1.0);
+        options.plan = Some(context_pipeline());
+        options.seed = Some(json!({
+            "card": {"thesis": {"text": "A seeded thesis.", "evidence": [], "confidence": "high"}}
+        }));
+        let record = extract_with(&options, plan_backend(&cli, directory.path()))
+            .await
+            .expect("record");
+        assert!(
+            record.warnings.iter().any(|warning| {
+                warning.kind == QualityWarningKind::CallFailed && warning.field == "context"
+            }),
+            "{:#?}",
+            record.warnings
+        );
+        let outcome = crate::analysis::context_outcome(record);
+        assert!(
+            outcome.is_err_and(|error| error.to_string().contains("context refresh failed")),
+            "a failed refresh is an error, not an old or empty context"
+        );
+    }
+
+    #[test]
+    fn should_warn_for_each_field_of_a_failed_or_skipped_plan_call() {
+        let plan = core_pipeline(Features::parse("context").expect("features"));
+        let failure = |stage: &str| Failure {
+            stage: stage.to_owned(),
+            chunk: None,
+            error: "bad json".to_owned(),
+            raw: None,
+        };
+        let failures = [failure("outline"), failure(CHECK_STAGE)];
+        let skipped = ["context".to_owned(), "sections.retry".to_owned()];
+        let warnings = call_warnings(&plan, &failures, &skipped);
+        let shown = warnings
+            .iter()
+            .map(|warning| (warning.kind, warning.field.as_str()))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            shown,
+            [
+                (QualityWarningKind::CallFailed, "outline"),
+                (QualityWarningKind::CallSkipped, "context"),
+            ],
+            "verification stages and plausibility retries report elsewhere"
+        );
+        assert!(warnings[0].message.contains("bad json"));
+        assert!(warnings.iter().all(|warning| warning.kind.degrades()));
     }
 
     #[test]

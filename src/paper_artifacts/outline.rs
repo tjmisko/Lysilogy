@@ -194,6 +194,8 @@ pub struct Admitted {
     pub entries: Vec<Entry>,
     /// Titles that could not be found on their page or a neighbour.
     pub dropped: Vec<String>,
+    /// Entries that named a heading line another entry already took.
+    pub duplicates: usize,
 }
 
 fn canonical(text: &str) -> String {
@@ -423,10 +425,15 @@ pub fn candidates(pages: &[ExtractedPage], layout: &DocumentLayout) -> Vec<Headi
             let candidate = match number {
                 Some(number) if rest.is_empty() => {
                     // A number printed on its own line before the heading text.
+                    // A page number followed by a running head is not one.
                     lines[index + 1..]
                         .iter()
                         .find(|next| !next.is_empty())
-                        .filter(|next| heading_words(next) && !next.ends_with('.'))
+                        .filter(|next| {
+                            heading_words(next)
+                                && !next.ends_with('.')
+                                && !is_furniture(next, &furniture)
+                        })
                         .map(|next| (format!("{number} {next}"), Some(number), true))
                 }
                 Some(number) if heading_words(rest) => Some((line.clone(), Some(number), true)),
@@ -677,9 +684,11 @@ pub fn admit(outline: &mut Value, pages: &[ExtractedPage]) -> Admitted {
     admitted
         .entries
         .sort_by_key(|entry| (entry.page, entry.line));
+    let before = admitted.entries.len();
     admitted
         .entries
         .dedup_by_key(|entry| (entry.page, entry.line));
+    admitted.duplicates = before - admitted.entries.len();
     let mut parent = 0;
     for entry in &mut admitted.entries {
         entry.level = entry.level.min(parent + 1).max(1);
@@ -865,6 +874,36 @@ mod tests {
                 .all(|candidate| candidate.text != "JOURNAL OF THINGS")
         );
         assert_eq!(found.len(), 2);
+    }
+
+    #[test]
+    fn should_not_join_a_page_number_with_the_running_head_after_it() {
+        let pages = pages(&[
+            "1 Introduction\nWe study markets.",
+            "2\nAMERICAN ECONOMIC REVIEW\nText goes on here.",
+            "3\nAMERICAN ECONOMIC REVIEW\nMore text here.",
+            "4\nAMERICAN ECONOMIC REVIEW\n2 Data\nWe use data.",
+            "5\nAMERICAN ECONOMIC REVIEW\nEven more text.",
+        ]);
+        let numbered = candidates(&pages, &DocumentLayout::default())
+            .into_iter()
+            .filter(|candidate| candidate.number.is_some())
+            .map(|candidate| candidate.text)
+            .collect::<Vec<_>>();
+        assert_eq!(numbered, ["1 Introduction", "2 Data"]);
+    }
+
+    #[test]
+    fn should_count_entries_that_name_a_heading_already_taken() {
+        let pages = pages(&["1 Introduction\nText.", "2 Data\nText."]);
+        let mut outline = json!([
+            {"number": "1", "title": "Introduction", "level": 1, "page": 1, "role": "main"},
+            {"number": "1", "title": "Introduction", "level": 1, "page": 1, "role": "main"},
+            {"number": "2", "title": "Data", "level": 1, "page": 2, "role": "main"}
+        ]);
+        let admitted = admit(&mut outline, &pages);
+        assert_eq!(admitted.entries.len(), 2);
+        assert_eq!(admitted.duplicates, 1);
     }
 
     #[test]

@@ -196,6 +196,7 @@ mod tests {
             quality_warnings: Vec::new(),
             context: None,
             abstract_agreement: None,
+            component_versions: std::collections::BTreeMap::new(),
         }
     }
 }

@@ -16,10 +16,11 @@ use crate::{
     Result,
     config::AnalysisConfig,
     domain::{
-        AgentSession, AnalysisProvider, Claim, Clarification, ContextBasis, ContextKind,
+        AgentSession, AnalysisComponent, AnalysisProvider, Claim, Clarification, ContextBasis, ContextKind,
         ContextNote, ContextSource, EvidenceStrength, ExtractedPaper, GlossaryEntry, KeyQuote,
         LearningRamp, OutlineEntry, OutlineRole, PageSpan, PaperAnalysis, PaperContext,
-        PaperSection, PromptExperiment, PromptVariant, QualityWarning, QuoteSignificance,
+        PaperSection, PromptExperiment, PromptVariant, QualityWarning, QualityWarningKind,
+        QuoteSignificance,
         SectionFamily, SectionKind, SectionSourceSpan,
     },
     error::Error,
@@ -288,17 +289,22 @@ impl AnalysisService {
             resources::DEFAULT_DPI,
             run::{CoreMode, ExtractOptions, context_pipeline, extract_with},
         };
-        let seed = tokio::fs::read(artifact_directory.join("paper-artifacts.json"))
+        // Only the core fields seed the draft: a context left in the seed
+        // would stand in for a context call that failed.
+        let mut seed = tokio::fs::read(artifact_directory.join("paper-artifacts.json"))
             .await
             .ok()
             .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok())
             .and_then(|record| record.get("artifacts").cloned())
             .filter(serde_json::Value::is_object)
             .unwrap_or_else(|| {
-            serde_json::json!({
-                "card": {"thesis": {"text": previous.thesis, "evidence": [], "confidence": "medium"}},
-            })
-        });
+                serde_json::json!({
+                    "card": {"thesis": {"text": previous.thesis, "evidence": [], "confidence": "medium"}},
+                })
+            });
+        if let Some(fields) = seed.as_object_mut() {
+            fields.remove(crate::paper_artifacts::context::FIELD);
+        }
         let settings = &self.settings;
         let options = ExtractOptions {
             pdf: pdf.to_path_buf(),
@@ -324,23 +330,7 @@ impl AnalysisService {
         let ledger = spend::SpendLedger::with_defaults();
         let backend = self.backend(provider, &options, &ledger)?;
         let record = extract_with(&options, backend).await?;
-        let degraded = !record.succeeded();
-        let context = record
-            .artifacts
-            .as_ref()
-            .and_then(context_from_artifacts)
-            .ok_or_else(|| {
-                Error::InvalidAnalysis(record.failures.first().map_or_else(
-                    || "the context node returned no context".to_owned(),
-                    |failure| failure.error.clone(),
-                ))
-            })?;
-        Ok(ContextOutcome {
-            context,
-            warnings: record.warnings,
-            degraded,
-            pipeline_version: record.pipeline_version,
-        })
+        context_outcome(record)
     }
 
     pub async fn revise(
@@ -725,9 +715,71 @@ pub(crate) fn context_from_artifacts(artifacts: &serde_json::Value) -> Option<Pa
         .ok()
 }
 
+/// What a context refresh run produced, or why it produced nothing usable.
+///
+/// A refresh whose context call failed or was skipped is an error, never a
+/// quiet success: the seed carries no context, so there is nothing older to
+/// fall back to. Every warning of the run is filed under the context, so it
+/// travels with the context it describes and is replaced by the next
+/// refresh; a verification stage that did not run keeps its kind and says
+/// it was the context refresh's.
+pub(crate) fn context_outcome(
+    record: crate::paper_artifacts::run::ExtractRecord,
+) -> Result<ContextOutcome> {
+    let field = crate::paper_artifacts::context::FIELD;
+    let degraded = !record.succeeded();
+    let call_failed = record.failures.iter().any(|failure| failure.stage == field)
+        || record.warnings.iter().any(|warning| {
+            warning.field == field
+                && matches!(
+                    warning.kind,
+                    QualityWarningKind::CallFailed
+                        | QualityWarningKind::CallSkipped
+                        | QualityWarningKind::ContextMissing
+                )
+        });
+    let context = record
+        .artifacts
+        .as_ref()
+        .filter(|_| !call_failed)
+        .and_then(context_from_artifacts)
+        .ok_or_else(|| {
+            let reason = record
+                .failures
+                .iter()
+                .find(|failure| failure.stage == field)
+                .map(|failure| failure.error.clone())
+                .or_else(|| record.budget_stopped.clone())
+                .unwrap_or_else(|| "the context node returned no context".to_owned());
+            Error::InvalidAnalysis(format!("the context refresh failed: {reason}"))
+        })?;
+    let warnings = record
+        .warnings
+        .into_iter()
+        .map(|warning| {
+            if warning.field == field {
+                warning
+            } else {
+                QualityWarning {
+                    message: format!("Context refresh: {}", warning.message),
+                    field: field.to_owned(),
+                    ..warning
+                }
+            }
+        })
+        .collect();
+    Ok(ContextOutcome {
+        context,
+        warnings,
+        degraded,
+        pipeline_version: record.pipeline_version,
+    })
+}
+
 /// Put a refreshed context on a stored analysis: the context itself, its
-/// projection onto the brief and notes, and its warnings. Notes from the
-/// older web-research design are kept.
+/// projection onto the brief and notes, its warnings in place of the older
+/// context's, and the pipeline that wrote it. Notes from the older
+/// web-research design are kept.
 pub(crate) fn apply_context(analysis: &mut PaperAnalysis, refreshed: ContextOutcome) {
     let (brief, notes) = context_projection(&refreshed.context);
     if !brief.is_empty() {
@@ -736,16 +788,94 @@ pub(crate) fn apply_context(analysis: &mut PaperAnalysis, refreshed: ContextOutc
     analysis.context_notes.retain(|note| note.basis.is_none());
     analysis.context_notes.extend(notes);
     analysis.context = Some(refreshed.context);
-    let field = crate::paper_artifacts::context::FIELD;
+    replace_component_warnings(
+        analysis,
+        component_fields(AnalysisComponent::Context),
+        refreshed.warnings,
+    );
+    analysis.record_component_version(AnalysisComponent::Context, refreshed.pipeline_version);
+}
+
+/// The warning fields that belong to a refreshable component.
+pub(crate) const fn component_fields(component: AnalysisComponent) -> &'static [&'static str] {
+    match component {
+        AnalysisComponent::Abstract => &["abstract", "author_abstract"],
+        AnalysisComponent::Context => &[crate::paper_artifacts::context::FIELD],
+        AnalysisComponent::Structure => &["outline", "sections"],
+    }
+}
+
+/// Put the abstract or the structure of a fresh full run on a stored
+/// analysis: the component's fields, its warnings in place of the older
+/// ones, and the pipeline that wrote it. A failed call or a skipped
+/// verification pass of the run is kept as a warning on the component, so a
+/// degraded refresh is never stored as a clean one.
+pub(crate) fn apply_component(
+    analysis: &mut PaperAnalysis,
+    component: AnalysisComponent,
+    refreshed: AnalysisOutcome,
+) {
+    let fresh = refreshed.analysis;
+    match component {
+        AnalysisComponent::Structure => {
+            analysis.outline = fresh.outline;
+            analysis.sections = fresh.sections;
+            analysis.generated_at = fresh.generated_at;
+        }
+        AnalysisComponent::Abstract => {
+            analysis.author_abstract = fresh.author_abstract;
+            analysis.abstract_extraction = fresh.abstract_extraction;
+            analysis.abstract_agreement = fresh.abstract_agreement;
+        }
+        AnalysisComponent::Context => {
+            analysis.context = fresh.context;
+        }
+    }
+    let fields = component_fields(component);
+    let label = match component {
+        AnalysisComponent::Abstract => "Abstract refresh",
+        AnalysisComponent::Context => "Context refresh",
+        AnalysisComponent::Structure => "Structure refresh",
+    };
+    let primary = fields[0];
+    let warnings = refreshed
+        .warnings
+        .into_iter()
+        .filter_map(|warning| {
+            if fields.contains(&warning.field.as_str()) {
+                Some(warning)
+            } else if matches!(
+                warning.kind,
+                QualityWarningKind::VerificationSkipped | QualityWarningKind::VerificationFailed
+            ) {
+                Some(QualityWarning {
+                    message: format!("{label}: {}", warning.message),
+                    field: primary.to_owned(),
+                    ..warning
+                })
+            } else {
+                None
+            }
+        })
+        .collect();
+    replace_component_warnings(analysis, fields, warnings);
+    if let Some(version) = fresh.pipeline_version {
+        analysis.record_component_version(component, version);
+    }
+}
+
+/// Replace the stored warnings about `fields` with a refresh's warnings
+/// about them; warnings about other fields are left alone.
+pub(crate) fn replace_component_warnings(
+    analysis: &mut PaperAnalysis,
+    fields: &[&str],
+    refreshed: Vec<QualityWarning>,
+) {
+    let about = |warning: &QualityWarning| fields.contains(&warning.field.as_str());
+    analysis.quality_warnings.retain(|warning| !about(warning));
     analysis
         .quality_warnings
-        .retain(|warning| warning.field != field);
-    analysis.quality_warnings.extend(
-        refreshed
-            .warnings
-            .into_iter()
-            .filter(|warning| warning.field == field),
-    );
+        .extend(refreshed.into_iter().filter(about));
 }
 
 /// What the older reader fields show of a context: the lead as the outsider
@@ -1028,6 +1158,7 @@ fn normalize_analysis(
         quality_warnings: Vec::new(),
         context: draft.context,
         abstract_agreement: None,
+        component_versions: std::collections::BTreeMap::new(),
     };
     validate_citations(&mut analysis, &paper.layout)?;
     Ok(analysis)
@@ -1445,13 +1576,17 @@ esac
             .await
             .expect("analysis");
         assert!(!outcome.degraded);
+        // The stub's outline call answers without an outline.
         assert_eq!(
             outcome
                 .warnings
                 .iter()
                 .map(|warning| warning.kind)
                 .collect::<Vec<_>>(),
-            [crate::domain::QualityWarningKind::SectionsLowCoverage]
+            [
+                QualityWarningKind::OutlineMissing,
+                QualityWarningKind::SectionsLowCoverage
+            ]
         );
         assert_eq!(outcome.analysis.quality_warnings, outcome.warnings);
         let context = outcome.analysis.context.as_ref().expect("context");
@@ -1574,6 +1709,7 @@ esac
             quality_warnings: Vec::new(),
             context: None,
             abstract_agreement: None,
+            component_versions: std::collections::BTreeMap::new(),
         }
     }
 
@@ -1942,6 +2078,62 @@ esac
         assert!(analysis.outsider_brief.starts_with("It overturned"));
         assert!(analysis.context.is_some());
         assert!(analysis.quality_warnings.is_empty());
+        assert_eq!(analysis.pipeline_version.as_deref(), Some("v"));
+        assert_eq!(
+            analysis.component_versions.get(&AnalysisComponent::Context).map(String::as_str),
+            Some("v")
+        );
+    }
+
+    fn warning(kind: QualityWarningKind, field: &str, message: &str) -> QualityWarning {
+        QualityWarning {
+            kind,
+            field: field.to_owned(),
+            message: message.to_owned(),
+        }
+    }
+
+    #[test]
+    fn should_replace_a_refreshed_components_warnings_and_record_its_pipeline() {
+        let mut analysis = analysis_with_sections(Vec::new());
+        analysis.pipeline_version = Some("old".to_owned());
+        analysis.quality_warnings = vec![
+            warning(QualityWarningKind::SectionsMirrorOutline, "sections", "stale"),
+            warning(QualityWarningKind::AbstractDisagreement, "abstract", "kept"),
+        ];
+        let mut fresh = analysis_with_sections(Vec::new());
+        fresh.pipeline_version = Some("new".to_owned());
+        let refreshed = AnalysisOutcome {
+            analysis: fresh,
+            session: None,
+            warnings: vec![
+                warning(QualityWarningKind::SectionsGroupingRepaired, "sections", "fresh"),
+                warning(QualityWarningKind::VerificationSkipped, "self_check", "unchecked"),
+                warning(QualityWarningKind::TitleImplausible, "identity", "not ours"),
+            ],
+            degraded: true,
+        };
+        apply_component(&mut analysis, AnalysisComponent::Structure, refreshed);
+        let shown = analysis
+            .quality_warnings
+            .iter()
+            .map(|warning| (warning.kind, warning.field.as_str()))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            shown,
+            [
+                (QualityWarningKind::AbstractDisagreement, "abstract"),
+                (QualityWarningKind::SectionsGroupingRepaired, "sections"),
+                (QualityWarningKind::VerificationSkipped, "outline"),
+            ]
+        );
+        assert!(analysis.quality_warnings[2].message.starts_with("Structure refresh:"));
+        assert!(analysis.degraded(), "a degraded refresh stays flagged");
+        assert_eq!(analysis.pipeline_version.as_deref(), Some("new"));
+        assert_eq!(
+            analysis.component_versions.get(&AnalysisComponent::Structure).map(String::as_str),
+            Some("new")
+        );
     }
 
     #[test]

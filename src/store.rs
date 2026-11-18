@@ -887,6 +887,7 @@ mod tests {
             quality_warnings: Vec::new(),
             context: None,
             abstract_agreement: None,
+            component_versions: std::collections::BTreeMap::new(),
         };
         store.save_analysis(&id, &analysis).await?;
         assert!(store.load_analysis(&id).await?.is_some());

@@ -66,6 +66,24 @@ pub fn check(
     if fields.contains("abstract") {
         warnings.extend(abstract_warnings(artifacts, pages));
     }
+    if fields.contains("outline") && artifacts.get("outline").is_none() {
+        warnings.push(warning(
+            QualityWarningKind::OutlineMissing,
+            "outline",
+            "The plan asked for the outline, but the record has none, so the reader falls back to page-span units.".to_owned(),
+        ));
+    }
+    if fields.contains(super::context::FIELD)
+        && !artifacts
+            .get(super::context::FIELD)
+            .is_some_and(Value::is_object)
+    {
+        warnings.push(warning(
+            QualityWarningKind::ContextMissing,
+            super::context::FIELD,
+            "The plan asked for the context, but the record has none, so the first view shows no account of why the paper matters.".to_owned(),
+        ));
+    }
     warnings.extend(degenerate(artifacts, fields, pages));
     if fields.contains("sections") {
         warnings.extend(grouping_warnings(artifacts, pages));
@@ -602,6 +620,21 @@ mod tests {
         let record = json!({"supercut": []});
         let fields = BTreeSet::from(["supercut".to_owned()]);
         assert!(check(&record, &fields, &sixteen_pages_with_references()).is_empty());
+    }
+
+    #[test]
+    fn should_flag_a_planned_outline_or_context_that_the_record_lacks() {
+        let fields = BTreeSet::from(["outline".to_owned(), "context".to_owned()]);
+        let warnings = check(&json!({}), &fields, &numbered_pages());
+        assert_eq!(
+            kinds(&warnings),
+            [
+                QualityWarningKind::OutlineMissing,
+                QualityWarningKind::ContextMissing
+            ]
+        );
+        let present = json!({"outline": numbered_outline(), "context": {"lead": []}});
+        assert!(check(&present, &fields, &numbered_pages()).is_empty());
     }
 
     fn numbered_pages() -> Vec<ExtractedPage> {

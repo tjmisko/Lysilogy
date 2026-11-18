@@ -8,6 +8,7 @@
 //! structural fields become flags, because a changed outline would silently
 //! shift every unit's range.
 
+use serde::Serialize;
 use serde_json::{Map, Value};
 
 use super::{
@@ -27,33 +28,98 @@ pub fn usable_outline(outline: Option<&Value>, pages: &[ExtractedPage]) -> Optio
     outline::usable(&entries, pages.len()).then_some(entries)
 }
 
+/// What admitting one outline answer kept and dropped, for the run record.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
+pub struct OutlineAdmission {
+    /// Entries the model returned.
+    pub returned: usize,
+    /// Entries kept after admission.
+    pub kept: usize,
+    /// Titles not found on their page or a neighbour.
+    pub dropped: Vec<String>,
+    /// Entries that named a heading line another entry already took.
+    pub duplicates: usize,
+}
+
+/// What settling one answer did.
+#[derive(Debug, Default)]
+pub struct Settled {
+    pub warnings: Vec<QualityWarning>,
+    /// Set when the answer carried an outline.
+    pub outline: Option<OutlineAdmission>,
+}
+
 /// Settle one call's answer: admit its outline, then repair its sections
 /// against that outline or the one already in `draft`.
 pub fn settle_fragment(
     fragment: &mut Value,
     draft: &Map<String, Value>,
     pages: &[ExtractedPage],
-) -> Vec<QualityWarning> {
+) -> Settled {
+    let mut settled = Settled::default();
     let Some(fields) = fragment.as_object_mut() else {
-        return Vec::new();
+        return settled;
     };
     if let Some(value) = fields.get_mut("outline") {
-        outline::admit(value, pages);
+        let returned = value.as_array().map_or(0, Vec::len);
+        let admitted = outline::admit(value, pages);
+        let admission = OutlineAdmission {
+            returned,
+            kept: admitted.entries.len(),
+            dropped: admitted.dropped,
+            duplicates: admitted.duplicates,
+        };
+        settled.warnings.extend(dropped_warning(&admission));
+        settled.outline = Some(admission);
     }
     let Some(Value::Array(units)) = fields.get("sections") else {
-        return Vec::new();
+        return settled;
     };
     let mut units = units.clone();
     let source = fields.get("outline").or_else(|| draft.get("outline"));
     let entries = usable_outline(source, pages).unwrap_or_default();
     let notes = grouping::repair(&mut units, &entries, pages);
     fields.insert("sections".to_owned(), Value::Array(units));
-    repair_warning(&notes).into_iter().collect()
+    settled.warnings.extend(repair_warning(&notes));
+    settled
 }
 
-/// Settle a whole draft, after the self-check.
+/// Settle a whole draft, after the self-check. Its outline was admitted when
+/// the outline call answered, so admitting it again drops nothing.
 pub fn settle_draft(draft: &mut Value, pages: &[ExtractedPage]) -> Vec<QualityWarning> {
-    settle_fragment(draft, &Map::new(), pages)
+    settle_fragment(draft, &Map::new(), pages).warnings
+}
+
+/// A warning when admission dropped headings the model returned, so a
+/// reviewer can tell an admission drop from a model omission.
+fn dropped_warning(admission: &OutlineAdmission) -> Option<QualityWarning> {
+    if admission.dropped.is_empty() {
+        return None;
+    }
+    let titles = admission
+        .dropped
+        .iter()
+        .map(|title| format!("\"{title}\""))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let duplicates = if admission.duplicates > 0 {
+        format!(
+            " {} further entr{} repeated a heading already listed.",
+            admission.duplicates,
+            if admission.duplicates == 1 { "y" } else { "ies" }
+        )
+    } else {
+        String::new()
+    };
+    Some(QualityWarning {
+        kind: QualityWarningKind::OutlineEntriesDropped,
+        field: "outline".to_owned(),
+        message: format!(
+            "{} of the {} headings the model returned were not found in the page text of their page or a neighbour and were dropped: {titles}.{duplicates}",
+            admission.dropped.len(),
+            admission.returned
+        ),
+    })
 }
 
 fn repair_warning(notes: &[String]) -> Option<QualityWarning> {
@@ -144,12 +210,17 @@ mod tests {
             {"number": "2", "title": "Model", "level": 1, "page": 2, "role": "main"},
             {"number": "3", "title": "Results", "level": 1, "page": 3, "role": "main"}
         ]});
-        assert!(settle_fragment(&mut outline_answer, &draft, &pages).is_empty());
+        let settled = settle_fragment(&mut outline_answer, &draft, &pages);
+        assert!(settled.warnings.is_empty());
+        assert_eq!(
+            settled.outline.map(|admission| (admission.returned, admission.kept)),
+            Some((3, 3))
+        );
         draft.insert("outline".to_owned(), outline_answer["outline"].clone());
         let mut sections = json!({"sections": [
             {"title": "Why and how", "kind": "theory", "family": "context", "outline_first": 0, "outline_last": 1, "summary": "s", "question": "q"}
         ]});
-        let warnings = settle_fragment(&mut sections, &draft, &pages);
+        let warnings = settle_fragment(&mut sections, &draft, &pages).warnings;
         assert_eq!(warnings.len(), 1);
         assert_eq!(
             warnings[0].kind,
@@ -161,6 +232,28 @@ mod tests {
             "the skipped results join the unit"
         );
         assert_eq!(units[0]["pages"], json!({"start": 1, "end": 3}));
+    }
+
+    #[test]
+    fn should_warn_when_admission_drops_headings_the_model_returned() {
+        let pages = pages();
+        let mut answer = json!({"outline": [
+            {"number": "1", "title": "Introduction", "level": 1, "page": 1, "role": "main"},
+            {"number": "1", "title": "Introduction", "level": 1, "page": 1, "role": "main"},
+            {"number": "4", "title": "Robustness", "level": 1, "page": 3, "role": "main"}
+        ]});
+        let settled = settle_fragment(&mut answer, &Map::new(), &pages);
+        let admission = settled.outline.expect("outline admission");
+        assert_eq!(admission.returned, 3);
+        assert_eq!(admission.kept, 1);
+        assert_eq!(admission.dropped, ["Robustness"]);
+        assert_eq!(admission.duplicates, 1);
+        assert_eq!(settled.warnings.len(), 1);
+        assert_eq!(
+            settled.warnings[0].kind,
+            QualityWarningKind::OutlineEntriesDropped
+        );
+        assert!(settled.warnings[0].message.contains("\"Robustness\""));
     }
 
     #[test]

@@ -178,6 +178,7 @@ export type QualityWarningKind =
   | "authors_missing"
   | "outline_missing"
   | "outline_sparse"
+  | "outline_entries_dropped"
   | "sections_grouping_repaired"
   | "sections_grouping_invalid"
   | "sections_mirror_outline"
@@ -185,6 +186,9 @@ export type QualityWarningKind =
   | "verification_failed"
   | "abstract_disagreement"
   | "context_claims_downgraded"
+  | "context_missing"
+  | "call_failed"
+  | "call_skipped"
   | "other";
 
 /** One deterministic sanity check the model output failed. */
@@ -258,7 +262,14 @@ export type ContextClaim = {
   downgraded?: ContextDowngrade | null;
 };
 
-export type NeighbourRelation = "predecessor" | "successor" | "critique" | "replication" | "other";
+export type NeighbourRelation =
+  | "predecessor"
+  | "successor"
+  | "critique"
+  | "replication"
+  | "survey"
+  | "parallel"
+  | "other";
 
 /** A neighbouring work worth reading next to the paper. */
 export type ReadAlongside = {
@@ -283,6 +294,8 @@ export type ContextCounts = {
   downgraded_unknown_work: number;
   unknown_work_ids: number;
   dropped_read_alongside: number;
+  /** Claims dropped because their text was empty. */
+  dropped_empty_claims?: number;
 };
 
 /** Why the paper matters: the first view's context, written by the context node. */
@@ -295,6 +308,27 @@ export type PaperContext = {
   /** What the model said it does not know about the reception. */
   reception_note: string | null;
   counts: ContextCounts;
+  /** The neighbour dossier the context node read; absent on older contexts. */
+  dossier?: ContextDossier | null;
+};
+
+/** Whether the neighbour dossier could be assembled for the context node. */
+export type DossierStatus = "ok" | "not_linked" | "no_graph" | "error" | "other";
+
+/** The dossier the context node read, in compact form. */
+export type ContextDossier = {
+  status: DossierStatus;
+  works: DossierWorkSummary[];
+};
+
+export type DossierWorkSummary = {
+  id: string;
+  title: string | null;
+  year: number | null;
+  first_author: string | null;
+  /** True for a later work citing the paper, false for one it cites. */
+  citing: boolean;
+  local_paper_id: string | null;
 };
 
 /** The model's abstract against the deterministic extraction. */
@@ -353,6 +387,8 @@ export type PaperAnalysis = {
   caveats: string[];
   reading_path: string[];
   pipeline_version?: string | null;
+  /** The pipeline version that last refreshed each component, keyed abstract/context/structure. */
+  component_versions?: Partial<Record<"abstract" | "context" | "structure", string>>;
   quality_warnings?: QualityWarning[];
   /** Why the paper matters; absent on older analyses and when the node did not run. */
   context?: PaperContext | null;

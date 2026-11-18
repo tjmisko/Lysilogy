@@ -58,14 +58,34 @@ function validContext(analysis: PaperAnalysis): {
   };
 }
 
+type CitedWork = { id: string; title: string; year: number | null; local_paper_id: string | null };
+
+/** Every work a dossier claim can cite, from the stored dossier first, then the reading list. */
+function claimWorks(context: PaperContext): Map<string, CitedWork> {
+  const works = new Map<string, CitedWork>();
+  for (const work of context.dossier?.works ?? []) {
+    works.set(work.id, {
+      id: work.id,
+      title: work.title ?? work.id,
+      year: work.year,
+      local_paper_id: work.local_paper_id,
+    });
+  }
+  for (const item of context.read_alongside) {
+    if (item.work_id != null && !works.has(item.work_id)) {
+      works.set(item.work_id, { id: item.work_id, title: item.title, year: item.year, local_paper_id: item.local_paper_id });
+    }
+  }
+  return works;
+}
+
 function ClaimList({ claims, context, onOpenPage, onOpenPaper }: {
   claims: ContextClaim[];
   context: PaperContext;
   onOpenPage: (page: number) => void;
   onOpenPaper: (paperId: string) => void;
 }) {
-  const works = new Map(context.read_alongside.filter((item) => item.work_id != null)
-    .map((item) => [item.work_id as string, item] as const));
+  const works = claimWorks(context);
   return <ul className="context-claim-list">{claims.map((claim, index) => {
     const label = basisLabel(claim.basis);
     const downgrade = downgradeText(claim);
@@ -81,7 +101,7 @@ function ClaimList({ claims, context, onOpenPage, onOpenPaper }: {
         </blockquote>
       ))}
       {cited.length > 0 && <p className="context-claim-works">Graph record:{" "}
-        {cited.map((work, workIndex) => <span key={work.work_id}>
+        {cited.map((work, workIndex) => <span key={work.id}>
           {workIndex > 0 && "; "}
           {work.local_paper_id != null
             ? <button type="button" className="context-claim-work" onClick={() => onOpenPaper(work.local_paper_id as string)}>{work.title}</button>
