@@ -190,7 +190,12 @@ impl LocalCliAnalyzer {
         let started = std::time::Instant::now();
         let prompt = plan_prompt(request.parts)?;
         let schema = serde_json::to_string(request.schema)?;
-        let schema_path = directory.join("plan-output.schema.json");
+        // One file per schema: plan calls run concurrently, and a shared
+        // file would let one call run with another call's schema.
+        let schema_path = directory.join(format!(
+            "plan-output-{}.schema.json",
+            fingerprint(schema.as_bytes())
+        ));
         write_schema(&schema_path, &schema).await?;
         let schema_path = canonical_schema(&schema_path).await?;
         let output_filename = format!(
