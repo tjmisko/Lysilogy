@@ -2,7 +2,9 @@
 // equally pure readerOutput.ts, so node's test runner can load it directly
 // (see scripts/review.test.mjs).
 
-import type { ContextNote, ContextSource, PaperAnalysis, PaperContext, PaperSection } from "../types";
+import type {
+  ContextNote, ContextSource, EdgeLabelCounts, LabelledEdge, PaperAnalysis, PaperContext, PaperSection,
+} from "../types";
 import { groupedHeadings, groupedRangeLabel, outlineLabel, outlineRows, paperContext, type OutlineRow } from "./readerOutput.ts";
 
 export type DimensionKind = "score" | "pass_fail" | "choice" | "count";
@@ -150,8 +152,26 @@ export const GENERAL_COMPONENT = "general";
 // stored analysis verbatim (src/review/snapshot.rs), so they have the reader
 // model's types; fields an older analysis lacks are simply absent.
 
-/** The analysis fields a review snapshot carries. */
-export type ReviewedFields = Partial<Pick<PaperAnalysis,
+/**
+ * The citation labels pinned beside the analysis fields (`edge_labels`): a
+ * sample of the last labelling run, pinned at a review's first save.
+ */
+export type PinnedEdgeLabels = {
+  generated_at: string | null;
+  status: "completed" | "skipped" | "failed";
+  detail: string | null;
+  labeler: string | null;
+  prompt_version: number;
+  label_version: string;
+  counts: Partial<EdgeLabelCounts>;
+  unresolved_keys: number | null;
+  left_for_later: number | null;
+  rejected_for_grounding: number | null;
+  sample: LabelledEdge[];
+};
+
+/** The analysis fields a review snapshot carries, plus the pinned citation labels. */
+export type ReviewedFields = { edge_labels?: PinnedEdgeLabels } & Partial<Pick<PaperAnalysis,
   | "thesis"
   | "author_abstract"
   | "abstract_extraction"
@@ -227,6 +247,43 @@ export function readThesis(fields: ReviewedFields): string | null {
   return text(fields.thesis);
 }
 
+export type EdgeLabelOutput = {
+  pinned: PinnedEdgeLabels | null;
+  /** Sampled edges that carry a label. */
+  sample: LabelledEdge[];
+  /** One line of the run's counts, for the grader. */
+  countsLine: string | null;
+};
+
+export function readEdgeLabels(fields: ReviewedFields): EdgeLabelOutput {
+  const pinned = fields.edge_labels ?? null;
+  if (pinned === null) return { pinned: null, sample: [], countsLine: null };
+  const counts = pinned.counts;
+  const parts: string[] = [];
+  if (counts.edges != null) parts.push(`${counts.labelled ?? 0} of ${counts.edges} edges labelled`);
+  if ((counts.unlabelled_with_passages ?? 0) > 0) parts.push(`${counts.unlabelled_with_passages} with passages but no label`);
+  if ((counts.perfunctory ?? 0) > 0) parts.push(`${counts.perfunctory} perfunctory`);
+  if ((counts.not_shown ?? 0) > 0) parts.push(`${counts.not_shown} where the passages do not show why`);
+  if ((pinned.unresolved_keys ?? 0) > 0) parts.push(`${pinned.unresolved_keys} core reference keys unresolved`);
+  if ((pinned.left_for_later ?? 0) > 0) parts.push(`${pinned.left_for_later} left for a later run`);
+  if ((pinned.rejected_for_grounding ?? 0) > 0) parts.push(`${pinned.rejected_for_grounding} answers failed grounding`);
+  return {
+    pinned,
+    sample: pinned.sample.filter((edge) => edge.label !== null),
+    countsLine: parts.length === 0 ? null : parts.join(" · "),
+  };
+}
+
+/**
+ * The fields a panel shows: the current output, with the citation labels a
+ * saved review pinned taking the place of the current run's sample.
+ */
+export function shownFields(snapshot: ReviewSnapshot | null, review: Review | null): ReviewedFields | null {
+  if (snapshot === null) return null;
+  const pinned = review?.snapshot.fields.edge_labels;
+  return pinned === undefined ? snapshot.fields : { ...snapshot.fields, edge_labels: pinned };
+}
+
 /** Whether the reader produced anything for a rubric component. */
 export function isProduced(componentId: string, fields: ReviewedFields): boolean {
   switch (componentId) {
@@ -238,6 +295,7 @@ export function isProduced(componentId: string, fields: ReviewedFields): boolean
     }
     case "outline": return (fields.outline?.length ?? 0) > 0;
     case "logical": return (fields.sections?.length ?? 0) > 0;
+    case "edge_labels": return readEdgeLabels(fields).sample.length > 0;
     default: return false;
   }
 }

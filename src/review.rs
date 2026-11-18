@@ -27,11 +27,13 @@ use serde::{Deserialize, Serialize};
 pub use self::{
     progress::{MANIFEST_JSON, Manifest, ManifestPaper, ProgressRow, manifest_match, progress},
     rubric::{DimensionKind, GENERAL_COMPONENT, RUBRIC_JSON, Rubric, RubricComponent},
-    snapshot::{ReviewSnapshot, snapshot_from_analysis},
+    snapshot::{
+        EDGE_LABELS_FIELD, ReviewSnapshot, label_version, pin_edge_labels, snapshot_from_analysis,
+    },
     storage::{load_all_reviews, load_analysis_json, load_paper_reviews, load_review, save_review},
     summary::{
-        ComponentSummary, DimensionSummary, ExportedIssue, GroupSummary, ReviewExport, Summary,
-        UNVERSIONED, export, render_summary, summarize,
+        ComponentSummary, DimensionSummary, ExportedIssue, GroupSummary, LabelActionSummary,
+        LabelVersionSummary, ReviewExport, Summary, UNVERSIONED, export, render_summary, summarize,
     },
 };
 use crate::{Error, Result, domain::PaperId, store::ArtifactStore};
@@ -194,6 +196,33 @@ impl Review {
     }
 }
 
+/// The graph's accept, reject and edit counts per label path, model and
+/// prompt version, when `LYSILOGY_DATABASE_URL` reaches a graph; empty
+/// otherwise (and the summary says nothing about them).
+async fn label_actions_from_env() -> Vec<LabelActionSummary> {
+    let Ok(url) = std::env::var("LYSILOGY_DATABASE_URL") else {
+        return Vec::new();
+    };
+    match crate::graph::GraphState::connect(&url).await {
+        Ok(graph) => label_actions(&graph).await,
+        Err(error) => {
+            tracing::warn!(%error, "could not read label review actions from the graph");
+            Vec::new()
+        }
+    }
+}
+
+/// The label review actions recorded in `graph`.
+pub async fn label_actions(graph: &crate::graph::GraphState) -> Vec<LabelActionSummary> {
+    match graph.relationships.label_review_counts().await {
+        Ok(rows) => rows.into_iter().map(LabelActionSummary::from).collect(),
+        Err(error) => {
+            tracing::warn!(%error, "could not read label review actions from the graph");
+            Vec::new()
+        }
+    }
+}
+
 /// `lysilogy review`: the summary as a table (or JSON), or, with an export
 /// path, every review, the summary and the flagged issues written as one JSON
 /// file. Returns the text to print.
@@ -230,7 +259,8 @@ pub async fn run_cli(
             path.display()
         ));
     }
-    let summary = summarize(&rubric, &reviews);
+    let mut summary = summarize(&rubric, &reviews);
+    summary.label_actions = label_actions_from_env().await;
     if json {
         let mut text = serde_json::to_string_pretty(&summary)?;
         text.push('\n');

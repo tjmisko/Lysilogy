@@ -26,6 +26,45 @@ const REVIEWED_PREFIXES: &[&str] = &[
     "component_versions",
 ];
 
+/// The snapshot field that pins the citation labels a review graded.
+///
+/// It is not part of the analysis and not hashed into the snapshot id: labels are
+/// written after the analysis and change as the owner reviews them, so the
+/// first save of a review pins the sample it graded and later saves keep it.
+pub const EDGE_LABELS_FIELD: &str = "edge_labels";
+
+/// Pin a sample of the last labelling run's labels into `snapshot`, unless
+/// one is already pinned. Without a run nothing is pinned and the panel shows
+/// the component as not produced.
+pub fn pin_edge_labels(snapshot: &mut ReviewSnapshot, run: Option<&crate::edge_labels::EdgeLabelRun>) {
+    if snapshot.fields.contains_key(EDGE_LABELS_FIELD) {
+        return;
+    }
+    let Some(run) = run else {
+        return;
+    };
+    let pinned = serde_json::json!({
+        "generated_at": run.generated_at,
+        "status": run.status,
+        "detail": run.detail,
+        "labeler": run.labeler,
+        "prompt_version": run.prompt_version,
+        "label_version": label_version(run.labeler.as_deref(), run.prompt_version),
+        "counts": run.counts,
+        "unresolved_keys": run.core.as_ref().map(|core| core.unresolved.values().sum::<usize>()),
+        "left_for_later": run.labels.as_ref().map(|labels| labels.over_limit + labels.over_budget + labels.failed),
+        "rejected_for_grounding": run.labels.as_ref().map(|labels| labels.rejected_for_grounding),
+        "sample": run.review_sample(crate::edge_labels::REVIEW_SAMPLE_SIZE),
+    });
+    snapshot.fields.insert(EDGE_LABELS_FIELD.to_owned(), pinned);
+}
+
+/// The key edge-label grades are compared under: the labeler and its prompt version.
+#[must_use]
+pub fn label_version(labeler: Option<&str>, prompt_version: u32) -> String {
+    format!("{} @ prompt v{prompt_version}", labeler.unwrap_or("no labeler"))
+}
+
 /// What a review graded: the reviewed fields as they were, plus the
 /// identifiers that tell one analysis run from another.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

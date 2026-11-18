@@ -106,7 +106,10 @@ fn should_parse_the_bundled_rubric_and_manifest() -> Result<()> {
         .iter()
         .map(|component| component.id.as_str())
         .collect::<Vec<_>>();
-    assert_eq!(ids, ["abstract", "thesis", "context", "outline", "logical"]);
+    assert_eq!(
+        ids,
+        ["abstract", "thesis", "context", "outline", "logical", "edge_labels"]
+    );
     assert!(
         rubric
             .component("context")
@@ -534,4 +537,30 @@ fn should_pin_every_graded_field_of_the_shared_reader_fixture() {
         snapshot.pipeline_version.as_deref(),
         analysis["pipeline_version"].as_str()
     );
+}
+
+#[test]
+fn should_count_label_review_actions_as_grading_data() {
+    let row = crate::review::LabelActionSummary::from(lysilogy_db::relationship::LabelReviewCounts {
+        path: "core_relation".to_owned(),
+        model: Some("openrouter:m".to_owned()),
+        prompt_version: None,
+        accepted: 6,
+        rejected: 1,
+        unreviewed: 10,
+        edited: 1,
+        replaced: 2,
+    });
+    assert_eq!(row.accept_rate, Some(0.75));
+    let rubric = Rubric::bundled().expect("rubric");
+    let mut summary = summarize(&rubric, &[]);
+    assert!(summary.label_actions.is_empty() && summary.label_versions.is_empty());
+    summary.label_actions = vec![row];
+    let text = render_summary(&rubric, &summary);
+    assert!(
+        text.contains("core_relation  openrouter:m v-: accepted 6, rejected 1, edited 1, unreviewed 10, replaced 2 (accept rate 75%)"),
+        "{text}"
+    );
+    let empty = crate::review::LabelActionSummary::from(lysilogy_db::relationship::LabelReviewCounts::default());
+    assert_eq!(empty.accept_rate, None);
 }

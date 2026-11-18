@@ -105,3 +105,36 @@ test('restores drafts, numbers issues and summarises progress', () => {
   assert.deepEqual(progressCounts(rows), { total: 3, inLibrary: 2, analysed: 2, reviewed: 1 });
   assert.deepEqual(rows.map(progressState), ['missing', 'reviewed', 'stale']);
 });
+
+test('reads the pinned citation labels and keeps a saved review on the labels it graded', async () => {
+  const { readEdgeLabels, shownFields } = await import('../src/lib/review.ts');
+  const label = (claim_id, relation, engagement) => ({
+    claim_id, relation, reason: `Reason ${claim_id}.`, quote: 'their index of heat stress', path: 'edge_labeler',
+    engagement, review_state: 'unreviewed', model: null, prompt_version: 2, passage: 'We use their index of heat stress [3].', page: 4,
+  });
+  const pinned = (reason) => ({
+    generated_at: '2026-11-18T00:00:00Z', status: 'completed', detail: null, labeler: 'openrouter:m', prompt_version: 2,
+    label_version: 'openrouter:m @ prompt v2',
+    counts: { edges: 5, labelled: 3, unlabelled_with_passages: 1, perfunctory: 1, not_shown: 0 },
+    unresolved_keys: 2, left_for_later: 0, rejected_for_grounding: 1,
+    sample: [
+      { work_id: 'w1', title: 'Reef survey', year: 2001, first_author: null, mention_count: 2, label: { ...label('r1', 'uses_method', 'substantive'), reason } },
+      { work_id: 'w2', title: 'No label', year: null, first_author: null, mention_count: 1, label: null },
+    ],
+  });
+  const output = readEdgeLabels({ edge_labels: pinned('Uses it.') });
+  assert.equal(output.sample.length, 1);
+  assert.equal(output.countsLine, '3 of 5 edges labelled · 1 with passages but no label · 1 perfunctory · 2 core reference keys unresolved · 1 answers failed grounding');
+  assert.equal(readEdgeLabels({}).pinned, null);
+  assert.equal(isProduced('edge_labels', { edge_labels: pinned('x') }), true);
+  assert.equal(isProduced('edge_labels', { ...current }), false, 'an analysis alone has no labels');
+
+  const snapshot = { snapshot_id: 's-1', generated_at: null, pipeline_version: null, provider: null, fields: { thesis: 'T.', edge_labels: pinned('Current run.') } };
+  const review = { snapshot: { ...snapshot, fields: { thesis: 'T.', edge_labels: pinned('Graded run.') } } };
+  assert.equal(shownFields(snapshot, review).edge_labels.sample[0].label.reason, 'Graded run.');
+  assert.equal(shownFields(snapshot, null).edge_labels.sample[0].label.reason, 'Current run.');
+  assert.equal(shownFields(null, null), null);
+  const edgeComponent = component('edge_labels');
+  assert.deepEqual(edgeComponent.reads, ['edge_labels']);
+  assert.ok(edgeComponent.dimensions.some((dimension) => dimension.id === 'wrong_relation' && dimension.kind === 'count'));
+});

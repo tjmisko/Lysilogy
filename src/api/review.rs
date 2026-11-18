@@ -18,7 +18,7 @@ use crate::{
     review::{
         MANIFEST_JSON, Manifest, RUBRIC_JSON, Review, ReviewInput, ReviewSnapshot, ReviewSubject,
         Rubric, load_all_reviews, load_analysis_json, load_paper_reviews, load_review,
-        manifest_match, progress, save_review, snapshot_from_analysis, summarize,
+        manifest_match, pin_edge_labels, progress, save_review, snapshot_from_analysis, summarize,
     },
 };
 
@@ -83,7 +83,11 @@ async fn list(State(state): State<AppState>) -> Result<Json<Vec<Review>>> {
 async fn summary(State(state): State<AppState>) -> Result<Response> {
     let rubric = Rubric::bundled()?;
     let reviews = load_all_reviews(&state.store).await?;
-    Ok(Json(summarize(&rubric, &reviews)).into_response())
+    let mut summary = summarize(&rubric, &reviews);
+    if let Some(graph) = &state.graph {
+        summary.label_actions = crate::review::label_actions(graph).await;
+    }
+    Ok(Json(summary).into_response())
 }
 
 async fn subject(state: &AppState, id: &str) -> Result<ReviewSubject> {
@@ -103,11 +107,19 @@ async fn subject(state: &AppState, id: &str) -> Result<ReviewSubject> {
     })
 }
 
+/// The output the paper shows now, with a sample of its citation labels
+/// pinned beside the analysis fields (not part of the snapshot id).
 async fn current_snapshot(state: &AppState, id: &PaperId) -> Result<Option<ReviewSnapshot>> {
-    Ok(load_analysis_json(&state.store, id)
+    let Some(mut snapshot) = load_analysis_json(&state.store, id)
         .await?
         .as_ref()
-        .map(snapshot_from_analysis))
+        .map(snapshot_from_analysis)
+    else {
+        return Ok(None);
+    };
+    let run = state.load_edge_label_run(id).await?;
+    pin_edge_labels(&mut snapshot, run.as_ref());
+    Ok(Some(snapshot))
 }
 
 async fn read(State(state): State<AppState>, AxumPath(id): AxumPath<String>) -> Result<Response> {
@@ -167,6 +179,17 @@ async fn save(
             .into_response());
     }
     let previous = load_review(&state.store, &subject.paper_id, &snapshot.snapshot_id).await?;
+    // The labels graded are the ones pinned at the first save, even if a
+    // labelling run or a review in the graph has changed them since.
+    let mut snapshot = snapshot;
+    if let Some(pinned) = previous
+        .as_ref()
+        .and_then(|review| review.snapshot.fields.get(crate::review::EDGE_LABELS_FIELD))
+    {
+        snapshot
+            .fields
+            .insert(crate::review::EDGE_LABELS_FIELD.to_owned(), pinned.clone());
+    }
     let review = Review::from_input(
         &rubric,
         subject,
@@ -234,6 +257,7 @@ mod tests {
         let (status, rubric) = call(&app, "GET", "/api/review/rubric", None).await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(rubric["components"][2]["id"], "context");
+        assert_eq!(rubric["components"][5]["id"], "edge_labels");
 
         let (status, before) = call(&app, "GET", &uri, None).await;
         assert_eq!(status, StatusCode::OK);
@@ -313,5 +337,82 @@ mod tests {
         assert_eq!(after["earlier"][0]["pipeline_version"], "core-v4");
         let (status, _) = call(&app, "GET", "/api/papers/1234567890abcdef/review", None).await;
         assert_eq!(status, StatusCode::NOT_FOUND);
+    }
+
+    fn run_with_label(reason: &str) -> Value {
+        json!({
+            "generated_at": "2026-11-18T00:00:00Z",
+            "status": "completed",
+            "labeler": "openrouter:example/model",
+            "prompt_version": 2,
+            "counts": {"edges": 3, "labelled": 2, "unlabelled_with_passages": 1, "perfunctory": 1},
+            "core": {"unresolved": {"no_matching_entry": 2}},
+            "labels": {"over_budget": 1},
+            "edges": [
+                {"work_id": "w1", "title": "A reef survey", "mention_count": 2,
+                 "label": {"claim_id": "r1", "relation": "uses_method", "reason": reason,
+                           "quote": "we use their index", "path": "edge_labeler",
+                           "engagement": "substantive", "review_state": "unreviewed"}},
+                {"work_id": "w2", "title": "Unlabelled", "mention_count": 1, "label": null}
+            ]
+        })
+    }
+
+    #[tokio::test]
+    async fn should_pin_the_citation_labels_a_review_graded_and_group_them_by_label_version() {
+        let library = tempfile::tempdir().unwrap();
+        let data = tempfile::tempdir().unwrap();
+        tokio::fs::write(library.path().join("paper.pdf"), b"fixture").await.unwrap();
+        let id = PaperId::from_relative_path(std::path::Path::new("paper.pdf"));
+        let state = AppState::new(library.path(), data.path()).await.unwrap();
+        let app = crate::build_router(state.clone(), None);
+        let uri = format!("/api/papers/{id}/review");
+        let paper_dir = state.store.paper_dir(&id);
+        tokio::fs::create_dir_all(&paper_dir).await.unwrap();
+        tokio::fs::write(
+            paper_dir.join("analysis.json"),
+            json!({"generated_at": "2026-11-01T00:00:00Z", "thesis": "T.", "pipeline_version": "core-v9"}).to_string(),
+        )
+        .await
+        .unwrap();
+        let (_, without) = call(&app, "GET", &uri, None).await;
+        assert!(without["snapshot"]["fields"]["edge_labels"].is_null(), "no run, nothing pinned");
+        let snapshot_id = without["snapshot"]["snapshot_id"].clone();
+
+        let write_run = |reason: &str| {
+            let path = paper_dir.join(crate::edge_labels::EDGE_LABELS_FILE);
+            let run = run_with_label(reason).to_string();
+            async move { tokio::fs::write(path, run).await.unwrap() }
+        };
+        write_run("Uses their bleaching index as the outcome.").await;
+        let (_, opened) = call(&app, "GET", &uri, None).await;
+        assert_eq!(opened["snapshot"]["snapshot_id"], snapshot_id, "labels do not change the snapshot id");
+        let pinned = &opened["snapshot"]["fields"]["edge_labels"];
+        assert_eq!(pinned["label_version"], "openrouter:example/model @ prompt v2");
+        assert_eq!(pinned["sample"].as_array().map(Vec::len), Some(1), "only labelled edges are sampled");
+        assert_eq!(pinned["unresolved_keys"], 2);
+        assert_eq!(pinned["left_for_later"], 1);
+
+        let grades = json!({"snapshot_id": snapshot_id, "components": {"edge_labels": {"values": {
+            "sampled": 1, "wrong_relation": 0, "weak_reason": 1, "specificity": 2}}}});
+        let (status, saved) = call(&app, "PUT", &uri, Some(grades.clone())).await;
+        assert_eq!(status, StatusCode::OK, "{saved}");
+        assert_eq!(
+            saved["snapshot"]["fields"]["edge_labels"]["sample"][0]["label"]["reason"],
+            "Uses their bleaching index as the outcome."
+        );
+
+        // A later labelling run does not move the grades onto other labels.
+        write_run("A rewritten reason.").await;
+        let (_, resaved) = call(&app, "PUT", &uri, Some(grades)).await;
+        assert_eq!(
+            resaved["snapshot"]["fields"]["edge_labels"]["sample"][0]["label"]["reason"],
+            "Uses their bleaching index as the outcome."
+        );
+        let (_, summary) = call(&app, "GET", "/api/reviews/summary", None).await;
+        let group = &summary["label_versions"][0];
+        assert_eq!(group["label_version"], "openrouter:example/model @ prompt v2");
+        assert_eq!(group["component"]["dimensions"]["weak_reason"]["total"], 1);
+        assert_eq!(summary["label_actions"], json!([]), "no graph, no actions");
     }
 }

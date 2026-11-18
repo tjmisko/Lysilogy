@@ -23,6 +23,54 @@ pub struct Summary {
     pub issues_by_component: BTreeMap<String, BTreeMap<String, usize>>,
     /// Issue counts across every version, by tag.
     pub issues_by_tag: BTreeMap<String, usize>,
+    /// Citation-label grades grouped by the labeler and prompt version that
+    /// wrote the pinned labels, which differ from the analysis pipeline.
+    pub label_versions: Vec<LabelVersionSummary>,
+    /// Accept, reject and edit actions on labels in the graph, as grading
+    /// data per path, model and prompt version. Empty without a graph.
+    pub label_actions: Vec<LabelActionSummary>,
+}
+
+/// The citation-label component's grades for one labeler and prompt version.
+#[derive(Clone, Debug, Serialize)]
+pub struct LabelVersionSummary {
+    pub label_version: String,
+    pub reviews: usize,
+    pub component: ComponentSummary,
+}
+
+/// Review actions on AI labels in the graph for one path, model and prompt version.
+#[derive(Clone, Debug, Default, PartialEq, Serialize)]
+pub struct LabelActionSummary {
+    pub path: String,
+    pub model: Option<String>,
+    pub prompt_version: Option<i32>,
+    pub accepted: i64,
+    pub rejected: i64,
+    pub edited: i64,
+    pub unreviewed: i64,
+    pub replaced: i64,
+    /// Accepted over accepted, rejected and edited: how often a reviewed
+    /// label was right as written.
+    pub accept_rate: Option<f64>,
+}
+
+impl From<lysilogy_db::relationship::LabelReviewCounts> for LabelActionSummary {
+    fn from(row: lysilogy_db::relationship::LabelReviewCounts) -> Self {
+        let reviewed = row.accepted + row.rejected + row.edited;
+        let to_f64 = |value: i64| f64::from(i32::try_from(value).unwrap_or(i32::MAX));
+        Self {
+            accept_rate: (reviewed > 0).then(|| to_f64(row.accepted) / to_f64(reviewed)),
+            path: row.path,
+            model: row.model,
+            prompt_version: row.prompt_version,
+            accepted: row.accepted,
+            rejected: row.rejected,
+            edited: row.edited,
+            unreviewed: row.unreviewed,
+            replaced: row.replaced,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -110,8 +158,46 @@ pub fn summarize(rubric: &Rubric, reviews: &[Review]) -> Summary {
             .collect(),
         issues_by_component,
         issues_by_tag,
+        label_versions: summarize_label_versions(rubric, reviews),
+        label_actions: Vec::new(),
     }
 }
+
+/// The edge-label component grouped by the label version its review pinned.
+fn summarize_label_versions(rubric: &Rubric, reviews: &[Review]) -> Vec<LabelVersionSummary> {
+    let Some(component) = rubric.component(EDGE_LABELS_COMPONENT) else {
+        return Vec::new();
+    };
+    let mut groups: BTreeMap<String, Vec<&Review>> = BTreeMap::new();
+    for review in reviews {
+        let graded = review
+            .components
+            .get(EDGE_LABELS_COMPONENT)
+            .is_some_and(super::ComponentGrade::is_graded);
+        if !graded {
+            continue;
+        }
+        let version = review
+            .snapshot
+            .field(super::EDGE_LABELS_FIELD)
+            .and_then(|pinned| pinned.get("label_version"))
+            .and_then(Value::as_str)
+            .unwrap_or(UNVERSIONED)
+            .to_owned();
+        groups.entry(version).or_default().push(review);
+    }
+    groups
+        .into_iter()
+        .map(|(label_version, group)| LabelVersionSummary {
+            label_version,
+            reviews: group.len(),
+            component: summarize_component(component, &group),
+        })
+        .collect()
+}
+
+/// The rubric component that grades citation labels.
+pub const EDGE_LABELS_COMPONENT: &str = "edge_labels";
 
 fn summarize_group(rubric: &Rubric, version: &str, reviews: &[&Review]) -> GroupSummary {
     let papers = reviews
@@ -123,60 +209,7 @@ fn summarize_group(rubric: &Rubric, version: &str, reviews: &[&Review]) -> Group
     let components = rubric
         .components
         .iter()
-        .map(|component| {
-            let grades = reviews
-                .iter()
-                .filter_map(|review| review.components.get(&component.id))
-                .filter(|grade| grade.is_graded())
-                .collect::<Vec<_>>();
-            let dimensions = component
-                .dimensions
-                .iter()
-                .map(|dimension| {
-                    let values = grades
-                        .iter()
-                        .filter_map(|grade| grade.values.get(&dimension.id))
-                        .collect::<Vec<_>>();
-                    (
-                        dimension.id.clone(),
-                        summarize_dimension(dimension.kind, &values),
-                    )
-                })
-                .collect::<BTreeMap<_, _>>();
-            let pooled = stat(
-                component
-                    .dimensions
-                    .iter()
-                    .filter(|dimension| dimension.kind == DimensionKind::Score)
-                    .flat_map(|dimension| {
-                        grades
-                            .iter()
-                            .filter_map(|grade| match grade.values.get(&dimension.id) {
-                                Some(GradeValue::Number(score)) => Some(*score),
-                                _ => None,
-                            })
-                    }),
-            );
-            let mut issues = BTreeMap::new();
-            for issue in reviews
-                .iter()
-                .flat_map(|review| &review.issues)
-                .filter(|issue| issue.component == component.id)
-            {
-                *issues.entry(issue.severity.clone()).or_default() += 1;
-            }
-            (
-                component.id.clone(),
-                ComponentSummary {
-                    graded: grades.len(),
-                    not_produced: grades.iter().filter(|grade| grade.not_produced).count(),
-                    hard_rejects: grades.iter().filter(|grade| grade.hard_reject).count(),
-                    score_mean: pooled.mean,
-                    dimensions,
-                    issues,
-                },
-            )
-        })
+        .map(|component| (component.id.clone(), summarize_component(component, reviews)))
         .collect();
     GroupSummary {
         pipeline_version: version.to_owned(),
@@ -184,6 +217,58 @@ fn summarize_group(rubric: &Rubric, version: &str, reviews: &[&Review]) -> Group
         papers,
         overall,
         components,
+    }
+}
+
+fn summarize_component(component: &super::RubricComponent, reviews: &[&Review]) -> ComponentSummary {
+    let grades = reviews
+        .iter()
+        .filter_map(|review| review.components.get(&component.id))
+        .filter(|grade| grade.is_graded())
+        .collect::<Vec<_>>();
+    let dimensions = component
+        .dimensions
+        .iter()
+        .map(|dimension| {
+            let values = grades
+                .iter()
+                .filter_map(|grade| grade.values.get(&dimension.id))
+                .collect::<Vec<_>>();
+            (
+                dimension.id.clone(),
+                summarize_dimension(dimension.kind, &values),
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    let pooled = stat(
+        component
+            .dimensions
+            .iter()
+            .filter(|dimension| dimension.kind == DimensionKind::Score)
+            .flat_map(|dimension| {
+                grades
+                    .iter()
+                    .filter_map(|grade| match grade.values.get(&dimension.id) {
+                        Some(GradeValue::Number(score)) => Some(*score),
+                        _ => None,
+                    })
+            }),
+    );
+    let mut issues = BTreeMap::new();
+    for issue in reviews
+        .iter()
+        .flat_map(|review| &review.issues)
+        .filter(|issue| issue.component == component.id)
+    {
+        *issues.entry(issue.severity.clone()).or_default() += 1;
+    }
+    ComponentSummary {
+        graded: grades.len(),
+        not_produced: grades.iter().filter(|grade| grade.not_produced).count(),
+        hard_rejects: grades.iter().filter(|grade| grade.hard_reject).count(),
+        score_mean: pooled.mean,
+        dimensions,
+        issues,
     }
 }
 
@@ -321,6 +406,7 @@ pub fn render_summary(rubric: &Rubric, summary: &Summary) -> String {
             }
         }
     }
+    render_labels(rubric, summary, &mut text);
     if !summary.issues_by_component.is_empty() {
         text.push_str("\nFlagged issues\n");
         for (component, severities) in &summary.issues_by_component {
@@ -333,6 +419,50 @@ pub fn render_summary(rubric: &Rubric, summary: &Summary) -> String {
         }
     }
     text
+}
+
+/// The citation-label sections of the summary: grades by label version and
+/// the review actions recorded in the graph.
+fn render_labels(rubric: &Rubric, summary: &Summary, text: &mut String) {
+    let format_mean =
+        |mean: Option<f64>| mean.map_or_else(|| "-".to_owned(), |m| format!("{m:.2}"));
+    for group in &summary.label_versions {
+        let _ = writeln!(
+            text,
+            "\n== citation labels {} ({} reviews) mean {}",
+            group.label_version,
+            group.reviews,
+            format_mean(group.component.score_mean)
+        );
+        if let Some(component) = rubric.component(EDGE_LABELS_COMPONENT) {
+            for dimension in &component.dimensions {
+                if let Some(DimensionSummary::Count { n, total, .. }) =
+                    group.component.dimensions.get(&dimension.id)
+                {
+                    let _ = writeln!(text, "      {:<28} total {total} (n={n})", dimension.label);
+                }
+            }
+        }
+    }
+    if !summary.label_actions.is_empty() {
+        text.push_str("\nLabel review actions in the graph\n");
+        for row in &summary.label_actions {
+            let _ = writeln!(
+                text,
+                "  {:<14} {} v{}: accepted {}, rejected {}, edited {}, unreviewed {}, replaced {} (accept rate {})",
+                row.path,
+                row.model.as_deref().unwrap_or("-"),
+                row.prompt_version.map_or_else(|| "-".to_owned(), |version| version.to_string()),
+                row.accepted,
+                row.rejected,
+                row.edited,
+                row.unreviewed,
+                row.replaced,
+                row.accept_rate
+                    .map_or_else(|| "-".to_owned(), |rate| format!("{:.0}%", rate * 100.0))
+            );
+        }
+    }
 }
 
 /// Everything needed to analyse reviews offline in one file.

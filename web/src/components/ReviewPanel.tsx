@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent a
 
 import "./ReviewPanel.css";
 import { ApiError, request } from "../lib/api";
+import { edgeRelationLabel, engagementLabel, pathLabel } from "../lib/edgeLabels";
 import {
   GENERAL_COMPONENT,
   OVERALL,
@@ -16,7 +17,9 @@ import {
   progressCounts,
   progressState,
   readAbstract,
+  shownFields,
   readContext,
+  readEdgeLabels,
   readLogical,
   readOutline,
   readThesis,
@@ -233,6 +236,29 @@ function ComponentOutput({ component, fields, manifestPaper }: { component: Rubr
         </li>)}</ol>
       </>;
     }
+    case "edge_labels": {
+      const labels = readEdgeLabels(fields);
+      if (labels.pinned === null) return <NotProduced />;
+      return <>
+        <p className="review-hint">
+          {labels.pinned.label_version}
+          {labels.pinned.status !== "completed" && labels.pinned.detail !== null && <> · {labels.pinned.status}: {labels.pinned.detail}</>}
+          {labels.countsLine !== null && <> · {labels.countsLine}</>}
+        </p>
+        {labels.sample.length === 0 ? <NotProduced /> : <ol className="review-edge-labels">{labels.sample.map((edge) => {
+          const label = edge.label;
+          if (label === null) return null;
+          const engagement = engagementLabel(label.engagement);
+          return <li key={label.claim_id} data-relation={label.relation} data-path={label.path ?? "edge_labeler"}>
+            <div><strong>{edge.title ?? edge.work_id}</strong>{edge.year !== null && <span className="review-muted"> ({edge.year})</span>}</div>
+            <div><span className="review-question">{edgeRelationLabel(label.relation)}</span> {label.reason}</div>
+            {label.quote !== null && label.quote !== "" && <blockquote>“{label.quote}”</blockquote>}
+            {label.passage !== null && label.passage !== "" && <details><summary>Citing passage{label.page !== null ? ` · p. ${label.page}` : ""}</summary><p>{label.passage}</p></details>}
+            <div className="review-muted">{pathLabel(label.path)}{engagement !== null ? ` · ${engagement}` : ""} · {label.review_state}</div>
+          </li>;
+        })}</ol>}
+      </>;
+    }
     default:
       return null;
   } })();
@@ -395,7 +421,7 @@ export function ReviewPanel({ paperId, onClose, onOpenPaper }: ReviewPanelProps)
   const focusedRow = rows[Math.min(focusIndex, Math.max(0, rows.length - 1))] ?? null;
   const done = rubric === null ? null : completion(rubric, draft);
   const manifestPaper = manifest?.papers.find((entry) => entry.id === paper?.manifest_id) ?? null;
-  const fields = paper?.snapshot?.fields ?? null;
+  const fields = shownFields(paper?.snapshot ?? null, paper?.review ?? null);
   const counts = progressCounts(progress);
 
   const focusRow = useCallback((index: number): void => {
